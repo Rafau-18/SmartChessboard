@@ -7,249 +7,249 @@ checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
   gray_areas_resolved:
-    - topic: "kategoria bólu"
-      decision: "dane uwięzione w fizycznym świecie + brak analizy + tarcie ręcznego zapisu"
-    - topic: "insight motywujący projekt"
-      decision: "komercyjne smart chessboardy są za drogie i zamknięte dla tego use-case; autor ma już prototyp sprzętu"
-    - topic: "zakres persony"
-      decision: "multi-user — autor + grono znajomych, każdy z własnym profilem i historią"
-    - topic: "model uwierzytelniania"
-      decision: "konta użytkowników (mechanizm odracza się do tech-stack)"
-    - topic: "role"
-      decision: "flat — wszyscy zalogowani równi"
+    - topic: "pain category"
+      decision: "data trapped in the physical world + no analysis + friction of manual notation"
+    - topic: "insight motivating the project"
+      decision: "commercial smart chessboards are too expensive and closed for this use case; the author already has a hardware prototype"
+    - topic: "persona scope"
+      decision: "multi-user — author + a circle of friends, each with their own profile and history"
+    - topic: "authentication model"
+      decision: "user accounts (mechanism deferred to tech-stack)"
+    - topic: "roles"
+      decision: "flat — all logged-in users equal"
     - topic: "sign-up"
       decision: "open registration via external identity provider (OAuth) — initially 'closed beta with invitations' in Phase 2, revised post-Phase-7 to open OAuth-based registration; provider deferred to tech-stack"
   frs_drafted: 23
-  # FR rev history: +1 FR-011 (zegar szachowy, +Runda 3); -1 FR-018 (wstrzymanie/wznowienie redundantne, -Runda 5); +1 FR-022 (auto-detect powrotu pozycji, post-Phase-7); +1 FR-023 (network-loss recovery, post-Phase-8); ostateczna liczba: 23
+  # FR rev history: +1 FR-011 (chess clock, +Round 3); -1 FR-018 (pause/resume redundant, -Round 5); +1 FR-022 (auto-detect position recovery, post-Phase-7); +1 FR-023 (network-loss recovery, post-Phase-8); final count: 23
   quality_check_status: accepted
 ---
 
 # Shape notes — Smart Chessboard
 
-Notatki z sesji /10x-shape. Treść porządkuje się pod sekcje PRD, ale to NIE jest jeszcze PRD.
+Notes from the /10x-shape session. The content is organized under PRD sections, but this is NOT yet a PRD.
 
 ## Vision & Problem Statement
 
-Szachista amator gra w szachy na fizycznej, drewnianej szachownicy ze znajomymi w domu. Partie rozegrane w ten sposób znikają w chwili zakończenia — nie ma ich w żadnym zapisie, nie da się ich później przeanalizować, ani wrócić do konkretnej pozycji. Próby ręcznego notowania ruchów na kartce zabijają tempo i przyjemność z gry, więc w praktyce nikt tego nie robi.
+An amateur chess player plays chess on a physical wooden board with friends at home. Games played this way vanish the moment they end — they exist in no record, cannot be analyzed afterward, and there is no way to return to a specific position. Attempts to manually notate moves on paper kill the tempo and enjoyment of the game, so in practice nobody does it.
 
-Insight: komercyjne "smart chessboardy" (Square Off, Chessnut, DGT) rozwiązują ten problem, ale są drogie i zamknięte — nie pasują do use-case'u autora i jego znajomych. Autor zbudował już własny prototyp fizycznej szachownicy z matrycą kontaktronów i ESP32 podczas studiów. Projekt to nadbudowa software'owa nad istniejącym sprzętem, krojona pod konkretne grono użytkowników, nie pod rynek masowy.
+Insight: commercial "smart chessboards" (Square Off, Chessnut, DGT) solve this problem, but they are expensive and closed — they don't fit the author's and his friends' use case. The author already built a prototype of a physical board with a reed-switch matrix and an ESP32 during his studies. The project is a software overlay on top of existing hardware, tailored to a specific group of users, not to the mass market.
 
 ## User & Persona
 
-**Primary persona — szachista amator.** Autor projektu i jego grono znajomych. Grają w szachy fizyczne dla przyjemności (nie turniejowo), regularnie w domu. Każdy ma własne konto, własny profil i własną historię partii — chcą widzieć swoje statystyki i wracać do swoich partii, nie do "wspólnej puli".
+**Primary persona — amateur chess player.** The project author and his circle of friends. They play physical chess for enjoyment (not competitively), regularly at home. Each person has their own account, their own profile, and their own game history — they want to see their own statistics and return to their own games, not a "shared pool".
 
 ## Access Control
 
-Każdy gracz posiada własne konto i loguje się do aplikacji, by mieć przypisaną historię partii i statystyki.
+Each player has their own account and logs into the application to have their game history and statistics attributed to them.
 
-- **Model:** flat — wszyscy zalogowani użytkownicy mają te same uprawnienia. Brak ról admin/user/guest w MVP.
-- **Sign-up:** otwarty — każdy może założyć konto bez zaproszenia. Założenie: niska widoczność projektu w MVP ("nikt nie wie o produkcie") + krótka ścieżka rejestracji jest wystarczającym balansem dla closed-circle persony. Brak mechanizmu zaproszeń = brak osobnego UI i osobnego kodu w MVP.
-- **Mechanizm uwierzytelniania:** logowanie i rejestracja przez **external identity provider (OAuth)** — pojedynczy provider, ten sam dla rejestracji i logowania. Brak własnego password hashing, brak własnego flow reset hasła, brak własnego email-verification. Konkretny provider (Google / GitHub / Apple / Auth0 / Supabase Auth / inne) odracza się do tech-stack-selection.
-- **Anonymous access:** brak. Niezalogowany użytkownik nie ma dostępu do żadnych widoków partii ani analiz w MVP.
+- **Model:** flat — all logged-in users have the same permissions. No admin/user/guest roles in the MVP.
+- **Sign-up:** open — anyone can create an account without an invitation. Assumption: low project visibility in the MVP ("nobody knows about the product") + a short registration path is sufficient balance for the closed-circle persona. No invitation mechanism = no separate UI and no separate code in the MVP.
+- **Authentication mechanism:** login and registration via an **external identity provider (OAuth)** — a single provider, the same one for registration and login. No in-house password hashing, no in-house password-reset flow, no in-house email verification. The specific provider (Google / GitHub / Apple / Auth0 / Supabase Auth / other) is deferred to tech-stack selection.
+- **Anonymous access:** none. An unauthenticated user has no access to any game views or analysis in the MVP.
 
 ## Success Criteria
 
 ### Primary
-- Użytkownik może rozegrać pełną partię szachów w jednym z dwóch trybów: (a) **gra cyfrowa** w trybie pass-and-play na ekranie urządzenia mobilnego (Android lub iOS), (b) **gra fizyczna** na podłączonej do aplikacji fizycznej szachownicy z matrycą kontaktronów (ESP32, przycisk zatwierdzania ruchu). W obu trybach partia jest automatycznie zapisywana w standardowych formatach (PGN i FEN po każdym ruchu). Użytkownik może później wrócić do listy swoich partii i przejść wybraną partię ruch po ruchu z odtworzeniem każdej pozycji.
+- The user can play a complete chess game in one of two modes: (a) **digital play** in pass-and-play mode on a mobile device screen (Android or iOS), (b) **physical play** on a physical board connected to the app, equipped with a reed-switch matrix (ESP32, move-confirmation button). In both modes the game is automatically saved in standard formats (PGN and FEN after each move). The user can later return to the list of their games and walk through a chosen game move by move, with every position replayed.
 
 ### Secondary
-- Po zakończeniu partii użytkownik może zobaczyć ocenę pozycji (np. pasek oceny / wykres oceny Stockfisha) dla wybranych pozycji partii — analiza pobierana z zewnętrznego, darmowego źródła oceny pozycji szachowych.
+- After a game ends, the user can view a position evaluation (e.g., a Stockfish evaluation bar / chart) for selected positions in the game — the analysis is fetched from an external, free source of chess position evaluation.
 
 ### Guardrails
-- **Legalność ruchu:** aplikacja NIGDY nie zapisuje nielegalnego ruchu. Każdy ruch jest walidowany wg pełnych reguł szachowych — ruch związanej figury, ruch nie wychodzący z szacha, niedozwolony ruch króla, błędna roszada, niedozwolone bicie w przelocie, niedozwolona promocja — przed zapisem. Walidacja obowiązuje w obu trybach (cyfrowym i fizycznym). **Uwaga:** automatyczne *wykrywanie końca partii* (mat / pat / 3x powtórzenie / 50 ruchów) jest poza MVP — w MVP użytkownik manualnie oznacza koniec partii i wynik (patrz FR).
-- **Trwałość partii:** raz zapisana partia nie znika z konta użytkownika. Awaria aplikacji w trakcie trwającej partii nie powoduje utraty ruchów wykonanych do momentu awarii. Guardrail pokrywa awarię aplikacji; utrata połączenia z fizyczną szachownicą obsługiwana w MVP minimalnie (ostatni zapisany ruch zachowany dzięki FR-015), pełne wstrzymanie + auto-reconnect bez utraty stanu wyodrębnione jako nice-to-have FR-023.
-- **Reaktywność ruchu:** zaakceptowany ruch (dotyk ekranu w trybie cyfrowym lub naciśnięcie przycisku zatwierdzającego w trybie fizycznym) pojawia się jako wykonany na ekranie urządzenia w czasie nieprzekraczającym 500 ms od interakcji.
-- **Brak cichej korupcji detekcji fizycznej:** aplikacja nie zapisuje błędnie zinterpretowanego ruchu po cichu. Każdy zatwierdzony przyciskiem stan kończy się jedną z dwóch obserwowalnych dla użytkownika reakcji: (a) ruch jest poprawnie rozpoznany jako konkretny legalny ruch szachowy i zapisany, albo (b) aplikacja widocznie zgłasza problem detekcji (brak odpowiadającego legalnego ruchu, niejednoznaczność, wykryta inkonsystencja stanu matrycy) i wstrzymuje partię do manualnej korekty. **Akceptujemy hobbystyczny charakter sprzętu:** matryca kontaktronów może mieć fałszywe trafienia (magnes "zapala" zbędne pole) lub niewykrycia (figura stoi, ale pole nie sygnalizuje). Dlatego doświadczenie nie jest w pełni autonomiczne — aplikacja oferuje wsparcie do manualnej korekty (diagnostyczny live-widok matrycy FR-012, jasny komunikat błędu z możliwością ponowienia FR-013, opcjonalny auto-detect powrotu do pozycji FR-022). Lepiej "częściowo autonomicznie + pomoc człowieka" niż "100% autonomicznie albo nic".
+- **Move legality:** the application NEVER saves an illegal move. Every move is validated against the full rules of chess — pinned-piece movement, moves that fail to escape check, illegal king moves, invalid castling, illegal en passant, illegal promotion — before being saved. Validation applies in both modes (digital and physical). **Note:** automatic *end-of-game detection* (checkmate / stalemate / threefold repetition / 50-move rule) is out of MVP — in the MVP the user manually marks the end of the game and the result (see FR).
+- **Game durability:** once saved, a game does not disappear from the user's account. An application crash during an in-progress game does not cause the loss of moves made up to the point of the crash. The guardrail covers application crashes; loss of connection to the physical board is handled minimally in the MVP (last saved move retained thanks to FR-015), while a full pause + auto-reconnect without state loss is broken out as nice-to-have FR-023.
+- **Move responsiveness:** an accepted move (a screen touch in digital mode or a press of the confirmation button in physical mode) appears on the device screen as executed within at most 500 ms of the interaction.
+- **No silent corruption of physical detection:** the application does not silently save a misinterpreted move. Every state confirmed by a button press ends with one of two user-observable reactions: (a) the move is correctly recognized as a specific legal chess move and saved, or (b) the application visibly reports a detection problem (no matching legal move, ambiguity, detected matrix-state inconsistency) and pauses the game until manual correction. **We accept the hobbyist character of the hardware:** the reed-switch matrix may produce false hits (a magnet "lights up" an unintended square) or non-detections (a piece stands on the board, but the square does not signal). For this reason the experience is not fully autonomous — the application offers support for manual correction (diagnostic live matrix view FR-012, a clear error message with a retry option FR-013, optional auto-detect of position recovery FR-022). Better "partially autonomous + human assistance" than "100% autonomous or nothing".
 
 ## Timeline acknowledgment
 
-Acknowledged on 2026-05-25: MVP wymaga ponad 12 tygodni regularnej, intensywnej pracy. Użytkownik jawnie zaakceptował koszt: długoterminowy projekt edukacyjny, sustained-effort cost przyjęty na wejściu, z buforem na naukę nowych technologii. `mvp_weeks: 12` (rewizja post-Phase-8: bez hard capa — 12 tygodni jako realistyczny budżet z buforem na nice-to-have, nie sztywny deadline). Zakres MVP: pełen scope cyfrowy (Android + iOS, multi-user, rejestracja, replay UI) PLUS warstwa sprzętowa (ESP32 z matrycą kontaktronów, przycisk zatwierdzania, WiFiManager captive portal, diagnostyka stanu szachownicy, symulator sprzętu na potrzeby testów i CI/CD). Wszystkie 4 nice-to-have FR (FR-016, FR-017, FR-018, FR-022) plus nowy FR-023 zostają w scope jako opcjonalne — wejdą do MVP jeśli budżet czasu pozwoli, w przeciwnym razie spadają do post-MVP roadmapy bez renegocjacji must-have.
+Acknowledged on 2026-05-25: the MVP requires more than 12 weeks of regular, intensive work. The user has explicitly accepted the cost: a long-term educational project, with sustained-effort cost accepted up front and a buffer for learning new technologies. `mvp_weeks: 12` (post-Phase-8 revision: no hard cap — 12 weeks as a realistic budget with a buffer for nice-to-haves, not a rigid deadline). MVP scope: the full digital scope (Android + iOS, multi-user, registration, replay UI) PLUS the hardware layer (ESP32 with a reed-switch matrix, confirmation button, WiFiManager captive portal, board-state diagnostics, hardware simulator for testing and CI/CD). All 4 nice-to-have FRs (FR-016, FR-017, FR-018, FR-022) plus the new FR-023 remain in scope as optional — they enter the MVP if the time budget permits; otherwise they drop to the post-MVP roadmap without renegotiating must-haves.
 
 ## Functional Requirements
 
-### Konta i logowanie
-- FR-001: Nowy użytkownik może utworzyć konto poprzez zalogowanie się przez external identity provider (OAuth single-sign-on). Rejestracja jest otwarta — bez zaproszenia, bez kodu, bez weryfikacji email. Priority: must-have
-  > Socrates: Counter-argument considered in Round 1: "ręczne zakładanie kont / kod zaproszenia". Resolution: initially kept ("zaproszenia jako must-have"), then REVISED post-Phase-7: open registration via OAuth zastępuje closed beta. Powody rewizji: (1) niska widoczność projektu w MVP ("nikt nie wie") jest wystarczającym ograniczeniem; (2) OAuth eliminuje rejestracyjne UI + password management; (3) cel edukacyjny autora obejmuje praktyczne wdrożenie OAuth.
+### Accounts and login
+- FR-001: A new user can create an account by signing in through an external identity provider (OAuth single sign-on). Registration is open — no invitation, no code, no email verification. Priority: must-have
+  > Socrates: Counter-argument considered in Round 1: "manual account creation / invitation code". Resolution: initially kept ("invitations as must-have"), then REVISED post-Phase-7: open registration via OAuth replaces the closed beta. Reasons for revision: (1) low project visibility in the MVP ("nobody knows") is a sufficient constraint; (2) OAuth eliminates registration UI + password management; (3) the author's educational goal includes a practical OAuth implementation.
 
-- FR-002: Użytkownik może się zalogować do swojego konta poprzez tego samego external identity providera (OAuth), z którego korzystał przy zakładaniu konta. Priority: must-have
-  > Socrates: Counter-argument considered: "PIN + select-from-list / magic-link". Resolution: kept; pełne logowanie przez OAuth zostaje (potwierdzone post-Phase-7 razem z FR-001), konkretny provider w tech-stack.
+- FR-002: The user can log into their account through the same external identity provider (OAuth) they used to create the account. Priority: must-have
+  > Socrates: Counter-argument considered: "PIN + select-from-list / magic-link". Resolution: kept; full OAuth login stays (confirmed post-Phase-7 together with FR-001); the specific provider is in tech-stack.
 
-- FR-003: Użytkownik może się wylogować. Priority: must-have
-  > Socrates: Counter-argument considered: "wylogowanie martwą funkcją na jednoosobowym telefonie". Resolution: kept; podstawowy auth feature, brak byłby dziwny nawet jeśli rzadko używany.
+- FR-003: The user can log out. Priority: must-have
+  > Socrates: Counter-argument considered: "logout is a dead feature on a single-person phone". Resolution: kept; a basic auth feature, its absence would be odd even if rarely used.
 
-### Tworzenie partii
-- FR-004: Zalogowany użytkownik może utworzyć nową partię, wskazując tryb gry (cyfrowy lub fizyczny) oraz kto gra białymi i czarnymi. Priority: must-have
-  > Socrates: Counter-argument considered: "tryb auto-detect po sparowanym sprzęcie / kolor białego automatycznie". Resolution: kept; użytkownik explicite kontroluje tryb i kolory.
+### Game creation
+- FR-004: A logged-in user can create a new game, indicating the play mode (digital or physical) and who plays White and Black. Priority: must-have
+  > Socrates: Counter-argument considered: "auto-detect the mode from paired hardware / White auto-assigned". Resolution: kept; the user explicitly controls the mode and the colors.
 
-### Rozgrywka cyfrowa (pass-and-play)
-- FR-005: Użytkownik wykonuje ruchy na ekranowej szachownicy interaktywnie (przeciągając lub klikając pole-pole). Priority: must-have
-  > Socrates: Counter-argument considered: "tylko drag-and-drop bez tap-tap / notacja algebraiczna". Resolution: kept; standardowy UX szachownicy, konkretny wybór drag/tap odracza się do implementacji.
+### Digital play (pass-and-play)
+- FR-005: The user makes moves on the on-screen board interactively (by dragging or by tap-tap on squares). Priority: must-have
+  > Socrates: Counter-argument considered: "drag-and-drop only without tap-tap / algebraic notation". Resolution: kept; standard chessboard UX; the specific choice of drag vs. tap is deferred to implementation.
 
-- FR-006: Aplikacja waliduje legalność każdego ruchu przed jego wykonaniem zgodnie z pełnymi regułami szachowymi (ruch związanej figury, wyjście z szacha, roszada, en passant). Priority: must-have
-  > Socrates: Counter-argument considered: "gracze sami się walidują / tylko podstawowa walidacja bez pinning". Resolution: kept; spina się z guardrailem "Legalność ruchu" z Fazy 3, niezbywalne.
+- FR-006: The application validates the legality of every move before it is executed, in accordance with the full rules of chess (pinned-piece movement, escaping check, castling, en passant). Priority: must-have
+  > Socrates: Counter-argument considered: "players validate themselves / only basic validation without pinning". Resolution: kept; ties into the "Move legality" guardrail from Phase 3, non-negotiable.
 
-- FR-007: Przy promocji piona aplikacja wyświetla pop-up wyboru figury (hetman / wieża / skoczek / goniec). Priority: must-have
-  > Socrates: Counter-argument considered: "auto-promocja do hetmana / gesture na figurę". Resolution: kept; standard z Lichess/Chess.com.
+- FR-007: On pawn promotion the application displays a piece-selection pop-up (queen / rook / knight / bishop). Priority: must-have
+  > Socrates: Counter-argument considered: "auto-promote to queen / gesture-based piece choice". Resolution: kept; standard from Lichess/Chess.com.
 
-### Rozgrywka fizyczna (sprzęt)
-- FR-008: Użytkownik konfiguruje Wi-Fi szachownicy fizycznej przez captive portal (WiFiManager) — bez wpisywania credentials do firmware. Priority: must-have
-  > Socrates: Counter-argument considered: "hardcoded credentials / BLE handshake". Resolution: kept; notatka jawnie wymaga (credentials nie w kodzie); BLE jest jawnie poza MVP.
+### Physical play (hardware)
+- FR-008: The user configures the physical board's Wi-Fi via a captive portal (WiFiManager) — without entering credentials into the firmware. Priority: must-have
+  > Socrates: Counter-argument considered: "hardcoded credentials / BLE handshake". Resolution: kept; the note explicitly requires it (credentials not in code); BLE is explicitly out of MVP.
 
-- FR-009: Aplikacja nawiązuje połączenie z fizyczną szachownicą w lokalnej sieci. W MVP — jedna domyślna szachownica per użytkownik; parowanie z wieloma szachownicami odracza się do post-MVP. Priority: must-have
-  > Socrates: Counter-argument considered and ACCEPTED: "tylko jedna plansza per użytkownik — niepotrzebne wybieranie z listy". FR przepisany: zamiast "parowania" — proste połączenie z jedną domyślną szachownicą; multi-board pairing wychodzi do post-MVP.
+- FR-009: The application establishes a connection with the physical board on the local network. In the MVP — one default board per user; pairing with multiple boards is deferred to post-MVP. Priority: must-have
+  > Socrates: Counter-argument considered and ACCEPTED: "only one board per user — no need to pick from a list". FR rewritten: instead of "pairing" — a simple connection to one default board; multi-board pairing moves to post-MVP.
 
-- FR-010: Sprzęt monitoruje stan matrycy kontaktronów w czasie ciągłym i wysyła zmiany (delta) do aplikacji. Aplikacja śledzi sekwencję podniesień i odłożeń figur od ostatniego zatwierdzenia ruchu. Po naciśnięciu przycisku zatwierdzającego aplikacja interpretuje całą zarejestrowaną sekwencję jako jeden konkretny legalny ruch szachowy — w tym poprawnie obsługując bicia (np. "figura podniesiona z pola A → figura podniesiona z pola B → figura odłożona na pole B" rozpoznane jako bicie AxB) oraz roszadę (dwie figury podniesione, dwie odłożone na inne pola). Priority: must-have
-  > Socrates: Counter-argument considered and ACCEPTED: "continuous detection bez przycisku to chaos / przycisk per gracz (zegar)". FR przepisany: continuous monitoring stanu matrycy + sekwencja podniesień/odłożeń jako wejście, ZAMIAST snapshotu delta (snapshot nie wystarczy dla bić — bicie z perspektywy delta wygląda jak zniknięcie figury). Zegar (per-player przycisk) wyodrębniony jako osobny FR-011.
+- FR-010: The hardware continuously monitors the state of the reed-switch matrix and sends changes (deltas) to the application. The application tracks the sequence of piece lifts and placements since the last move confirmation. After the confirmation button is pressed, the application interprets the entire recorded sequence as one specific legal chess move — including correct handling of captures (e.g., "piece lifted from square A → piece lifted from square B → piece placed on square B" recognized as capture AxB) and castling (two pieces lifted, two placed on different squares). Priority: must-have
+  > Socrates: Counter-argument considered and ACCEPTED: "continuous detection without a button is chaos / button per player (clock)". FR rewritten: continuous monitoring of the matrix state + the sequence of lifts/placements as input, INSTEAD OF a delta snapshot (a snapshot is not enough for captures — from the delta's perspective a capture looks like a piece disappearance). The clock (per-player button) is broken out as a separate FR-011.
 
-- FR-011: Sprzęt udostępnia dwa przyciski zatwierdzające ruch — po jednym dla każdego gracza, fizycznie zorganizowane w formie zegara szachowego. Aplikacja rozróżnia, który przycisk został naciśnięty, i przypisuje zatwierdzony ruch do koloru gracza po tej stronie zegara. Priority: must-have
-  > Socrates: Nowy FR powstały z counter-argumentu FR-010. Notatka wcześniej wspominała "przycisk/przyciski (np. w formie zegara szachowego)" — Socrates uświadomił, że bez dwóch przycisków nie wiadomo, czyj ruch zatwierdzono (jeden gracz może wcisnąć za drugiego). Must-have.
+- FR-011: The hardware exposes two move-confirmation buttons — one for each player, physically organized in the shape of a chess clock. The application distinguishes which button was pressed and assigns the confirmed move to the color of the player on that side of the clock. Priority: must-have
+  > Socrates: A new FR born from the counter-argument to FR-010. The note previously mentioned "a button / buttons (e.g., in the shape of a chess clock)" — Socrates pointed out that without two buttons it is unclear whose move was confirmed (one player could press for the other). Must-have.
 
-- FR-012: Użytkownik widzi w aplikacji diagnostyczny podgląd stanu matrycy kontaktronów (które pola wykrywają figurę / magnes). Priority: must-have
-  > Socrates: Counter-argument considered and REJECTED: "diagnostyka tylko w logach firmware / tylko przy błędach". Reason: projekt hobbystyczny z nieidealnym sprzętem, wady kontaktronów wymagają stałego wsparcia debugowania — diagnostyka jest absolute must-have.
+- FR-012: The user sees a diagnostic in-app preview of the reed-switch matrix state (which squares detect a piece / magnet). Priority: must-have
+  > Socrates: Counter-argument considered and REJECTED: "diagnostics only in firmware logs / only on errors". Reason: hobby project with imperfect hardware; the shortcomings of reed switches require constant debugging support — diagnostics is an absolute must-have.
 
-- FR-013: Aplikacja sygnalizuje błąd, gdy zarejestrowana sekwencja stanów matrycy po naciśnięciu przycisku NIE odpowiada żadnemu legalnemu ruchowi z aktualnej pozycji; partia jest wstrzymana, użytkownik proszony o manualne przywrócenie poprzedniej pozycji figur (z pomocą widoku diagnostycznego FR-012) i ponowne naciśnięcie przycisku zatwierdzającego, gdy plansza będzie ponownie zgodna z oczekiwanym stanem. Aplikacja NIE zapisuje takiego stanu jako ruchu. Priority: must-have
-  > Socrates: Counter-argument considered: "ignorowanie błędnych stanów / force-update". Resolution: kept; spina się z guardrails (legalność + brak cichej korupcji). Cisza nie jest jednoznacznym odrzuceniem. Post-Phase-7 refinement: w treści FR doprecyzowano, że "przywrócenie pozycji" jest manualne (z pomocą widoku diagnostycznego); pełne auto-detect zgodności matrycy bez przycisku wyodrębniony do nowego FR-022 jako nice-to-have.
+- FR-013: The application signals an error when the recorded sequence of matrix states after a button press does NOT correspond to any legal move from the current position; the game is paused, the user is asked to manually restore the previous piece positions (assisted by the diagnostic view FR-012) and to press the confirmation button again once the board is consistent with the expected state. The application does NOT save such a state as a move. Priority: must-have
+  > Socrates: Counter-argument considered: "ignore bad states / force-update". Resolution: kept; ties into the guardrails (legality + no silent corruption). Silence is not an unambiguous rejection. Post-Phase-7 refinement: the FR text was clarified to state that "position restoration" is manual (assisted by the diagnostic view); full auto-detect of matrix consistency without a button is broken out into the new FR-022 as nice-to-have.
 
-### Koniec partii i persystencja
-- FR-014: Użytkownik może w dowolnym momencie ręcznie oznaczyć koniec partii i jej wynik (1-0 / 0-1 / ½-½ / niedokończona). Priority: must-have
-  > Socrates: Counter-argument considered: "wynik bez sztywnej enumeracji / tylko binarne 'koniec partii'". Resolution: kept; standardowa notacja szachowa wymaga jednego z czterech wyników.
+### End of game and persistence
+- FR-014: The user can at any time manually mark the end of the game and its result (1-0 / 0-1 / ½-½ / unfinished). Priority: must-have
+  > Socrates: Counter-argument considered: "result without a strict enumeration / only binary 'game over'". Resolution: kept; standard chess notation requires one of four results.
 
-- FR-015: Aplikacja automatycznie zapisuje każdy zaakceptowany ruch w trwałym magazynie (PGN + FEN po każdym ruchu, niezależnie od trybu i niezależnie od tego, czy partia została później zakończona). Priority: must-have
-  > Socrates: Counter-argument considered: "zapis tylko po zakończeniu / tylko PGN bez FEN per move". Resolution: kept; spina się z guardrailem trwałości (crash-safe), FEN per move ułatwia replay (FR-020).
+- FR-015: The application automatically saves every accepted move to durable storage (PGN + FEN after each move, regardless of mode and regardless of whether the game is later finished). Priority: must-have
+  > Socrates: Counter-argument considered: "save only after the game ends / PGN only without per-move FEN". Resolution: kept; ties into the durability guardrail (crash-safe); per-move FEN simplifies replay (FR-020).
 
-- FR-016: Aplikacja automatycznie wykrywa koniec partii (mat / pat / trzykrotne powtórzenie pozycji / reguła 50 ruchów) i sugeruje wynik. Priority: nice-to-have
-  > Socrates: Counter-argument considered: "promo do must-have / tylko mat i pat bez 3x i 50". Resolution: kept as nice-to-have — MVP simplification autora, manualne oznaczanie wystarcza, auto-detect odracza się.
+- FR-016: The application automatically detects the end of the game (checkmate / stalemate / threefold repetition / 50-move rule) and suggests the result. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "promote to must-have / only checkmate and stalemate without threefold and 50". Resolution: kept as nice-to-have — author's MVP simplification; manual marking is sufficient; auto-detect is deferred.
 
-- FR-017: Gracz może zarejestrować rezygnację lub remis za zgodą jako jeden ze sposobów oznaczenia końca partii. Priority: nice-to-have
-  > Socrates: Counter-argument considered: "redundantne z FR-014 / UI zgody za skomplikowane dla pass-and-play". Resolution: kept as nice-to-have — wchodzi po Primary path.
+- FR-017: A player can record resignation or a draw by agreement as one of the ways to mark the end of the game. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "redundant with FR-014 / agreement UI too complex for pass-and-play". Resolution: kept as nice-to-have — enters after the Primary path.
 
-- FR-018: Użytkownik może rozpocząć nową partię z pozycji wybranej z dowolnej zapisanej partii (zarówno zakończonej, jak i niedokończonej) — "nowa partia od pozycji X". Priority: nice-to-have
-  > Socrates: Counter-argument considered: "FEN do zewnętrznego narzędzia / tylko dla zakończonych". Resolution: kept as nice-to-have — wchodzi po Primary path.
+- FR-018: The user can start a new game from a position selected from any saved game (whether finished or unfinished) — "new game from position X". Priority: nice-to-have
+  > Socrates: Counter-argument considered: "FEN to an external tool / only for finished games". Resolution: kept as nice-to-have — enters after the Primary path.
 
-> Usunięty FR (wstrzymanie/wznowienie partii): w Socratic round counter-argument ZAAKCEPTOWANY. Funkcjonalność wstrzymania jest implicite zapewniona przez FR-015 (auto-zapis każdego ruchu) + FR-019 (otwarcie partii z listy) — osobny FR redundantny.
+> Removed FR (game pause/resume): in the Socratic round the counter-argument was ACCEPTED. Pause functionality is implicitly provided by FR-015 (auto-save of every move) + FR-019 (open a game from the list) — a separate FR would be redundant.
 
-### Historia i replay
-- FR-019: Zalogowany użytkownik może otworzyć listę swoich partii w porządku chronologicznym. Priority: must-have
-  > Socrates: Counter-argument considered: "lista wszystkich partii grona (społecznościowa) / tylko ostatnie 20". Resolution: kept; lista 'moich' partii (privacy), paginacja vs scroll to detal implementacyjny.
+### History and replay
+- FR-019: A logged-in user can open the list of their games in chronological order. Priority: must-have
+  > Socrates: Counter-argument considered: "list of all games across the circle (social) / only the last 20". Resolution: kept; a list of 'my' games (privacy); pagination vs. scroll is an implementation detail.
 
-- FR-020: Użytkownik może otworzyć wybraną partię z historii i przejść ją ruch po ruchu (forward / back / start / end) z odtworzeniem każdej pozycji na ekranie. Priority: must-have
-  > Socrates: Counter-argument considered: "tylko forward (playback) / Lichess-style side-by-side analysis board". Resolution: kept; pełen forward/back/start/end jest niezbywalny dla 'wracania do pozycji' (pierwotny ból z Fazy 1).
+- FR-020: The user can open a chosen game from history and walk through it move by move (forward / back / start / end) with every position replayed on screen. Priority: must-have
+  > Socrates: Counter-argument considered: "forward (playback) only / Lichess-style side-by-side analysis board". Resolution: kept; full forward/back/start/end is non-negotiable for 'returning to a position' (the original pain from Phase 1).
 
-### Analiza (Secondary)
-- FR-021: Po zakończeniu partii użytkownik może wywołać ocenę pozycji dla wybranych pozycji partii ze źródła zewnętrznego (np. darmowe Lichess Cloud Eval). Priority: nice-to-have
-  > Socrates: Counter-argument considered: "tylko ocena końcowa / pasek real-time / własny silnik". Resolution: kept as nice-to-have — konkretne źródło (Lichess vs własny Stockfish) i zakres (per-position vs per-game) odracza się do implementacji. Własny silnik (na serwerze albo na urządzeniu mobilnym) wyraźnie zaznaczony jako post-MVP roadmap item.
+### Analysis (Secondary)
+- FR-021: After a game ends, the user can request position evaluation for selected positions in the game from an external source (e.g., the free Lichess Cloud Eval). Priority: nice-to-have
+  > Socrates: Counter-argument considered: "end-position evaluation only / real-time bar / in-house engine". Resolution: kept as nice-to-have — the specific source (Lichess vs. self-hosted Stockfish) and scope (per-position vs. per-game) is deferred to implementation. An in-house engine (on the server or on the mobile device) is clearly marked as a post-MVP roadmap item.
 
-### Rozszerzenia sprzętowe (nice-to-have)
-- FR-022: Po wykryciu błędu detekcji (FR-013) aplikacja monitoruje stan matrycy w czasie ciągłym i automatycznie wykrywa moment, gdy plansza fizyczna zgadza się z oczekiwaną poprzednią legalną pozycją; po wykryciu zgodności partia wznawia się bez wymagania ponownego naciśnięcia przycisku zatwierdzającego. Zmniejsza tarcie w sytuacjach granicznych z hobbystycznym sprzętem. Priority: nice-to-have
-  > Socrates: Nowy FR powstały post-Phase-7 jako odpowiedź na realistyczne ograniczenia sprzętu hobbystycznego (matryca kontaktronów z możliwymi fałszywymi trafieniami/niewykryciami). Wyodrębniony z must-have FR-013, który zachowuje manualne ponowienie po naciśnięciu przycisku.
+### Hardware extensions (nice-to-have)
+- FR-022: After a detection error is reported (FR-013), the application monitors the matrix state continuously and automatically detects the moment when the physical board matches the expected previous legal position; once a match is detected the game resumes without requiring the confirmation button to be pressed again. Reduces friction in edge cases with hobbyist hardware. Priority: nice-to-have
+  > Socrates: A new FR introduced post-Phase-7 as a response to the realistic limitations of hobbyist hardware (a reed-switch matrix with possible false hits / non-detections). Broken out from must-have FR-013, which retains the manual retry-after-press flow.
 
-- FR-023: Po utracie połączenia z fizyczną szachownicą w trakcie partii aplikacja wstrzymuje przyjmowanie ruchów, wyświetla jednoznaczny komunikat o utracie sieci i próbuje auto-reconnect w tle. Po przywróceniu połączenia partia kontynuuje od ostatniego zatwierdzonego ruchu bez utraty stanu i bez wymagania manualnej rekonstrukcji pozycji. Priority: nice-to-have
-  > Socrates: Nowy FR powstały post-Phase-8 w wyniku cross-checku z shape-alternative.md. Counter-argument considered: "MVP może żyć bez tego — FR-015 (auto-zapis każdego ruchu) gwarantuje, że ostatni zatwierdzony stan jest na dysku, a po reconnect użytkownik otworzy partię z listy". Resolution: zachowane jako nice-to-have — happy-path bez utraty ciągłości gry istotnie poprawia UX dla mid-game disconnectu, ale wymaga bufferingu po stronie ESP32 i protokołu replay; w MVP akceptowalne jest minimalne pokrycie (ostatni zapis + manualne wznowienie z historii).
+- FR-023: After loss of connection to the physical board during a game, the application pauses move acceptance, displays an unambiguous network-loss message, and attempts auto-reconnect in the background. Once the connection is restored the game resumes from the last confirmed move without state loss and without requiring manual position reconstruction. Priority: nice-to-have
+  > Socrates: A new FR introduced post-Phase-8 as a result of the cross-check with shape-alternative.md. Counter-argument considered: "the MVP can live without it — FR-015 (auto-save of every move) guarantees that the last confirmed state is on disk, and after reconnect the user opens the game from the list". Resolution: kept as nice-to-have — the happy-path without losing game continuity meaningfully improves UX for mid-game disconnects, but it requires buffering on the ESP32 side and a replay protocol; in the MVP minimal coverage is acceptable (last save + manual resume from history).
 
 ## User Stories
 
-### US-01: Rozgrywka partii na fizycznej szachownicy
+### US-01: Playing a game on the physical board
 
-- **Given** zalogowany użytkownik z aplikacją mobilną sparowaną z fizyczną szachownicą podłączoną do tej samej sieci Wi-Fi oraz fizycznie obecny przeciwnik przy szachownicy
-- **When** użytkownik tworzy nową partię w trybie "fizycznym", obaj gracze wykonują ruchy na fizycznej planszy i naciskają przycisk zatwierdzenia po każdym swoim ruchu
-- **Then** aplikacja po każdym naciśnięciu przycisku odbiera stan matrycy ze sprzętu, rozpoznaje wykonany ruch, waliduje jego legalność, zapisuje go w trwałym magazynie (PGN + FEN) i wyświetla aktualną pozycję na ekranie urządzenia
+- **Given** a logged-in user with the mobile app paired with a physical board connected to the same Wi-Fi network and an opponent physically present at the board
+- **When** the user creates a new game in "physical" mode, both players make moves on the physical board and press the confirmation button after each of their own moves
+- **Then** after every button press the application receives the matrix state from the hardware, recognizes the executed move, validates its legality, saves it to durable storage (PGN + FEN), and displays the current position on the device screen
 
 #### Acceptance Criteria
-- Naciśnięcie przycisku zegara po stronie gracza, który właśnie wykonał legalny ruch, skutkuje zapisem ruchu pod tym kolorem oraz widoczną aktualizacją pozycji na ekranie w czasie < 500 ms (zgodnie z guardrailem reaktywności i FR-011)
-- Aplikacja śledzi sekwencję podniesień i odłożeń figur od ostatniego zatwierdzenia (continuous monitoring) i poprawnie rozpoznaje bicia oraz roszadę z pełnej sekwencji, a nie z samego snapshotu delta (FR-010)
-- Jeśli zarejestrowana sekwencja po naciśnięciu przycisku NIE odpowiada żadnemu legalnemu ruchowi z aktualnej pozycji, aplikacja wyświetla komunikat błędu, wstrzymuje partię i prosi o przywrócenie poprzedniej pozycji; ruch nie zostaje zapisany (FR-013)
-- Przy promocji piona aplikacja wyświetla pop-up wyboru figury; ruch jest zapisywany dopiero po wyborze (FR-007)
-- Diagnostyczny widok stanu matrycy (które pola wykrywają figurę) jest dostępny dla użytkownika w trakcie partii (FR-012)
-- Koniec partii i wynik (1-0 / 0-1 / ½-½ / niedokończona) są ustawiane manualnie przez użytkownika (FR-014); aplikacja nie ogłasza końca samodzielnie w MVP
-- Po oznaczeniu końca partia jest dostępna w liście historii (FR-019) i może być przejrzana ruch po ruchu (FR-020)
+- A press of the clock button on the side of the player who just made a legal move results in the move being saved under that color and a visible update of the on-screen position within < 500 ms (per the responsiveness guardrail and FR-011)
+- The application tracks the sequence of piece lifts and placements since the last confirmation (continuous monitoring) and correctly recognizes captures and castling from the full sequence rather than from a delta snapshot alone (FR-010)
+- If the recorded sequence after a button press does NOT correspond to any legal move from the current position, the application displays an error message, pauses the game, and asks for restoration of the previous position; the move is not saved (FR-013)
+- On pawn promotion the application displays a piece-selection pop-up; the move is saved only after the choice is made (FR-007)
+- A diagnostic view of the matrix state (which squares detect a piece) is available to the user during the game (FR-012)
+- The end of the game and the result (1-0 / 0-1 / ½-½ / unfinished) are set manually by the user (FR-014); the application does not announce the end on its own in the MVP
+- Once marked, the game is available in the history list (FR-019) and can be reviewed move by move (FR-020)
 
 ## Business Logic
 
-Aplikacja gwarantuje, że każda zarejestrowana partia szachowa składa się wyłącznie z legalnych ruchów i może być odtworzona ruch po ruchu w identycznym stanie, niezależnie od medium (fizyczne czy cyfrowe), na którym została rozegrana.
+The application guarantees that every recorded chess game consists exclusively of legal moves and can be replayed move by move in an identical state, regardless of the medium (physical or digital) on which it was played.
 
-**Co reguła konsumuje (wejście).** Wejściem są surowe akty rozgrywki produkowane przez użytkownika w jednym z dwóch kanałów: (a) interakcje dotykowe na ekranie urządzenia mobilnego (przeciągnięcia lub kliknięcia pola-pole) wraz z wyborem figury w pop-upie promocji; (b) fizyczna sekwencja podniesień i odłożeń figur na drewnianej szachownicy z magnesami, zarejestrowana w czasie ciągłym, zakończona naciśnięciem przycisku zatwierdzającego po stronie gracza, który wykonał ruch. Oba kanały oddają tę samą semantykę "gracz chce wykonać ten ruch teraz".
+**What the rule consumes (input).** The input is the raw acts of play produced by the user through one of two channels: (a) touch interactions on the mobile device screen (drag-and-drop or tap-tap on squares), together with a piece choice in the promotion pop-up; (b) a physical sequence of piece lifts and placements on the wooden board with magnets, recorded continuously and concluded by a press of the confirmation button on the side of the player who made the move. Both channels carry the same semantics: "the player wants to make this move now".
 
-**Co reguła produkuje (wyjście).** Każda zgłoszona próba ruchu kończy się jednym z dwóch wyników: ruch zostaje zaakceptowany jako konkretny legalny ruch szachowy z aktualnej pozycji i utrwalony w historii partii w standardowej notacji (PGN + FEN per pozycja); albo ruch zostaje jednoznacznie odrzucony z informacją, dlaczego jest nielegalny, a partia wstrzymana do momentu przywrócenia poprzedniej pozycji. Stan historii jest deterministycznie odtwarzalny — z zapisanej notacji można odtworzyć każdą pozycję, jaka kiedykolwiek wystąpiła w partii.
+**What the rule produces (output).** Every submitted move attempt ends with one of two outcomes: the move is accepted as a specific legal chess move from the current position and persisted in the game history in standard notation (PGN + FEN per position); or the move is unambiguously rejected with information about why it is illegal, and the game is paused until the previous position is restored. The history state is deterministically reproducible — from the saved notation one can reconstruct every position that ever occurred in the game.
 
-**Jak użytkownik z regułą się spotyka.** W trakcie rozgrywki — natychmiastowy feedback: ruch widoczny na ekranie albo komunikat błędu z prośbą o korektę. Po rozgrywce — partia w liście historii własnych partii, otwierana do replay'u krok po kroku (forward / back / start / end), gdzie każdy stan pośredni jest dokładnie tym, co wydarzyło się przy stole lub na ekranie. Reguła nie pyta użytkownika o rozstrzygnięcia szachowe — sama wie, co jest legalne, a co nie.
+**How the user encounters the rule.** During play — immediate feedback: the move appears on the screen, or an error message asks for correction. After play — the game appears in the user's own game list, opened for step-by-step replay (forward / back / start / end), where every intermediate state is exactly what happened at the table or on the screen. The rule does not ask the user to make chess judgments — it knows what is legal and what is not on its own.
 
 ## Non-Functional Requirements
 
-- **Prywatność partii.** Partia rozegrana przez użytkownika jest dostępna wyłącznie dla niego — nie pojawia się w widokach innych zalogowanych użytkowników ani niezalogowanych. Wyjątek w MVP nie istnieje.
-- **Testowalność bez fizycznego sprzętu.** Aplikacja kliencka i jej część serwerowa mogą być w pełni zbudowane, uruchomione i zwalidowane automatycznie bez podpięcia fizycznej szachownicy ESP32 — niezależnie od tego, czy programista dysponuje sprzętem.
-- **Wsparcie platform.** Aplikacja kliencka jest dostępna i w pełni funkcjonalna na aktualnych dwóch głównych wersjach Androida oraz dwóch głównych wersjach iOS w momencie wydania MVP.
-- **Bezpieczeństwo poświadczeń sieci Wi-Fi.** Dane uwierzytelniające sieci Wi-Fi (SSID, hasło) nie są przechowywane w firmware mikrokontrolera ani w repozytorium kodu źródłowego. Są wprowadzane przez użytkownika końcowego i pozostają wyłącznie w pamięci konkretnego, sparowanego urządzenia.
+- **Game privacy.** A game played by a user is accessible only to that user — it does not appear in the views of other logged-in or unauthenticated users. No exception exists in the MVP.
+- **Testability without physical hardware.** The client application and its server side can be fully built, run, and automatically validated without connecting a physical ESP32 board — regardless of whether the developer has the hardware on hand.
+- **Platform support.** The client application is available and fully functional on the two currently major versions of Android and the two currently major versions of iOS at the time of the MVP release.
+- **Wi-Fi credential security.** Wi-Fi network credentials (SSID, password) are not stored in the microcontroller firmware or in the source code repository. They are entered by the end user and remain only in the memory of the specific paired device.
 
 ## Non-Goals
 
-Funkcjonalne i jakościowe scope avoidy. Technologie nie są tu listowane (idą do tech-stack-selection downstream).
+Functional and quality scope avoidances. Technologies are not listed here (they go to downstream tech-stack selection).
 
-- **Gra online przez internet / matchmaking / multiplayer.** MVP nie zawiera dobierania przeciwników, gry zdalnej ani integracji z platformami multiplayer (Lichess, Chess.com). Rozgrywka odbywa się lokalnie — na jednym urządzeniu (pass-and-play) lub na podłączonej fizycznej szachownicy. Online multiplayer jest jawnie odłożone do Fazy 2 (notatka idea-shape.md).
-- **Gra przeciwko AI / lokalny silnik szachowy jako przeciwnik.** MVP wspiera wyłącznie partie człowiek vs człowiek. Lokalny Stockfish jako "przeciwnik komputerowy" jest funkcjonalnością post-MVP (notatka idea-shape.md jawnie). Ocena pozycji ze źródła zewnętrznego po partii (FR-021) to inny use case — analiza, nie gra.
-- **Turnieje, ranking ELO, statystyki klubowe.** MVP nie zawiera funkcjonalności społecznościowo-klubowej (rozgrywki turniejowe, drabinki, ranking, agregaty W/L/D klubu). Każdy użytkownik widzi wyłącznie swoje partie.
-- **Trening / puzzle / lekcje szachowe.** MVP nie zawiera modułu edukacyjnego (zadania matowe, treningi otwarć, lekcje). Aplikacja jest narzędziem do *grania i analizy własnych partii*, nie do *uczenia się szachów*.
-- **Parowanie Bluetooth (BLE) sprzętu.** MVP używa wyłącznie Wi-Fi (WiFiManager captive portal — FR-008). BLE pairing dla skróconego onboardingu sprzętu jest odłożone do Fazy 2 (notatka idea-shape.md).
-- **Klient web (Kotlin/Wasm).** Pierwotna notatka idea-shape.md zakładała klient telefon + tablet + web. W Fazie 3 web został wycięty z MVP — klient mobilny (Android + iOS) jest jedynym kanałem dostępu.
-- **Parowanie aplikacji z wieloma fizycznymi szachownicami.** W MVP jedna domyślna szachownica per użytkownik (FR-009). Pełen mechanizm parowania z wieloma planszami (np. klub szachowy z kilkoma) jest odłożone do post-MVP.
-- **Kontrola czasu (time control).** MVP nie wspiera ustawiania limitu czasu na partię (10+5, 5+0, blitz, klasyczne 90+30 itp.) ani wygranej przez przekroczenie czasu. "Zegar" w opisie sprzętu (FR-011) odnosi się wyłącznie do fizycznej formy organizacji dwóch przycisków zatwierdzających (chess-clock style), NIE do funkcji odmierzania czasu. Time control jest odłożone do post-MVP roadmapy.
-- **Multi-client real-time dla gry fizycznej.** W MVP aplikacja działa na jednym urządzeniu obok planszy — oboje gracze widzą ten sam ekran w jednej sesji użytkownika zalogowanego do app (host gry). Wariant "każdy gracz na swoim telefonie, ekran obraca się dla perspektywy gracza, real-time sync między klientami" jest jawnie poza MVP — wymagałby pełnej infrastruktury multi-client sync i zarządzania sesją wieloosobową.
+- **Online play over the internet / matchmaking / multiplayer.** The MVP does not include opponent matching, remote play, or integration with multiplayer platforms (Lichess, Chess.com). Play takes place locally — on a single device (pass-and-play) or on a connected physical board. Online multiplayer is explicitly deferred to Phase 2 (idea-shape.md note).
+- **Play against AI / a local chess engine as the opponent.** The MVP supports only human-vs-human games. A local Stockfish as a "computer opponent" is a post-MVP feature (idea-shape.md explicitly). Position evaluation from an external source after a game (FR-021) is a different use case — analysis, not play.
+- **Tournaments, ELO rating, club statistics.** The MVP contains no community/club functionality (tournament play, brackets, ranking, club W/L/D aggregates). Each user sees only their own games.
+- **Training / puzzles / chess lessons.** The MVP contains no educational module (mate puzzles, opening training, lessons). The application is a tool for *playing and analyzing one's own games*, not for *learning chess*.
+- **Bluetooth (BLE) hardware pairing.** The MVP uses Wi-Fi only (WiFiManager captive portal — FR-008). BLE pairing for a shorter hardware onboarding is deferred to Phase 2 (idea-shape.md note).
+- **Web client (Kotlin/Wasm).** The original idea-shape.md note assumed a phone + tablet + web client. In Phase 3 web was cut from the MVP — a mobile client (Android + iOS) is the only access channel.
+- **Pairing the application with multiple physical boards.** In the MVP, one default board per user (FR-009). The full mechanism for pairing with multiple boards (e.g., a chess club with several) is deferred to post-MVP.
+- **Time control.** The MVP does not support setting a per-game time limit (10+5, 5+0, blitz, classical 90+30, etc.) or winning on time. "Clock" in the hardware description (FR-011) refers exclusively to the physical arrangement of the two confirmation buttons (chess-clock style), NOT to a time-keeping function. Time control is deferred to the post-MVP roadmap.
+- **Multi-client real-time for physical play.** In the MVP the application runs on a single device next to the board — both players see the same screen within a single session of the user logged into the app (the game host). The variant "each player on their own phone, screen flipped for their perspective, real-time sync between clients" is explicitly out of MVP — it would require a full multi-client sync infrastructure and multi-party session management.
 
 ## Product framing (anticipated PRD frontmatter)
 
-Notatka informacyjna dla `/10x-prd` — finalne wartości frontmatter pojawią się w `prd.md`.
+Informational note for `/10x-prd` — final frontmatter values will appear in `prd.md`.
 
 - **`project`**: "Smart Chessboard"
 - **`product_type`**: `mobile` (primary)
-  - Free-text uzupełnienie: hybrydowy produkt obejmujący aplikację mobilną (Android + iOS) jako główny kanał użytkownika, towarzyszący backend (auth, persystencja, ewentualny pośrednik analizy) oraz fizyczny sprzęt IoT (ESP32 + matryca kontaktronów). `mobile` wybrane jako primary, bo to tam użytkownik spędza czas; backend i firmware są infrastrukturą wspierającą produkt.
-  - Open Question (do PRD): czy `product_type` powinien być rozszerzony do explicit hybridy, czy `mobile` + adnotacja w opisie jest wystarczający?
+  - Free-text supplement: a hybrid product comprising a mobile application (Android + iOS) as the main user channel, an accompanying backend (auth, persistence, possibly an analysis proxy), and physical IoT hardware (ESP32 + reed-switch matrix). `mobile` chosen as primary because that is where the user spends time; the backend and firmware are supporting infrastructure for the product.
+  - Open Question (for the PRD): should `product_type` be expanded to an explicit hybrid, or is `mobile` + an annotation in the description sufficient?
 - **`target_scale`**:
-  - `users`: `small` (3–7 osób, closed beta)
-  - `qps`: `low` (kilka partii dziennie, bursty traffic; analiza pozycji opcjonalna)
-  - `data_volume`: `small` (PGN + FEN per partia; nawet 1000 partii = bardzo małe wolumeny)
+  - `users`: `small` (3–7 people, closed beta)
+  - `qps`: `low` (a few games per day, bursty traffic; position analysis optional)
+  - `data_volume`: `small` (PGN + FEN per game; even 1000 games is a very small volume)
 - **`timeline_budget`**:
-  - `mvp_weeks`: `12` (rewizja post-Phase-8: realistyczny budżet z buforem na nice-to-have, bez hard capa)
-  - `hard_deadline`: `null` (projekt hobbystyczny/edukacyjny, brak zewnętrznej presji)
-  - `after_hours_only`: `false` (autor pracuje nad projektem w mieszanym trybie, w tym pełen etat / sabbatical — to NIE jest klasyczny "tylko po godzinach")
+  - `mvp_weeks`: `12` (post-Phase-8 revision: realistic budget with a buffer for nice-to-haves, without a hard cap)
+  - `hard_deadline`: `null` (hobby/educational project, no external pressure)
+  - `after_hours_only`: `false` (the author works on the project in a mixed mode, including full-time / sabbatical — this is NOT a classic "after hours only")
 
 ## Quality cross-check
 
-Faza 7 zakończona. Quality status: **accepted** (wszystkie 5 wymaganych elementów obecnych, w tym dodatkowo 4 Guardrails z Fazy 3).
+Phase 7 completed. Quality status: **accepted** (all 5 required elements present, plus an additional 4 Guardrails from Phase 3).
 
-| Element                    | Stan     | Notatka |
-|----------------------------|----------|---------|
-| Access Control             | present  | Otwarta rejestracja przez OAuth (post-Phase-7 revision); flat role; mechanizm OAuth provider w tech-stack. |
-| Business Logic             | present  | Jednozdaniowa reguła: "Aplikacja gwarantuje, że każda zarejestrowana partia szachowa składa się wyłącznie z legalnych ruchów…" |
-| Project artifacts          | present  | shape-notes.md z valid frontmatter checkpoint (current_phase, phases_completed, gray_areas, frs_drafted, quality_check_status). |
-| Timeline-cost acknowledged | present  | `mvp_weeks: 12` (rewizja post-Phase-8) z jawną akceptacją sustained-effort cost (Faza 3, "Timeline acknowledgment" block). |
-| Non-Goals                  | present  | 9 wpisów: online multiplayer, AI/silnik, turnieje, trening, BLE pairing, Web client, multi-board, time control, multi-client real-time. |
-| Guardrails                 | present  | 4 (Faza 3): legalność ruchu, trwałość partii, reaktywność <500ms, brak cichej korupcji detekcji fizycznej. |
+| Element                    | State    | Note |
+|----------------------------|----------|------|
+| Access Control             | present  | Open registration via OAuth (post-Phase-7 revision); flat roles; OAuth provider mechanism in tech-stack. |
+| Business Logic             | present  | One-sentence rule: "The application guarantees that every recorded chess game consists exclusively of legal moves…" |
+| Project artifacts          | present  | shape-notes.md with a valid frontmatter checkpoint (current_phase, phases_completed, gray_areas, frs_drafted, quality_check_status). |
+| Timeline-cost acknowledged | present  | `mvp_weeks: 12` (post-Phase-8 revision) with an explicit acceptance of the sustained-effort cost (Phase 3, "Timeline acknowledgment" block). |
+| Non-Goals                  | present  | 9 entries: online multiplayer, AI/engine, tournaments, training, BLE pairing, web client, multi-board, time control, multi-client real-time. |
+| Guardrails                 | present  | 4 (Phase 3): move legality, game durability, responsiveness < 500 ms, no silent corruption of physical detection. |
 
-Brak zaakceptowanych "warned" gaps — `/10x-prd` otrzymuje pełen zestaw inputów i nie musi rzutować gap-warnings do `## Open Questions`.
+No accepted "warned" gaps — `/10x-prd` receives a complete set of inputs and does not need to project gap-warnings into `## Open Questions`.
 
-**Post-Phase-7 refinements (po pierwszym cross-checku):**
-- **Access Control (Faza 2):** closed beta z zaproszeniami → otwarta rejestracja przez OAuth external identity provider. Powody: niska widoczność projektu, OAuth eliminuje password management, cel edukacyjny autora.
-- **FR-001, FR-002:** przepisane pod OAuth. Socrates blockquotes zaktualizowane o "Resolution: revised post-Phase-7".
-- **Guardrail "Wierność detekcji fizycznej" (Faza 3):** zmiękczony z "100% poprawne rozpoznanie" na "brak cichej korupcji + akceptacja manualnej pomocy człowieka". Dostosowane do realistycznych ograniczeń hobbystycznego sprzętu.
-- **FR-013 (must-have):** doprecyzowano "manualne przywrócenie pozycji + ponowny przycisk" jako happy-error-path.
-- **FR-022 (NOWY, nice-to-have):** auto-detect powrotu do pozycji bez wymagania ponownego naciśnięcia przycisku. Wyodrębniony post-Phase-7 z must-have FR-013.
+**Post-Phase-7 refinements (after the first cross-check):**
+- **Access Control (Phase 2):** closed beta with invitations → open registration via an OAuth external identity provider. Reasons: low project visibility, OAuth eliminates password management, the author's educational goal.
+- **FR-001, FR-002:** rewritten for OAuth. Socrates blockquotes updated with "Resolution: revised post-Phase-7".
+- **Guardrail "Fidelity of physical detection" (Phase 3):** softened from "100% correct recognition" to "no silent corruption + acceptance of manual human assistance". Adjusted to the realistic limitations of hobbyist hardware.
+- **FR-013 (must-have):** clarified "manual position restoration + button re-press" as the happy-error-path.
+- **FR-022 (NEW, nice-to-have):** auto-detect of position recovery without requiring a button press. Broken out post-Phase-7 from must-have FR-013.
 
-**Post-Phase-8 refinements (po cross-checku z shape-alternative.md):**
-- **Timeline:** `mvp_weeks` 16 → 12. Powód: alternatywna wersja realizuje porównywalny scope w 8 tyg., nasz większy scope (22→23 FR) uzasadnia bufor, ale nie aż 4 tygodnie ponad. 12 tyg. jako realistyczny budżet z buforem na nice-to-have, bez hard capa — nice-to-have spadają do post-MVP roadmapy jeśli czas się skończy, bez renegocjacji must-have.
-- **Guardrail "Trwałość partii":** doprecyzowano zakres — pokrywa awarię aplikacji, ale nie utratę połączenia z fizyczną szachownicą. Pełne wstrzymanie + auto-reconnect wyodrębnione jako FR-023.
-- **FR-023 (NOWY, nice-to-have):** network-loss recovery — wstrzymanie partii + komunikat + auto-reconnect + zachowanie stanu. W MVP minimalne pokrycie (FR-015 zapis każdego ruchu), pełna ciągłość mid-game odracza się do nice-to-have.
-- **Non-Goals (+2):** dodano "Kontrola czasu (time control)" — wprost zamyka furtkę, że "zegar" oznacza tylko fizyczną organizację przycisków (FR-011), nie funkcję odmierzania czasu. Dodano "Multi-client real-time dla gry fizycznej" — zamyka furtkę, że MVP zakłada jedno urządzenie obok planszy, nie sync między telefonami obu graczy.
-- **Świadomie NIE zmienione (po porównaniu z alt):** anonymous access pozostaje "brak" (closed-circle persona nie wymaga); latencja 500 ms pozostaje (świadomy luźny próg dla hobbystycznego sprzętu, alt 300 ms wymagałby agresywnej optymalizacji niewspółmiernej do celów edukacyjnych); brak NFR budżetu czasu captive portalu (odkładane do implementacji, bez zobowiązania w shape-notes).
+**Post-Phase-8 refinements (after cross-check with shape-alternative.md):**
+- **Timeline:** `mvp_weeks` 16 → 12. Reason: the alternative version realizes comparable scope in 8 weeks; our larger scope (22 → 23 FRs) justifies a buffer, but not as much as 4 weeks over that. 12 weeks as a realistic budget with a buffer for nice-to-haves, without a hard cap — nice-to-haves drop to the post-MVP roadmap if time runs out, without renegotiating must-haves.
+- **Guardrail "Game durability":** scope clarified — covers application crashes but not loss of connection to the physical board. Full pause + auto-reconnect broken out as FR-023.
+- **FR-023 (NEW, nice-to-have):** network-loss recovery — game pause + message + auto-reconnect + state preservation. In the MVP minimal coverage (FR-015 auto-save of every move); full mid-game continuity is deferred to nice-to-have.
+- **Non-Goals (+2):** added "Time control" — explicitly closes the door on the idea that "clock" means anything other than the physical arrangement of buttons (FR-011), not a time-keeping function. Added "Multi-client real-time for physical play" — closes the door on a setup other than one device next to the board, not sync between both players' phones.
+- **Deliberately NOT changed (after comparison with alt):** anonymous access remains "none" (the closed-circle persona does not require it); 500 ms responsiveness remains (a deliberately loose threshold for hobbyist hardware; alt's 300 ms would require aggressive optimization disproportionate to the educational goals); no NFR for captive-portal duration (deferred to implementation, no commitment in shape-notes).
 
-<!-- Phase 7 complete. Phase 8: Finalizacja + handoff — IN PROGRESS -->
+<!-- Phase 7 complete. Phase 8: finalization + handoff — IN PROGRESS -->
 
 ## Forward: technical-roadmap
 
-Notatki do downstream chain steps (tech-stack-selection, planowanie post-MVP roadmapy). NIE są częścią PRD schema — nie wejdą do `prd.md`.
+Notes for downstream chain steps (tech-stack selection, post-MVP roadmap planning). NOT part of the PRD schema — will not enter `prd.md`.
 
-- **Lokalny silnik szachowy (post-MVP nice-to-have).** W MVP analiza pozycji korzysta wyłącznie z zewnętrznego źródła (FR-021 — np. Lichess Cloud Eval). Post-MVP rozważyć uruchomienie własnego silnika (np. Stockfish) jako alternatywę: (a) na backendzie do oceny prywatnej partii bez wysyłania pozycji do zewnętrznego API; (b) bezpośrednio na urządzeniu mobilnym (telefon/tablet) jako tryb offline analizy. Decyzja "gdzie żyje silnik" odracza się do tech-stack-selection lub post-MVP planu.
-- **Symulator sprzętu (strategia testowa, nie produkt).** Notatka idea-shape.md proponowała dedykowany endpoint udający fizyczną szachownicę dla automatycznych testów E2E i CI/CD bez podłączania ESP32. To strategia testowa / infrastruktura developerska, NIE funkcja użytkownika — nie jest FR. Wymaganie testowalności bez fizycznego sprzętu wejdzie do PRD jako NFR (Faza 5), konkretna realizacja (symulator) zostaje do tech-stack / planu.
-- **Web (Kotlin/Wasm).** Pierwotnie w notatce idea-shape.md była częścią klienta wieloplatformowego (telefon + tablet + web panoramiczny). Wycięta z MVP w Fazie 3. Post-MVP może wrócić — wymaga rewizji layoutu i strategii deploymentu.
-- **Bluetooth (BLE) pairing.** Jawnie poza MVP w notatce idea-shape.md (Faza 2 post-MVP). Jako alternatywa dla WiFiManager — krótszy onboarding sprzętu. Może wejść po MVP.
-- **Multi-board pairing.** W MVP jedna domyślna szachownica per użytkownik (FR-009). Post-MVP — pełen mechanizm parowania z wieloma szachownicami (klub szachowy z kilkoma planszami).
-- **Network-loss recovery dla gry fizycznej (post-MVP).** FR-023 (nice-to-have w MVP, może spaść do post-MVP). Pełna obsługa mid-game disconnectu wymaga bufferingu ostatniego stanu po stronie ESP32 + protokołu replay po reconnect + UX wstrzymania/wznowienia. W MVP minimalne pokrycie (ostatni zatwierdzony ruch z FR-015 + manualne wznowienie z listy partii). Pełna ciągłość gry po reconnect jest naturalnym post-MVP rozszerzeniem.
-- **Kontrola czasu (time control) (post-MVP).** MVP traktuje "zegar" wyłącznie jako fizyczną organizację przycisków (FR-011). Pełne time control (10+5, blitz, klasyczne 90+30, wygrana przez przekroczenie czasu) wymaga: UI ustawienia czasu w tworzeniu partii (FR-004), stanu odmierzania czasu per gracz, obsługi końca partii przez timeout, ewentualnie wyświetlania pozostałego czasu na ekranie. Szachy bez zegara to częściowe doświadczenie — post-MVP roadmap item z wysokim priorytetem.
+- **Local chess engine (post-MVP nice-to-have).** In the MVP, position analysis relies exclusively on an external source (FR-021 — e.g., Lichess Cloud Eval). Post-MVP, consider running an in-house engine (e.g., Stockfish) as an alternative: (a) on the backend to evaluate private games without sending positions to an external API; (b) directly on the mobile device (phone/tablet) as an offline analysis mode. The "where does the engine live" decision is deferred to tech-stack selection or to the post-MVP plan.
+- **Hardware simulator (testing strategy, not a product).** The idea-shape.md note proposed a dedicated endpoint that mimics the physical board for automated E2E tests and CI/CD without an ESP32. This is a testing strategy / developer infrastructure, NOT a user feature — it is not an FR. The requirement of testability without physical hardware enters the PRD as an NFR (Phase 5); the specific realization (a simulator) is left to tech-stack / planning.
+- **Web (Kotlin/Wasm).** Originally part of the cross-platform client in the idea-shape.md note (phone + tablet + panoramic web). Cut from the MVP in Phase 3. Post-MVP it may return — it requires a layout revision and a deployment strategy.
+- **Bluetooth (BLE) pairing.** Explicitly out of MVP in the idea-shape.md note (Phase 2 post-MVP). As an alternative to WiFiManager — shorter hardware onboarding. May enter after the MVP.
+- **Multi-board pairing.** In the MVP, one default board per user (FR-009). Post-MVP — a full mechanism for pairing with multiple boards (a chess club with several boards).
+- **Network-loss recovery for physical play (post-MVP).** FR-023 (nice-to-have in MVP, may slip to post-MVP). Full handling of mid-game disconnects requires buffering of the last state on the ESP32 side + a replay protocol after reconnect + pause/resume UX. In the MVP, minimal coverage (the last confirmed move from FR-015 + manual resume from the game list). Full game continuity after reconnect is a natural post-MVP extension.
+- **Time control (post-MVP).** The MVP treats "clock" exclusively as the physical organization of the buttons (FR-011). Full time control (10+5, blitz, classical 90+30, winning on time) requires: a time-setting UI in game creation (FR-004), per-player time-keeping state, end-of-game handling via timeout, and possibly a remaining-time display on the screen. Chess without a clock is a partial experience — a post-MVP roadmap item with high priority.
