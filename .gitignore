@@ -1,0 +1,25 @@
+# IDE / Editor — lokalne ustawienia
+.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Secrets (na przyszłość — gdy wejdzie stack)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Build outputs (placeholder — uzupełnić po tech-stack-selection)
+build/
+dist/
+out/
+target/
+node_modules/
+.gradle/
