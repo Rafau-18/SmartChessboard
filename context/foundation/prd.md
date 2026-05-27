@@ -10,174 +10,211 @@ target_scale:
   qps: low
   data_volume: small
 timeline_budget:
-  mvp_weeks: 12
+  mvp_weeks: 4
   hard_deadline: null
   after_hours_only: false
 ---
 
-# Smart Chessboard — PRD
-
 ## Vision & Problem Statement
 
-An amateur chess player plays chess on a physical wooden board with friends at home. Games played this way vanish the moment they end — they exist in no record, cannot be analyzed afterward, and there is no way to return to a specific position. Manually notating moves on paper kills the tempo and enjoyment of the game, so in practice nobody does it.
+The project author and a small circle of friends play chess on a physical wooden board for enjoyment. Those games usually disappear when they end: they are not automatically recorded, cannot be replayed from a precise position, and cannot be analyzed later unless someone interrupts the flow of play with manual notation.
 
-Commercial smart chessboard products solve the recording problem, but they are expensive and closed — they do not fit the author's use case or his circle of friends. The author already owns a working prototype of a physical board fitted with a magnetic-sensor matrix and a microcontroller, built during his studies. The project is a focused software layer over existing hardware, tailored to a specific group of users rather than a mass market. The insight is that with the hardware already in hand, a small mobile-first software effort is sufficient to deliver a premium digital-physical chess experience without buying into closed commercial systems.
+Commercial smart chessboards solve parts of this problem, but they are expensive and closed for this use case. The author already has a physical prototype with a reed-switch matrix and a microcontroller, so the product opportunity is a software layer that turns the existing board into an analysis-ready game recorder for a small group of real players.
+
+The first useful smart-board experience is not a live engine overlay during play; it is a complete, legal, replayable game record after play. A canonical game record lets players return to their own games and transform positions into evaluated states without changing the physical feel of the game.
 
 ## User & Persona
 
-**Primary persona — amateur chess player.** The project author and his circle of friends. They play physical chess for enjoyment, not competitively, regularly at home. Each person has their own account, profile, and game history — they want to see their own statistics and return to their own games, not a shared pool.
+Primary persona: the project author and a small circle of friends who play physical chess at home or in small informal settings. They are amateur chess players, not tournament operators, coaches, or club administrators.
+
+Each player wants their own account, their own game history, and the ability to return to their own games for replay and analysis. The MVP serves this small-circle use case first; it is not trying to become a mass-market chess platform.
 
 ## Success Criteria
 
 ### Primary
-- A user can play a complete chess game in one of two modes: (a) digital pass-and-play on a mobile device screen; (b) physical play on the connected hardware board. In both modes the game is automatically saved in standard chess notation (PGN + per-move FEN). The user can later return to the list of their own games and walk a chosen game move by move, with every position replayed.
+
+- A signed-in player can complete a digital pass-and-play game on iOS or Android, save every accepted move into a complete PGN source record, reopen the game from their own history, replay it with full navigation controls, and view post-game position evaluations.
+- A signed-in player can play through the physical board flow: moves are captured as confirmed sequences of piece lifts and placements, assigned to the correct side through two confirmation buttons, validated against full chess legality, and saved into the same canonical game record used by the digital flow.
 
 ### Secondary
-- After a game ends, a user can request a position evaluation for selected positions of the game from a free external chess position evaluation service.
+
+- A player can inspect live reed-switch diagnostics for every square to understand which board fields currently detect a piece or magnet.
+- A player can use a web target for selected core game, replay, or analysis views, with partial parity acceptable for the MVP.
+- The product can recover gracefully from physical-board network loss by pausing move acceptance, showing a clear message, and resuming from the last confirmed move after reconnect.
 
 ### Guardrails
-- **Move legality.** The product never persists an illegal move. Every move is validated against the full rules of chess (pinned-piece movement, escaping check, castling, en passant, promotion) before it is saved, in both digital and physical modes. Automatic end-of-game detection (mate, stalemate, threefold repetition, 50-move rule) is intentionally NOT in MVP — end-of-game and result are user-marked.
-- **Game durability.** A saved game does not disappear from the user's account. An application crash mid-game does not lose moves accepted up to the point of the crash. Loss of connection to the physical board is covered minimally in MVP (last accepted move retained); seamless mid-game continuity after reconnect is broken out as nice-to-have.
-- **Move responsiveness.** An accepted move (touch in digital mode, confirmation-button press in physical mode) appears on the device screen within 500 ms of the interaction.
-- **No silent corruption of physical detection.** A misinterpreted physical move is never silently persisted. Every confirmed sensor state ends in one of two user-observable outcomes: the move is recognized as a specific legal chess move and saved, or the product visibly reports a detection problem and pauses the game until the user manually corrects the position. The hobby-grade hardware (occasional false hits, occasional non-detections) is acknowledged: the experience is partially autonomous with human-assisted correction, never silently corrupting state.
+
+- The product never saves an illegal chess move. Validation covers the full rules needed for legal play, including check, pinned-piece movement, king safety, castling, en passant, and promotion.
+- The product does not silently corrupt physical-board input. Every confirmed physical-board state results in either a specific legal move being saved or a visible error path that asks the player to correct the board state.
+- A crash must not erase moves that were already accepted and saved before the crash.
+- The core digital pass-and-play, save, replay, and post-game analysis flow works without connected physical hardware.
 
 ## User Stories
 
-### US-01: Playing a game on the physical board
+### US-01: Digital game is recorded, replayed, and analyzed
 
-- **Given** a logged-in user with the mobile app connected to a physical board on the same Wi-Fi network, and an opponent physically present at the board
-- **When** the user creates a new game in "physical" mode, both players make moves on the board and press the confirmation button on their side after each of their moves
-- **Then** after each button press the product receives the sensor state from the board, recognizes the move, validates its legality, persists it in standard notation (PGN + FEN), and updates the on-screen position
+- **Given** a signed-in player starts a digital pass-and-play game on iOS or Android
+- **When** the players make legal moves on the on-screen board and the game history is saved as play progresses
+- **Then** the player can reopen the game from their own chronological history, replay it with full move controls, and view post-game position evaluations.
 
 #### Acceptance Criteria
-- A press of the confirmation button on the side of the player who just made a legal move results in the move being saved under that color and a visible on-screen position update within < 500 ms.
-- The product tracks the full sequence of piece lifts and placements since the last confirmation and correctly recognizes captures and castling from the sequence rather than from a single snapshot.
-- If the recorded sequence does not correspond to any legal move from the current position, the product displays an error, pauses the game, and asks for restoration of the previous position; the move is not saved.
-- On pawn promotion the product displays a piece-selection pop-up; the move is saved only after the choice is made.
-- A diagnostic view of the sensor-matrix state (which squares detect a piece) is available to the user during the game.
-- The end of the game and the result (1-0 / 0-1 / ½-½ / unfinished) are set manually by the user; the product does not declare end-of-game on its own in MVP.
-- Once marked, the game appears in the history list and can be reviewed move by move.
+
+- The player can create a game, choose digital mode, and assign White and Black.
+- The on-screen board accepts interactive moves and validates every move against full chess rules before execution.
+- Pawn promotion asks the player to choose the promoted piece before the move is saved.
+- Every accepted move is persisted into the game record as play progresses.
+- The saved game uses complete PGN as its source of truth, with FEN derived, generated, or cached only as needed for replay or analysis.
+- The player can navigate replay with start, back, forward, and end controls.
+- The player can request post-game analysis and view position evaluations while reviewing the game.
+
+### US-02: Physical board moves enter the canonical game record
+
+- **Given** a signed-in player has started a physical-mode game with the smart board available
+- **When** players make moves on the board and confirm each move with the button on their side
+- **Then** the product interprets the recorded sequence of lifts and placements as the next candidate move, validates it, and saves accepted moves into the same canonical game record as digital play.
+
+#### Acceptance Criteria
+
+- The player can create a game, choose physical mode, and assign White and Black.
+- The board flow tracks the sequence of piece lifts and placements since the previous confirmed move.
+- A confirmation button exists for each side; the pressed button identifies which side confirmed the move.
+- Captures and castling are recognized from the full sequence, not from a final board snapshot alone.
+- If the sequence is illegal, ambiguous, or inconsistent with the expected position, no move is saved.
+- A visible error path asks the player to restore the previous legal position with help from live diagnostics and retry confirmation.
+- Accepted physical-board moves appear in the game history and replay sequence.
+
+### US-03: Player reviews their own saved games
+
+- **Given** a signed-in player has at least one saved game
+- **When** they open their game history and choose a game
+- **Then** they see only their own games, can replay the selected game, and can review position evaluations after play.
+
+#### Acceptance Criteria
+
+- The game list is scoped to the signed-in player and ordered chronologically.
+- Unauthenticated users cannot access game, history, replay, or analysis views.
+- The chosen game opens at a reproducible board state.
+- Replay controls let the player jump to the start, step backward, step forward, and jump to the end.
+- Post-game position evaluation is available from the replay/review flow.
 
 ## Functional Requirements
 
-### Accounts and login
-- FR-001: A new user can create an account by signing in through an external identity provider. Registration is open — no invitation, no code, no email verification. Priority: must-have
-  > Socratic: Counter-argument considered in Round 1: "manual account creation / invitation code". Resolution: initially kept ("invitations as must-have"), then revised post-Phase-7: open registration via an external identity provider replaces the closed beta. Reasons for revision: (1) low project visibility in MVP is a sufficient constraint; (2) an external provider removes the need for registration UI and password management; (3) the author's educational goal includes practical hands-on integration with an external identity provider.
+### Account Access
 
-- FR-002: A user can log into their account through the same external identity provider used to create the account. Priority: must-have
-  > Socratic: Counter-argument considered: "PIN + select-from-list / magic-link". Resolution: kept; full external-provider login stays.
+- FR-001: Player can create or sign into an account through an external OAuth identity provider selected during downstream stack selection. Priority: must-have
+  > Socrates: Counter-argument considered: "Choosing a specific provider too early can over-commit the product before stack selection." Resolution: revised; OAuth remains must-have, but the provider is deferred downstream instead of hard-coding a provider in the shape notes.
 
-- FR-003: A user can log out. Priority: must-have
-  > Socratic: Counter-argument considered: "logout is a dead feature on a single-person phone". Resolution: kept; a basic auth feature whose absence would be conspicuous even if rarely used.
+- FR-002: Player can sign out of their account. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "Logout is not central to the first chess flow and may be rarely used on a personal device." Resolution: kept as nice-to-have; it is expected account behavior but does not block MVP acceptance.
 
-### Game creation
-- FR-004: A logged-in user can create a new game, indicating the play mode (digital or physical) and who plays White and Black. Priority: must-have
-  > Socratic: Counter-argument considered: "auto-detect mode from paired hardware / auto-assign colors". Resolution: kept; the user explicitly controls mode and colors.
+### Game Creation And Digital Play
 
-### Digital play (pass-and-play)
-- FR-005: A user makes moves on the on-screen board interactively (by dragging or by tap-tap on squares). Priority: must-have
-  > Socratic: Counter-argument considered: "drag-and-drop only without tap-tap / algebraic notation entry". Resolution: kept; standard chessboard interaction. Specific drag-vs-tap choice is an implementation detail.
+- FR-003: Player can create a new game, choose digital or physical play mode, and assign White and Black. Priority: must-have
+  > Socrates: Counter-argument considered: "Mode and color assignment could be inferred automatically." Resolution: kept as must-have; explicit game setup removes ambiguity before the first move.
 
-- FR-006: The product validates the legality of every move before it is executed, against the full rules of chess (pinned-piece movement, escaping check, castling, en passant, promotion). Priority: must-have
-  > Socratic: Counter-argument considered: "players validate themselves / only basic validation without pinning". Resolution: kept; ties into the move-legality guardrail. Non-negotiable.
+- FR-004: Player can make moves interactively on an on-screen chessboard. Priority: must-have
+  > Socrates: Counter-argument considered: "A generic pass-and-play requirement might be enough." Resolution: added as must-have; the digital MVP needs an explicit input capability before recording, replay, or analysis can be validated.
 
-- FR-007: On pawn promotion the product displays a piece-selection pop-up (queen / rook / knight / bishop). Priority: must-have
-  > Socratic: Counter-argument considered: "auto-promote to queen / gesture-based choice". Resolution: kept; standard chess UI convention.
+- FR-005: System can validate every move against the full rules of chess before execution, including check, pinned-piece movement, king safety, castling, en passant, and promotion. Priority: must-have
+  > Socrates: Counter-argument considered: "Full chess validation can slow the first version, and partial validation could be enough for a prototype." Resolution: strengthened as must-have; saving illegal moves would break the canonical game record.
 
-### Physical play (hardware)
-- FR-008: A user configures the physical board's Wi-Fi via a captive portal flow on the board itself — without ever entering credentials into firmware or source code. Priority: must-have
-  > Socratic: Counter-argument considered: "hardcoded credentials / BLE handshake". Resolution: kept; the absolute constraint is credentials never in code; BLE is explicitly out of MVP.
+- FR-006: Player can choose the promoted piece when a pawn promotes through the mobile UI (iOS/Android), regardless of whether the move originated from the digital board or the physical board. In physical mode, board input is blocked after a promotion push is detected until the player selects the promoted piece in the app and the side confirms the move. Priority: must-have
+  > Socrates: Counter-argument considered: "Auto-promoting to queen would reduce UI work, and physical hardware cannot distinguish piece identity anyway." Resolution: kept as must-have; the mobile UI resolves the piece-identity gap of the reed-switch matrix and keeps PGN faithful.
 
-- FR-009: The product establishes a connection with the physical board on the local network. In MVP, one default board per user; pairing with multiple boards is deferred to post-MVP. Priority: must-have
-  > Socratic: Counter-argument considered and accepted: "only one board per user — no list-picker needed". FR was rewritten from "pairing" to a simple single-default-board connection; multi-board pairing moves to post-MVP.
+- FR-007: System automatically detects checkmate and stalemate as terminal game states and closes the game with the corresponding result. Detection follows from the legality engine: zero legal moves with check is checkmate, zero legal moves without check is stalemate. Other draw-by-rule conditions (threefold repetition, 50-move, insufficient material) are not auto-detected in MVP and must be marked manually via FR-018. Priority: must-have
+  > Socrates: Counter-argument considered: "Auto-detecting all draw rules would be more correct." Resolution: scoped to mate/stalemate; these fall out of the legality engine for free, while remaining draw rules require additional state tracking (move counters, position hash history) that does not pay off in casual play.
 
-- FR-010: The board continuously monitors the state of the sensor matrix and reports state changes to the product. The product tracks the sequence of piece lifts and placements since the last confirmation. Once the confirmation button is pressed, the product interprets the full recorded sequence as one specific legal chess move — including captures (e.g., "piece lifted from A → piece lifted from B → piece placed on B" recognized as capture AxB) and castling (two pieces lifted, two placed on different squares). Priority: must-have
-  > Socratic: Counter-argument considered and accepted: "continuous detection without a button is chaos / button per player (clock)". FR was rewritten: continuous monitoring of sensor state + the full lift/placement sequence as input, instead of a delta snapshot (a snapshot is insufficient for captures — from the delta's perspective a capture looks like a disappearance). The per-player button was broken out as a separate FR-011.
+### Physical Board Play
 
-- FR-011: The board exposes two move-confirmation buttons — one per player, physically arranged in the form of a chess clock. The product distinguishes which button was pressed and attributes the confirmed move to the player on that side of the clock. Priority: must-have
-  > Socratic: New FR derived from the counter-argument to FR-010. Without two distinguishable buttons it is unclear whose move was confirmed (one player could press for the other). Must-have.
+- FR-008: Player can submit physical-board moves through a confirmed sequence of piece lifts and placements recorded since the previous confirmed move. Priority: must-have
+  > Socrates: Counter-argument considered: "A button-triggered final board snapshot would be simpler." Resolution: revised to continuous sequence capture; captures and castling cannot be resolved reliably from a final snapshot alone.
 
-- FR-012: A user sees an in-product diagnostic view of the sensor-matrix state (which squares currently detect a piece / magnet). Priority: must-have
-  > Socratic: Counter-argument considered and rejected: "diagnostics only in firmware logs / only on errors". Reason: hobby-grade hardware with imperfect sensors requires constant debugging support; in-product diagnostics is an absolute must-have.
+- FR-009: Physical board flow can distinguish two confirmation buttons organized like a chess clock, one for each side. Priority: must-have
+  > Socrates: Counter-argument considered: "A single button could confirm the stable state and color could follow turn order." Resolution: added as must-have; two side-specific buttons reduce ambiguity about who confirmed the move.
 
-- FR-013: When the recorded sensor sequence after a button press does NOT correspond to any legal move from the current position, the product signals an error, pauses the game, and asks the user to manually restore the previous piece positions (with help from the diagnostic view) and to press the confirmation button again once the board matches the expected state. The product does NOT save such a state as a move. Priority: must-have
-  > Socratic: Counter-argument considered: "ignore bad states / force-update". Resolution: kept; ties into the legality and no-silent-corruption guardrails. Post-Phase-7 refinement: explicitly clarified that restoration is manual (assisted by the diagnostic view); full automatic position-recovery detection broken out into FR-022 as nice-to-have.
+- FR-010: System can reject illegal, ambiguous, or inconsistent physical-board sequences, pause the game, and ask the player to manually restore the previous legal position with diagnostic assistance before retrying confirmation. Priority: must-have
+  > Socrates: Counter-argument considered: "A generic reject-invalid-state rule might be enough." Resolution: added as must-have; hobbyist reed-switch hardware needs an explicit visible recovery path.
 
-### End of game and persistence
-- FR-014: A user can at any time manually mark the end of the game and its result (1-0 / 0-1 / ½-½ / unfinished). Priority: must-have
-  > Socratic: Counter-argument considered: "result without strict enumeration / only binary 'game over'". Resolution: kept; standard chess notation requires one of these four outcomes.
+- FR-011: Player can view live reed-switch diagnostics for every square. Priority: must-have
+  > Socrates: Counter-argument considered: "Live diagnostics may be only a debugging tool." Resolution: promoted to must-have; with imperfect physical detection, players need visible board-state support when resolving errors.
 
-- FR-015: The product automatically persists every accepted move to durable storage (PGN + per-move FEN), regardless of mode and regardless of whether the game is later finished. Priority: must-have
-  > Socratic: Counter-argument considered: "persist only after the game ends / PGN only without per-move FEN". Resolution: kept; ties into the durability guardrail, and per-move FEN simplifies replay (FR-020).
+- FR-012: Product can handle physical-board network loss by pausing move acceptance, showing an unambiguous connection-loss message, attempting reconnect, and resuming from the last confirmed move after reconnect. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "The MVP can rely on persisted last confirmed moves and manual resume." Resolution: added as nice-to-have; it improves physical-game continuity but does not block MVP acceptance.
 
-- FR-016: The product automatically detects end-of-game (mate / stalemate / threefold repetition / 50-move rule) and suggests the corresponding result. Priority: nice-to-have
-  > Socratic: Counter-argument considered: "promote to must-have / partial detection (mate + stalemate only)". Resolution: kept as nice-to-have — manual end-marking is sufficient for MVP.
+- FR-013: Product can resume an in-progress physical-mode game after an app restart on the same device. On resume, the app loads the last persisted move, renders the expected position, and asks the player to confirm that the physical board matches before re-enabling move acceptance. If it does not match, the player uses live diagnostics (FR-011) to restore the position manually. Cross-device handoff of an active physical-mode game is not part of MVP. Priority: must-have
+  > Socrates: Counter-argument considered: "Requiring a fresh game on any restart would be simpler." Resolution: added as must-have; restarts are likely in MVP usage windows, and discarding accepted moves would violate the canonical-record guardrail.
 
-- FR-017: A player can record resignation or a draw by agreement as a way to mark the end of the game. Priority: nice-to-have
-  > Socratic: Counter-argument considered: "redundant with FR-014 / agreement UI too complex for pass-and-play". Resolution: kept as nice-to-have — enters after the Primary path.
+### Game Record, History, Replay, And Analysis
 
-- FR-018: A user can start a new game from a position selected from any saved game (whether finished or unfinished) — "new game from position X". Priority: nice-to-have
-  > Socratic: Counter-argument considered: "FEN to an external tool / only for finished games". Resolution: kept as nice-to-have — enters after the Primary path.
+- FR-014: Product can automatically save every accepted move into durable game history as play progresses, using complete PGN as the source of truth while deriving, generating, or caching FEN for replay or analysis. Priority: must-have
+  > Socrates: Counter-argument considered: "Saving only at game completion and persisting FEN per move could both be simpler in different ways." Resolution: revised; auto-save protects accepted moves, PGN remains the durable source, and FEN is derived or cached as needed.
 
-### History and replay
-- FR-019: A logged-in user can open the list of their own games in chronological order. Priority: must-have
-  > Socratic: Counter-argument considered: "list of all games across the circle (social) / only the last 20". Resolution: kept; the list is the user's own games only.
+- FR-015: Player can open a chronological list of their own saved games. Priority: must-have
+  > Socrates: Counter-argument considered: "Replay could open only the most recent game or a direct game link." Resolution: added as must-have; returning to saved games is part of the original pain.
 
-- FR-020: A user can open a chosen game from history and walk through it move by move (forward / back / start / end), with every position replayed on screen. Priority: must-have
-  > Socratic: Counter-argument considered: "forward (playback) only / side-by-side analysis board". Resolution: kept; full forward / back / start / end is non-negotiable for the original pain ("return to a position").
+- FR-016: Player can replay a chosen saved game with start, back, forward, and end controls. Priority: must-have
+  > Socrates: Counter-argument considered: "Move-by-move replay could be generic or forward-only." Resolution: strengthened as must-have; reviewing a precise position requires bidirectional navigation.
 
-### Analysis
-- FR-021: After a game ends, a user can request a position evaluation for selected positions of the game from a free external chess position evaluation service. Priority: nice-to-have
-  > Socratic: Counter-argument considered: "end-position evaluation only / real-time bar / own engine". Resolution: kept as nice-to-have. The specific evaluation source and scope (per-position vs per-game) are deferred to implementation. Computing evaluations within the product itself (rather than from an external service) is a post-MVP roadmap item.
+- FR-017: Player can request post-game analysis and view position evaluations. Priority: must-have
+  > Socrates: Counter-argument considered: "Replay alone may be enough, and external tools could analyze exported PGN." Resolution: kept as must-have; position evaluations are the required analysis output for MVP.
 
-### Hardware extensions
-- FR-022: After a detection error (FR-013), the product monitors the sensor state continuously and automatically detects the moment the physical board matches the expected previous legal position; on a match, the game resumes without requiring another confirmation-button press. Priority: nice-to-have
-  > Socratic: Introduced post-Phase-7 to acknowledge realistic hobby-hardware limitations. Broken out from must-have FR-013, which retains manual retry-after-press as the baseline behavior.
+- FR-018: Player can manually mark the end of a game and record its result (win/loss/draw). Priority: must-have
+  > Socrates: Counter-argument considered: "A completed PGN move record can exist without explicit result handling." Resolution: promoted to must-have; with no automatic detection of draw-by-rule (threefold repetition, 50-move, insufficient material) in MVP, manual end-of-game is the only way to close such games and produce a complete PGN result tag.
 
-- FR-023: On loss of connection between the product and the physical board mid-game, the product pauses move acceptance, displays a clear network-loss message, and attempts automatic reconnect in the background. After reconnect, the game resumes from the last accepted move without state loss and without requiring manual position reconstruction. Priority: nice-to-have
-  > Socratic: Introduced post-Phase-8 after cross-check with shape-alternative.md. Counter-argument considered: "MVP can live without it — FR-015 (auto-save of every move) guarantees the last accepted state is on disk, and after reconnect the user re-opens the game from history". Resolution: kept as nice-to-have; happy-path continuity meaningfully improves UX for mid-game disconnects but requires additional buffering and a replay protocol — minimal coverage is acceptable in MVP.
+### Platform Surfaces
+
+- FR-019: Player can use the core play, save, history, replay, and post-game analysis flow on iOS and Android. Priority: must-have
+  > Socrates: Counter-argument considered: "A single mobile platform could reduce MVP scope." Resolution: kept as must-have; the chosen product surface is mobile across iOS and Android.
+
+- FR-020: Player can use a web target for selected core game, replay, or analysis views. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "Web should be equal to mobile if the project target can produce it." Resolution: kept as nice-to-have; the project may create a web target, but full parity and active validation are not MVP acceptance criteria.
 
 ## Non-Functional Requirements
 
-- A user's game is accessible only to that user — it never appears in views shown to other logged-in users or to anonymous visitors. No exception in MVP.
-- The product (both the user-facing client and any supporting software services it depends on) can be fully built, run, and automatically validated without a physical board attached — regardless of whether the developer has access to the hardware.
-- The product is available and fully functional on the two current major versions of each of the two mainstream mobile platforms (Android and iOS) at the time of MVP release.
-- Wi-Fi credentials (SSID, password) entered by the end user during board configuration are never persisted in any build-time artifact (firmware, source repository, configuration files) and exist only in the memory of the specific board the user paired and configured.
-- For every accepted move in either play mode, the on-screen position update is visible within 500 ms of the interaction (touch in digital mode, confirmation-button press in physical mode).
+- An accepted move appears on the player's device within 500 ms of the interaction that accepted it, whether the move came from the digital board or a physical-board confirmation.
+- A game is private by default: only the signed-in owner can access its game, history, replay, and analysis views in the MVP.
+- The core mobile product is available and usable on the latest two major versions of iOS and Android at MVP release time.
+- Wi-Fi credentials for a physical board are never committed to source control, stored in the source repository, or baked into reusable firmware artifacts.
+- Saved games are persisted locally on the player's device and backed up to cloud storage scoped to the signed-in account; the same game history is available across the player's signed-in devices.
 
 ## Business Logic
 
-The product guarantees that every recorded chess game consists exclusively of legal moves and can be replayed move by move in an identical state, regardless of the medium (physical or digital) on which it was played.
+The product records each game as an analysis-ready canonical chess record made only of legal moves, then lets the player replay and transform that record into evaluated positions after the game.
 
-**What the rule consumes.** The inputs are the raw acts of play produced by a user through one of two channels: (a) touch interactions on the device screen (drag-and-drop or tap-tap on squares), together with a promotion choice in the promotion pop-up; or (b) a physical sequence of piece lifts and placements on the wooden board with magnets, recorded continuously and concluded by a press of the per-player confirmation button. Both channels carry the same semantics — "the player wants to make this move now".
+The rule consumes played chess moves from two user-facing channels: interactive digital-board moves and physical-board move sequences confirmed by side-specific buttons. It accepts only move attempts that can be resolved into the legal continuation of the current game.
 
-**What the rule produces.** Every submitted move attempt ends in one of two outcomes: the move is accepted as a specific legal chess move from the current position and persisted in the game's history in standard chess notation (PGN + per-position FEN); or the move is unambiguously rejected with a reason, and the game is paused until the prior position is restored. The history state is deterministically reproducible — from the saved notation, every position that ever occurred in the game can be reconstructed.
-
-**How the user encounters the rule.** During play — immediate feedback: the move appears on the screen, or an error message asks for correction. After play — the game appears in the user's own game list, opens for step-by-step replay (forward / back / start / end), and every intermediate state is exactly what happened at the table or on the screen. The rule does not ask the user to judge chess legality; it knows what is legal and what is not.
+Every submitted move attempt ends in one of two user-visible outcomes: a specific legal move is accepted and persisted into the game record, or the attempt is rejected and the player receives a correction path. The user encounters this rule during play, while recovering from physical-board detection errors, when reopening the saved game, and when reviewing evaluated positions.
 
 ## Access Control
 
-Each player owns an account and signs into the product so that games and statistics are attributed to them.
+Users sign in through an external OAuth identity provider selected during downstream stack selection. If the person signing in does not already have an account, the product should automatically create one where possible.
 
-- **Role model:** flat — every logged-in user has the same capabilities. No admin / user / guest distinction in MVP.
-- **Sign-up:** open — anyone can create an account. No invitation, no invite code, no email-verification gate. Assumption: low MVP visibility plus a short sign-up path is a sufficient balance for the closed-circle persona.
-- **Authentication:** sign-up and sign-in both go through a single external identity provider; the product itself manages no passwords, no email-verification flow, and no password-reset flow.
-- **Anonymous access:** none. An unauthenticated visitor has no access to game views, history, or analysis. The pass-and-play digital mode is intentionally gated behind sign-in.
-- **Data isolation:** each user sees only their own games and history. There are no cross-user views in MVP.
+The MVP uses a flat user model: every signed-in user has the same capabilities. There are no separate admin, owner, guest, coach, or viewer roles in the MVP.
+
+Anonymous access is not part of the MVP. Unauthenticated users cannot access game, history, replay, or analysis views.
 
 ## Non-Goals
 
-- **Online play / matchmaking / remote multiplayer.** MVP does not include opponent matching, remote play, or integration with online chess platforms. Play is local — one device (pass-and-play) or one connected board.
-- **Play against an AI / a chess engine as the opponent.** MVP supports only human vs. human. A chess engine acting as a "computer opponent" is post-MVP. The optional secondary position-evaluation feature is post-game analysis, not gameplay.
-- **Tournaments, ELO ratings, club statistics.** MVP includes no competitive or club functionality: no tournament play, no brackets, no ranking, no aggregate club statistics. Each user sees only their own games.
-- **Training, puzzles, lessons.** MVP is a tool for playing and analyzing one's own games, not a teaching tool. No mate puzzles, opening drills, or guided lessons.
-- **Bluetooth (BLE) hardware pairing.** MVP uses Wi-Fi only via the captive-portal flow. BLE-based shorter onboarding is post-MVP.
-- **Web client.** Mobile (Android + iOS) is the only client surface in MVP. A browser-based client is post-MVP and would require its own layout and deployment design.
-- **Pairing with multiple physical boards.** One default board per user in MVP. A full multi-board pairing mechanism (e.g., a chess club with several boards) is post-MVP.
-- **Time control.** MVP does not support per-game time limits (10+5, blitz, classical 90+30, etc.) or wins on time. "Clock" in the hardware context refers exclusively to the physical arrangement of the two confirmation buttons, NOT to a timekeeping function. Time control is deferred to the post-MVP roadmap.
-- **Multi-client real-time for physical play.** In MVP the product runs on a single device next to the board — both players share the same screen within one signed-in session. The variant "each player on their own phone, screen flipped for perspective, real-time sync between clients" is explicitly out of MVP; it would require multi-client sync infrastructure and multi-party session management.
-- **Hardware redesign.** The product is a software layer over the author's existing prototype. Re-architecting the board itself — alternative sensor technologies (camera, RFID, capacitive), a different chassis, alternative microcontroller families — is out of MVP scope.
+- No live engine bar during gameplay. Analysis happens after the game; live evaluation may become a configurable post-MVP option.
+- No online matchmaking, remote multiplayer, or online play through external chess platforms. MVP play is local: digital pass-and-play or a connected physical board.
+- No AI opponent or local chess engine gameplay. The MVP supports human-vs-human games; engine work is analysis-related, not opponent play.
+- No automatic critical-moment detection. Critical moments are a post-MVP nice-to-have beyond basic position evaluations.
+- No tournaments, ELO ratings, rankings, or club statistics. The MVP is for personal game history and analysis, not organized competition.
+- No training, puzzles, lessons, or educational module. The MVP is a tool for playing and analyzing one's own games.
+- No time control. Any chess-clock-shaped hardware in the MVP means confirmation buttons only, not per-player timekeeping or wins on time.
+- No multi-client realtime physical play. The MVP assumes one active device next to the physical board, not separate synchronized phones for both players.
+- No guided physical-board recovery UX in MVP. When a sequence is rejected, the player uses the raw live reed-switch diagnostics (FR-011) to manually restore the previous legal position. A step-by-step guided restoration flow is post-MVP; MVP only commits to the happy path plus a visible error message and raw diagnostics.
 
 ## Open Questions
 
-1. **Is `product_type: mobile` sufficient, or should the schema be extended to an explicit "hybrid" category to capture the mobile + supporting software services + physical-hardware nature of this product?** — Owner: schema maintainer / tech-stack-selector. By: prior to running `/10x-tech-stack-selector`. Not blocking: `mobile` + a free-text description is the working interpretation; this question is about whether to formalize the hybrid shape in the schema.
+1. **What no-hardware validation strategy should downstream planning use?** — Owner: downstream stack/planning step. Latest acceptable resolution: before implementation planning. Block: no; this does not block PRD generation.
+   > Resolved 2026-05-26: MVP combines (A) unit tests of pure sequence-interpreter and rules-engine logic with (B) a programmatic reed-switch emulator — an interface that delivers the same messages as the microcontroller but is driven by test scripts or a dev tool, with no GUI. Together they let the full physical-mode flow (transport → interpreter → rules → UI) run end-to-end without the board, including in CI and from AI-assisted contributors. (C) Recorded hardware fixtures (replay of real microcontroller logs) is nice-to-have, useful for regression coverage of hardware artefacts (debouncing, spurious triggers), but does not block MVP acceptance. A visual click-driven simulator is out of scope for MVP.
+
+2. **What is the MVP scope of end-of-game detection?** — Must the system auto-detect checkmate and stalemate from validation, or also threefold repetition, 50-move rule, and insufficient material? Owner: downstream stack/planning step. Latest acceptable resolution: before validation engine implementation. Block: no; FR-005 covers move legality, but terminal-state detection scope needs explicit confirmation.
+   > Resolved 2026-05-26: MVP auto-detects only checkmate and stalemate (free from the legality engine — see FR-007). Threefold repetition, 50-move, and insufficient material are not auto-detected; players close such games manually via FR-018 (promoted to must-have).
+
+3. **What concrete output does post-game position evaluation produce, and which engine produces it?** — Numeric centipawn score only, or best-move suggestion / principal variation? Local engine on device, embedded engine in backend, or external API? On-demand per position or precomputed for the whole game? Owner: downstream stack/planning step. Latest acceptable resolution: before analysis subsystem implementation. Block: no; FR-017 commits to "position evaluations" but leaves shape and cost open.
+   > Resolved 2026-05-26: MVP uses the Lichess Cloud Eval API, invoked from the backend (centralised API key and rate-limit handling). Output is centipawn evaluation plus best move per position, on-demand only (no precompute, no live bar). Bundled Stockfish (local on device or in backend) is a post-MVP upgrade if offline analysis or stricter privacy becomes a requirement.
+
+4. **How is an in-progress physical-mode game reconciled after an app restart or device change?** — Does the app resume from the last persisted move and expect the player to confirm the current board matches, or does it require restarting the game? Owner: downstream stack/planning step. Latest acceptable resolution: before physical-mode session handling implementation. Block: no; FR-012 covers network loss but not full app/process restart mid-game.
+   > Resolved 2026-05-26: Same-device resume after app restart is in MVP via a position-confirmation screen plus live diagnostics — see FR-013. Cross-device handoff of an active physical-mode game is post-MVP; cloud-backed history covers cross-device access to completed games only.
