@@ -3,7 +3,6 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-05-27
 context_type: greenfield
 product_type: mobile
 target_scale:
@@ -14,9 +13,6 @@ timeline_budget:
   mvp_weeks: 4
   hard_deadline: null
   after_hours_only: false
-companion_documents:
-  firmware_prd: context/foundation/prd-firmware.md
-  contracts: docs/reference/contract-surfaces.md
 ---
 
 ## Vision & Problem Statement
@@ -43,7 +39,7 @@ Each player wants their own account, their own game history, and the ability to 
 ### Secondary
 
 - A player can inspect live reed-switch diagnostics for every square to understand which board fields currently detect a piece or magnet.
-- A player can use a web target for the digital subset — pass-and-play, history, replay, and post-game analysis — without the physical-board / BLE flow. Partial parity for digital flows is acceptable for MVP.
+- A player can use a web target for selected core game, replay, or analysis views, with partial parity acceptable for the MVP.
 - The product can recover gracefully from physical-board network loss by pausing move acceptance, showing a clear message, and resuming from the last confirmed move after reconnect.
 
 ### Guardrails
@@ -142,8 +138,8 @@ Each player wants their own account, their own game history, and the ability to 
 - FR-011: Player can view live reed-switch diagnostics for every square. Priority: must-have
   > Socrates: Counter-argument considered: "Live diagnostics may be only a debugging tool." Resolution: promoted to must-have; with imperfect physical detection, players need visible board-state support when resolving errors.
 
-- FR-012: Product can handle physical-board BLE disconnect by pausing move acceptance, showing an unambiguous connection-loss message, attempting automatic reconnect, and resuming from the last confirmed move after reconnect. On reconnect, the app reconciles the board state against the expected position derived from PGN; mismatch routes the player into the diagnostic-restore path (FR-010/FR-011). See `contract-surfaces.md` §1.7 for the full BLE disconnect/reconnect semantics. Priority: nice-to-have
-  > Socrates: Counter-argument considered: "The MVP can rely on persisted last confirmed moves and manual resume." Resolution: added as nice-to-have; it improves physical-game continuity but does not block MVP acceptance. Reworded 2026-05-27 from "network loss" to "BLE disconnect" after firmware ↔ mobile transport was settled as Bluetooth LE.
+- FR-012: Product can handle physical-board network loss by pausing move acceptance, showing an unambiguous connection-loss message, attempting reconnect, and resuming from the last confirmed move after reconnect. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "The MVP can rely on persisted last confirmed moves and manual resume." Resolution: added as nice-to-have; it improves physical-game continuity but does not block MVP acceptance.
 
 - FR-013: Product can resume an in-progress physical-mode game after an app restart on the same device. On resume, the app loads the last persisted move, renders the expected position, and asks the player to confirm that the physical board matches before re-enabling move acceptance. If it does not match, the player uses live diagnostics (FR-011) to restore the position manually. Cross-device handoff of an active physical-mode game is not part of MVP. Priority: must-have
   > Socrates: Counter-argument considered: "Requiring a fresh game on any restart would be simpler." Resolution: added as must-have; restarts are likely in MVP usage windows, and discarding accepted moves would violate the canonical-record guardrail.
@@ -170,15 +166,15 @@ Each player wants their own account, their own game history, and the ability to 
 - FR-019: Player can use the core play, save, history, replay, and post-game analysis flow on iOS and Android. Priority: must-have
   > Socrates: Counter-argument considered: "A single mobile platform could reduce MVP scope." Resolution: kept as must-have; the chosen product surface is mobile across iOS and Android.
 
-- FR-020: Player can use a web target for the digital subset of the MVP — digital pass-and-play game creation (FR-003, FR-004), game history list (FR-015), replay (FR-016), post-game analysis (FR-017), and end-of-game marking (FR-018) — without the physical-board flow (FR-008–FR-013) and without BLE diagnostics (FR-011). Priority: nice-to-have
-  > Socrates: Counter-argument considered: "Web should be equal to mobile if the project target can produce it." Resolution: kept as nice-to-have; partial parity for digital flows is acceptable. Reworded 2026-05-27 to narrow scope: physical-board mode and BLE are mobile-only because Web Bluetooth has inconsistent cross-browser support (no Safari on iOS, mobile browsers limited) and the small-circle MVP use case does not justify the integration cost.
+- FR-020: Player can use a web target for selected core game, replay, or analysis views. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "Web should be equal to mobile if the project target can produce it." Resolution: kept as nice-to-have; the project may create a web target, but full parity and active validation are not MVP acceptance criteria.
 
 ## Non-Functional Requirements
 
 - An accepted move appears on the player's device within 500 ms of the interaction that accepted it, whether the move came from the digital board or a physical-board confirmation.
 - A game is private by default: only the signed-in owner can access its game, history, replay, and analysis views in the MVP.
 - The core mobile product is available and usable on the latest two major versions of iOS and Android at MVP release time.
-- The physical board uses Bluetooth Low Energy (BLE) as its sole wireless transport in MVP; it does not initialize Wi-Fi peripherals, store Wi-Fi credentials, or depend on a local router for physical-mode play.
+- Wi-Fi credentials for a physical board are never committed to source control, stored in the source repository, or baked into reusable firmware artifacts.
 - Saved games are persisted locally on the player's device and backed up to cloud storage scoped to the signed-in account; the same game history is available across the player's signed-in devices.
 
 ## Business Logic
@@ -197,19 +193,6 @@ The MVP uses a flat user model: every signed-in user has the same capabilities. 
 
 Anonymous access is not part of the MVP. Unauthenticated users cannot access game, history, replay, or analysis views.
 
-## Implementation Decisions
-
-The following stack-shape decisions were settled on 2026-05-27, after the original PRD was drafted, in alignment with `docs/reference/contract-surfaces.md` and `context/foundation/prd-firmware.md`. They are recorded here as PRD-level decisions because they affect user-facing wording (FR-012, NFRs); concrete framework / library selection still lives in `context/foundation/tech-stack.md` (produced by `/10x-tech-stack-selector`).
-
-- **System decomposition**: the product is implemented as three sub-projects — **mobile** (this PRD), **firmware** (`prd-firmware.md`), and **backend** (no separate PRD; fully specified by `contract-surfaces.md` §2-4 because the backend is Supabase configuration plus one Edge Function, not custom server code).
-- **Firmware ↔ mobile transport**: Bluetooth Low Energy (BLE). The board does not use Wi-Fi in MVP — no Wi-Fi onboarding flow, no Wi-Fi credentials to manage, and no router dependency for physical-mode play. This resolves the prior NFR about Wi-Fi credentials, which is now superseded by a BLE-only transport NFR.
-- **Backend**: Supabase (managed Postgres + Auth + Edge Functions). Game persistence, OAuth, RLS-based per-user scoping, and the Lichess Cloud Eval proxy are all hosted on Supabase. No bespoke server is written for MVP. Backend behavior is specified in `contract-surfaces.md` §2-4.
-- **Identity provider**: Google OAuth via Supabase Auth, with automatic account creation on first sign-in (per FR-001 and Access Control). Apple Sign In and other providers are deferred and out of MVP scope. The MVP does not target App Store publication, so App Store Review Guideline 4.8 is not in force.
-- **Post-game analysis (FR-017)**: Lichess Cloud Eval API, called server-side from a Supabase Edge Function with a shared server-side cache in `position_evals` keyed by FEN. Centipawn evaluation plus best move per position, on-demand only. See `contract-surfaces.md` §3.3.
-- **Web target scope**: digital flows only (pass-and-play, history, replay, post-game analysis). Physical-board mode (FR-008–FR-013), BLE transport, and reed-switch diagnostics (FR-011) are intentionally excluded from the web target because Web Bluetooth has inconsistent cross-browser support (Chromium-only on desktop, no Safari on iOS, mobile browsers limited) and the small-circle MVP use case does not justify the integration cost. Decided 2026-05-27 alongside tech-stack selection (`context/foundation/tech-stack.md`).
-
-These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that those questions' resolutions already anticipated — see the Open Questions section below for the full reasoning trail.
-
 ## Non-Goals
 
 - No live engine bar during gameplay. Analysis happens after the game; live evaluation may become a configurable post-MVP option.
@@ -221,7 +204,6 @@ These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that t
 - No time control. Any chess-clock-shaped hardware in the MVP means confirmation buttons only, not per-player timekeeping or wins on time.
 - No multi-client realtime physical play. The MVP assumes one active device next to the physical board, not separate synchronized phones for both players.
 - No guided physical-board recovery UX in MVP. When a sequence is rejected, the player uses the raw live reed-switch diagnostics (FR-011) to manually restore the previous legal position. A step-by-step guided restoration flow is post-MVP; MVP only commits to the happy path plus a visible error message and raw diagnostics.
-- No physical-board mode on the web target. The BLE connection to the smart chessboard is mobile-only (iOS + Android). The web target supports digital play, history, replay, and post-game analysis exclusively.
 
 ## Open Questions
 
@@ -234,5 +216,5 @@ These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that t
 3. **What concrete output does post-game position evaluation produce, and which engine produces it?** — Numeric centipawn score only, or best-move suggestion / principal variation? Local engine on device, embedded engine in backend, or external API? On-demand per position or precomputed for the whole game? Owner: downstream stack/planning step. Latest acceptable resolution: before analysis subsystem implementation. Block: no; FR-017 commits to "position evaluations" but leaves shape and cost open.
    > Resolved 2026-05-26: MVP uses the Lichess Cloud Eval API, invoked from the backend (centralised API key and rate-limit handling). Output is centipawn evaluation plus best move per position, on-demand only (no precompute, no live bar). Bundled Stockfish (local on device or in backend) is a post-MVP upgrade if offline analysis or stricter privacy becomes a requirement.
 
-4. **How is an in-progress physical-mode game reconciled after an app restart or device change?** — Does the app resume from the last persisted move and expect the player to confirm the current board matches, or does it require restarting the game? Owner: downstream stack/planning step. Latest acceptable resolution: before physical-mode session handling implementation. Block: no; FR-012 covers BLE disconnect but not full app/process restart mid-game.
+4. **How is an in-progress physical-mode game reconciled after an app restart or device change?** — Does the app resume from the last persisted move and expect the player to confirm the current board matches, or does it require restarting the game? Owner: downstream stack/planning step. Latest acceptable resolution: before physical-mode session handling implementation. Block: no; FR-012 covers network loss but not full app/process restart mid-game.
    > Resolved 2026-05-26: Same-device resume after app restart is in MVP via a position-confirmation screen plus live diagnostics — see FR-013. Cross-device handoff of an active physical-mode game is post-MVP; cloud-backed history covers cross-device access to completed games only.
