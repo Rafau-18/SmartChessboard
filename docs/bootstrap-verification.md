@@ -27,7 +27,7 @@ re-runnable instructions live in each sub-project's own README.
 | Sub-project | Status | Last check |
 |---|---|---|
 | Mobile (`SmartChessboard/`) | ✅ Verified | 2026-05-28 — `./gradlew tasks` exit 0 |
-| Firmware (`firmware/`) | 🟡 Scaffolded, builds OK; flash pending | 2026-05-28 — `pio run` OK; HW verified; on-device flash next |
+| Firmware (`firmware/`) | ✅ Flashed & verified on DevKit V1; **parked** | 2026-05-28 — reed-matrix scan live; 4 reeds to repair |
 | Backend (`supabase/`) | 🟡 Skeleton + tooling; Docker ready, `supabase start` = Module 2 | 2026-05-28 — `supabase init` + skills done |
 
 ---
@@ -235,13 +235,14 @@ Re-verification after removal:
 
 ## 2. Firmware (`firmware/`)
 
-🟡 **Scaffolded 2026-05-28; build/flash UNVERIFIED — blocked on PlatformIO install.**
+✅ **Bootstrapped, flashed & verified on hardware 2026-05-28; now parked.**
 
 A diagnostic bringup firmware was hand-written (not via `pio project init`, to
 control the exact ESP-IDF layout). It scans an 8×8 reed-switch matrix and prints
 occupancy to the serial console — enough to validate wiring/pins on hardware
-before any game or BLE logic. Full setup + flashing + test instructions live in
-`firmware/README.md`.
+before any game or BLE logic. It was **flashed and verified live on the DevKit
+V1**; the phase is now **paused** (4 reed switches found broken, being repaired).
+Full setup + flashing + test instructions live in `firmware/README.md`.
 
 ### 2.1 Files
 
@@ -254,23 +255,29 @@ firmware/
 ├── src/
 │   ├── CMakeLists.txt       # idf_component_register(SRCS main.cpp)
 │   ├── pins.h               # 8 row + 8 col GPIO map — the swappable file
-│   └── main.cpp             # GPIO config + scan loop + serial grid output
+│   └── main.cpp             # GPIO config + scan loop + in-place change-driven console
 └── README.md               # prerequisites/gap-list, wiring, build, flash, test
 ```
 
-### 2.2 Pin selection (placeholder, swappable)
+### 2.2 Pin selection (DevKit V1 prototype wiring)
 
 Classic ESP32-WROOM-32 (`esp32dev`). Rows = outputs, columns = inputs with
-internal pull-ups. Chosen to dodge every hazard (flash GPIO6–11, UART0 GPIO1/3,
-input-only GPIO34–39, strapping GPIO0/2/12/15); GPIO5 (mild strapping) sits on
-the output side.
+internal pull-ups. `pins.h` matches the **existing prototype wiring** on the
+DevKit V1 (two physically-consecutive header blocks reused from an earlier
+project), with the file-g column moved off GPIO2 (onboard LED, read stuck-closed)
+to GPIO21:
 
 | Rows (rank 1→8) | Cols (file a→h) |
 |---|---|
-| 13, 14, 25, 26, 27, 32, 33, 5 | 16, 17, 18, 19, 21, 22, 23, 4 |
+| 32, 33, 25, 26, 27, 14, 12, 13 | 19, 18, 5, 17, 16, 4, 21, 15 |
 
-Square index `file + 8*rank` matches `contract-surfaces.md` §1.3. If a board
-lacks GPIO4, COL7 → GPIO15 (documented in `pins.h`).
+Square index `file + 8*rank` matches `contract-surfaces.md` §1.3.
+
+**Watch item:** GPIO12 (ROW6) is a flash-voltage strapping pin — fine as an
+output in practice, but suspect it first if the board ever boot-loops. The
+**hazard-free target map** (rows `13,14,25,26,27,32,33,5` / cols
+`16,17,18,19,21,22,23,4`) is drawn in `firmware/PINOUT.md` / `WIRING.md`;
+migrating `pins.h` to it is a tracked TODO (§2.5).
 
 ### 2.3 Why hand-written vs `pio project init`
 
@@ -287,8 +294,14 @@ PlatformIO is installed — no post-scaffold rewrite.
   `esptool.py` (see `firmware/HARDWARE.md` § "Verified on hardware"). Two ESP32
   boards (DevKitC V4, DevKit V1) are live and BLE-capable; the ESP-12E is an
   ESP8266 (`Features: WiFi` only, no BT) and is unsuitable.
-- **Flash + on-device test** — pending. First target: **DevKit V1** (has
-  prototype wiring). `cd firmware && pio run -t upload -t monitor`.
+- **Flash + on-device test** — ✅ done on the **DevKit V1** (`pio run -t upload`,
+  hash verified, auto-reset worked through a USB hub). Firmware boots, scans, and
+  renders the live 8×8 grid on the serial console (square naming `file+8*rank`
+  confirmed). The diagnostic immediately surfaced a stuck file-g column =
+  **GPIO2 (DOIT onboard LED)**, fixed by moving COL6 to **GPIO21**. Console was
+  then upgraded to in-place / change-driven / debounced rendering.
+- **Parked** — phase paused after a successful bringup; 4 reed switches found
+  broken (user repairing). Don't resume firmware unless explicitly asked.
 
 ### 2.5 Deferred / TODO
 
