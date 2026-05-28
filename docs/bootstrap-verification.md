@@ -28,7 +28,7 @@ re-runnable instructions live in each sub-project's own README.
 |---|---|---|
 | Mobile (`SmartChessboard/`) | ✅ Verified | 2026-05-28 — `./gradlew tasks` exit 0 |
 | Firmware (`firmware/`) | 🟡 Scaffolded, builds OK; flash pending | 2026-05-28 — `pio run` OK; HW verified; on-device flash next |
-| Backend (`supabase/`) | ⏭️ Pending | — |
+| Backend (`supabase/`) | 🟡 Skeleton + tooling; local stack pending Docker | 2026-05-28 — `supabase init` + skills done |
 
 ---
 
@@ -306,11 +306,23 @@ PlatformIO is installed — no post-scaffold rewrite.
 
 ## 3. Backend (`supabase/`)
 
-⏭️ Not yet bootstrapped. Planned per `tech-stack.md`:
+🟡 **Skeleton + tooling ready 2026-05-28; local stack pending Docker.**
 
-- `supabase init` (creates local project skeleton + migrations directory)
-- `supabase start` (Docker stack: Postgres + GoTrue + Studio)
-- Cloud project created in EU Frankfurt (`eu-central-1`), Free tier
+- **Supabase CLI** already installed (`/opt/homebrew/bin/supabase`, v2.101.0) — no install needed.
+- **`supabase init`** run in `claude/` → `claude/supabase/` with `config.toml` + `.gitignore`
+  (`migrations/` and `functions/` are created on first migration/function — normal).
+- **Supabase agent skills** installed per profile from `supabase/agent-skills`
+  (`npx skills add supabase/agent-skills --skill '*' --agent <token> --copy`):
+  `supabase` + `supabase-postgres-best-practices` in each of claude/codex/antigravity/kiro.
+
+### 3.1 Blocked / next (Module 2 territory)
+
+- **`supabase start`** (local stack: Postgres + GoTrue + PostgREST + Edge Runtime + Studio)
+  needs **Docker** — install pending (Docker Desktop chosen; `brew install --cask docker`).
+- Cloud project (EU Frankfurt `eu-central-1`, Free tier) + `supabase login`/`link` — only
+  when going hosted; **no Supabase account needed for local dev**.
+- Schema, RLS policies, and the `lichess-eval` Edge Function are feature implementation
+  (Module 2), per `contract-surfaces.md` §2-3.
 
 ---
 
