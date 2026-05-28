@@ -27,7 +27,7 @@ re-runnable instructions live in each sub-project's own README.
 | Sub-project | Status | Last check |
 |---|---|---|
 | Mobile (`SmartChessboard/`) | ✅ Verified | 2026-05-28 — `./gradlew tasks` exit 0 |
-| Firmware (`firmware/`) | ⏭️ Pending | — |
+| Firmware (`firmware/`) | 🟡 Scaffolded, builds OK; flash pending | 2026-05-28 — `pio run` OK; HW verified; on-device flash next |
 | Backend (`supabase/`) | ⏭️ Pending | — |
 
 ---
@@ -235,13 +235,72 @@ Re-verification after removal:
 
 ## 2. Firmware (`firmware/`)
 
-⏭️ Not yet bootstrapped. Planned per `tech-stack.md`:
+🟡 **Scaffolded 2026-05-28; build/flash UNVERIFIED — blocked on PlatformIO install.**
 
-```bash
-pio project init --board <variant> --project-option "framework=espidf"
+A diagnostic bringup firmware was hand-written (not via `pio project init`, to
+control the exact ESP-IDF layout). It scans an 8×8 reed-switch matrix and prints
+occupancy to the serial console — enough to validate wiring/pins on hardware
+before any game or BLE logic. Full setup + flashing + test instructions live in
+`firmware/README.md`.
+
+### 2.1 Files
+
+```
+firmware/
+├── platformio.ini          # esp32dev, framework=espidf, monitor 115200
+├── CMakeLists.txt          # ESP-IDF project glue
+├── sdkconfig.defaults      # committed config seed (sdkconfig is .gitignore'd)
+├── .gitignore              # .pio/, sdkconfig, build/
+├── src/
+│   ├── CMakeLists.txt       # idf_component_register(SRCS main.cpp)
+│   ├── pins.h               # 8 row + 8 col GPIO map — the swappable file
+│   └── main.cpp             # GPIO config + scan loop + serial grid output
+└── README.md               # prerequisites/gap-list, wiring, build, flash, test
 ```
 
-Blocked on Open Question FW-1 (ESP32 variant) in `tech-stack.md`.
+### 2.2 Pin selection (placeholder, swappable)
+
+Classic ESP32-WROOM-32 (`esp32dev`). Rows = outputs, columns = inputs with
+internal pull-ups. Chosen to dodge every hazard (flash GPIO6–11, UART0 GPIO1/3,
+input-only GPIO34–39, strapping GPIO0/2/12/15); GPIO5 (mild strapping) sits on
+the output side.
+
+| Rows (rank 1→8) | Cols (file a→h) |
+|---|---|
+| 13, 14, 25, 26, 27, 32, 33, 5 | 16, 17, 18, 19, 21, 22, 23, 4 |
+
+Square index `file + 8*rank` matches `contract-surfaces.md` §1.3. If a board
+lacks GPIO4, COL7 → GPIO15 (documented in `pins.h`).
+
+### 2.3 Why hand-written vs `pio project init`
+
+`pio project init` produces a generic skeleton; the matrix-scan code, pin map,
+and ESP-IDF C++ layout are written directly so the bringup is usable the moment
+PlatformIO is installed — no post-scaffold rewrite.
+
+### 2.4 Verification status
+
+- **PlatformIO** — installed via `brew install platformio` (Homebrew route;
+  system Python 3.14 is unsupported by the pipx/installer-script routes).
+- **Build** — `pio run` → `Successfully created esp32 image` ✅ (2026-05-28).
+- **Hardware** — all three owned boards detected and their silicon read via
+  `esptool.py` (see `firmware/HARDWARE.md` § "Verified on hardware"). Two ESP32
+  boards (DevKitC V4, DevKit V1) are live and BLE-capable; the ESP-12E is an
+  ESP8266 (`Features: WiFi` only, no BT) and is unsuitable.
+- **Flash + on-device test** — pending. First target: **DevKit V1** (has
+  prototype wiring). `cd firmware && pio run -t upload -t monitor`.
+
+### 2.5 Deferred / TODO
+
+- **Migrate `pins.h` off the prototype mapping.** For bringup, `pins.h` matches
+  an existing DevKit V1 prototype wiring (rows D32→D13, cols D19→D15) reused from
+  an earlier project. The file-g column was moved off GPIO2 (onboard LED, read
+  stuck-closed) to GPIO21; GPIO12 (ROW6, flash-strapping) remains a minor watch
+  item. Move to the hazard-free map in `firmware/PINOUT.md` / `WIRING.md` before
+  production.
+- Final ESP32 variant (Open Question FW-1) — `esp32dev` is a placeholder.
+- 64 anti-ghosting diodes (required for real play; OK to omit for ≤2-magnet bringup).
+- Per-cell debounce, BLE GATT (`contract-surfaces.md` §1).
 
 ---
 

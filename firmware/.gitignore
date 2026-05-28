@@ -1,0 +1,10 @@
+# PlatformIO build dir + toolchain cache
+.pio/
+
+# ESP-IDF generated config (commit sdkconfig.defaults instead)
+sdkconfig
+sdkconfig.old
+sdkconfig.esp32dev
+
+# Build output
+build/
