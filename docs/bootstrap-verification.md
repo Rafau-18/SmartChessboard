@@ -28,7 +28,7 @@ re-runnable instructions live in each sub-project's own README.
 |---|---|---|
 | Mobile (`SmartChessboard/`) | ✅ Verified | 2026-05-28 — `./gradlew tasks` exit 0 |
 | Firmware (`firmware/`) | 🟡 Scaffolded, builds OK; flash pending | 2026-05-28 — `pio run` OK; HW verified; on-device flash next |
-| Backend (`supabase/`) | 🟡 Skeleton + tooling; local stack pending Docker | 2026-05-28 — `supabase init` + skills done |
+| Backend (`supabase/`) | 🟡 Skeleton + tooling; Docker ready, `supabase start` = Module 2 | 2026-05-28 — `supabase init` + skills done |
 
 ---
 
@@ -317,14 +317,43 @@ PlatformIO is installed — no post-scaffold rewrite.
 
 ### 3.1 Blocked / next (Module 2 territory)
 
-- **`supabase start`** (local stack: Postgres + GoTrue + PostgREST + Edge Runtime + Studio)
-  needs **Docker** — install pending (Docker Desktop chosen; `brew install --cask docker`).
+- **Docker** installed and running (Docker Desktop, `docker` v29.5.2, daemon up). The
+  **`supabase start`** local stack (Postgres + GoTrue + PostgREST + Edge Runtime + Studio)
+  is the next step but is **deferred to Module 2** — nothing requires it during bootstrap.
 - Cloud project (EU Frankfurt `eu-central-1`, Free tier) + `supabase login`/`link` — only
   when going hosted; **no Supabase account needed for local dev**.
 - Schema, RLS policies, and the `lichess-eval` Edge Function are feature implementation
   (Module 2), per `contract-surfaces.md` §2-3.
 
 ---
+
+## 4. Agent permission policy (in-execution gate)
+
+The bootstrap lesson frames every agent execution through three gates —
+**pre-execution** (hand-off / recency), **in-execution** (harness permission
+policy), **post-execution** (verification / audit). Sections 1-3 above cover the
+scaffolds and their post-execution verification; this section records the
+in-execution gate.
+
+For this workspace the permission policy lives **globally** at
+`~/.claude/settings.json` (applies to all four tool profiles — claude, codex,
+antigravity, kiro), rather than per-project. Trade-off: convenient for a solo
+dev, but not shared via git; copy to `claude/.claude/settings.json` if a
+project-scoped, committed policy is ever wanted.
+
+- **allow** — `Bash(npm *)`, `Bash(npx *)`, `Bash(node *)`; local-only git
+  (`add`, `commit`, `diff`, `log`, `status`, `branch`, `checkout`, `stash`);
+  `Read`, `Edit`, `Write`; plus stack-specific `Bash(./gradlew *)` (KMP) and
+  `Bash(pio *)` (ESP32 firmware).
+- **ask** — `Bash(curl *)`, `Bash(wget *)`, `Bash(git push *)`, `Bash(git push)`.
+- **deny** — `Bash(rm -rf *)`.
+
+Evaluation order is **deny → ask → allow** (first match wins). This is the
+course-recommended baseline, extended with the Gradle/PlatformIO rules as those
+tools appeared — the "configuration matures over time" pattern. A per-workspace
+`~/.claude/settings.local.json` (gitignored) additionally accumulates one-off
+session approvals. Note this is harness-level and probabilistic, not absolute
+(bash paths can sidestep tool-name matching).
 
 ## References
 
