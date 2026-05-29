@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; case \"$f\" in *.kt|*.kts) command -v ktlint >/dev/null 2>&1 && ktlint -F \"$f\" >/dev/null 2>&1 || true ;; esac; }",
+            "statusMessage": "ktlint formatting…"
+          }
+        ]
+      }
+    ]
+  }
+}
