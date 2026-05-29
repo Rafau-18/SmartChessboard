@@ -1,21 +1,31 @@
-# Smart Chessboard — Session Handoff (updated 2026-05-28)
+# Smart Chessboard — Session Handoff (updated 2026-05-29)
 
 ## Status
 
-Module 1 lessons **L1–L3 complete**. Next session continues at **L4 — Agent
-Onboarding**. The KMP + ESP32 + Supabase stack has no starter-registry entry, so
-`/10x-tech-stack-selector` and `/10x-bootstrapper` were intentionally skipped;
-all three sub-projects were bootstrapped manually via official tooling and
-verified. See `context/foundation/lessons.md` lesson #1 for the rationale.
+Module 1 lessons **L1–L4 complete**. Next session continues at **L5 — infra/deploy**
+(confirm exact scope from the lesson material in `10xDevsLekcje/Module1/`, now
+un-ignored and readable from agent sessions). L4 (agent onboarding) was completed
+this session: per-module `AGENTS.md` is the source of truth in each scope; each
+`CLAUDE.md` is a thin `@AGENTS.md` import; `/10x-rule-review` scored all three
+module `AGENTS.md` healthy after one WARN fix and one factual fix (see Decisions
+below).
+
+The earlier workflow deviation still holds — KMP + ESP32 + Supabase has no
+starter-registry entry, so `/10x-tech-stack-selector` and `/10x-bootstrapper` are
+intentionally skipped. See `context/foundation/lessons.md` lesson #1.
 
 ## Module 1 progress
 
 - **L1** PRD ✓
 - **L2** tech-stack ✓ (hand-written, no selector)
-- **L3** bootstrap ✓ — **DONE this session** (manual path): three sub-project
-  scaffolds + verification + permission policy. All three gates satisfied.
-- **L4** agent onboarding → **NEXT**
-- **L5** infra/deploy — later
+- **L3** bootstrap ✓ (manual path): three sub-project scaffolds + verification + permission policy
+- **L4** agent onboarding ✓ — **DONE this session**: per-module `AGENTS.md`
+  unified across root / SmartChessboard / firmware; each `CLAUDE.md` collapsed
+  to a thin `@AGENTS.md` import; `/10x-rule-review` ran on all three module
+  `AGENTS.md` — verdicts healthy after one WARN fix (SC version pins →
+  `libs.versions.toml` reference) and one contradiction fix (root vs firmware
+  `IDF_PATH`).
+- **L5** infra/deploy → **NEXT**
 
 ## Monorepo layout (actual, as built)
 
@@ -24,7 +34,7 @@ over root-merge to keep the docs repo and code separate):
 
 ```
 claude/
-├── AGENTS.md, CLAUDE.md           # CLAUDE.md is still the M1L1 lesson text — replace in L4
+├── AGENTS.md, CLAUDE.md           # AGENTS.md = source of truth; CLAUDE.md = thin @AGENTS.md import (same pattern in each module)
 ├── context/foundation/            # prd.md, prd-firmware.md, tech-stack.md, lessons.md
 ├── docs/                          # bootstrap-verification.md, reference/contract-surfaces.md
 ├── SmartChessboard/               # mobile (KMP) — the wizard scaffold
@@ -97,15 +107,40 @@ Auto-memory at `~/.claude/projects/-Users-rurbaniak-Projects-Private-10xDevs/mem
 - `feedback_subproject-skill-locations.md` / `feedback_android-cli-skills-install.md` — skill install rules (incl. `npx skills --agent <token>` clean per-profile install)
 - All indexed in `MEMORY.md`, always loaded.
 
-## Next step — L4 Agent Onboarding
+## Decisions this session (L4)
 
-1. **`/10x-agents-md`** — generate a real `AGENTS.md` (the current `claude/CLAUDE.md`
-   is still the M1L1 lesson text, not project onboarding). Consider per-sub-project
-   rules given the three very different stacks (KMP / ESP-IDF / Supabase).
-2. **`/10x-rule-review`** — score the rules file(s).
-3. **`/10x-lesson`** — start appending recurring rules to `lessons.md` as they surface.
-4. Decisions tagged for L4: **DI library** (Koin KMP vs hand-rolled service locator);
-   keep **MVVM vs MVI** as a 2–3 screen spike for feature work.
+- **Agent docs across tools.** `AGENTS.md` is the source of truth in each scope
+  (root + each module); `CLAUDE.md` is a thin `@AGENTS.md` import. Single edit
+  point keeps `.claude/`, `.agents/`, `.kiro/`, `.codex/` consistent.
+- **Root vs module canonicality.** Root `AGENTS.md` keeps only cross-cutting
+  headlines + one-line pointers to module files; canonical rules live in the
+  module's `AGENTS.md` (e.g., KMP `web-WasmJS-only` and BLE placement live in
+  `SmartChessboard/AGENTS.md`, root just points there).
+- **No prose version pins.** Library version numbers belong only in
+  `gradle/libs.versions.toml`; prose files must not restate them — they drift.
+- **PlatformIO manages ESP-IDF.** The `pio` flow downloads its own toolchain —
+  do **not** set `IDF_PATH` manually (the earlier `IDF_PATH` note in root
+  `AGENTS.md` was wrong and is now fixed).
+- **`10xDevsLekcje/` un-ignored.** Course material is now visible to agents
+  (still kept untracked by convention — never committed) so sessions can read
+  lesson notes directly when planning.
+
+## Next step — L5 infra/deploy
+
+1. **Confirm L5 scope** from `10xDevsLekcje/Module1/` (now visible, not
+   gitignored). The `infra/deploy` label in this handoff is a placeholder — the
+   lesson notes are the source of truth for what the next assignment actually
+   asks for.
+2. **Candidate L5 content** per `tech-stack.md`: GitHub Actions for the three
+   sub-projects (mobile build + KMP host/iOS/wasm tests, firmware build,
+   supabase config validation); mobile distribution path (internal track vs
+   PWA); Supabase environments (when the hosted project gets created in
+   Module 2).
+3. **Deferred from L4 (don't delay L5)**:
+   - **DI library** — Koin KMP vs hand-rolled service locator.
+   - **MVVM vs MVI** — 2–3 screen spike when feature work begins.
+   - **`/10x-lesson`** — log new recurring rules into `lessons.md` as they
+     surface, not only at lesson boundaries.
 
 ## Open decisions deferred
 
@@ -117,8 +152,11 @@ mobile distribution path, Compose-Web viability, MVVM vs MVI, DI library, Maestr
 
 Auto-memory loads the deviation + firmware-parked summaries automatically. For
 full context:
-1. Read this file.
+1. Read this file (esp. **Decisions this session** for the *why* behind
+   agent-doc shape and the `IDF_PATH` / version-pin rules).
 2. Skim `context/foundation/lessons.md` and `docs/bootstrap-verification.md`.
-3. Start L4: run `/10x-agents-md`. Stack and bootstrap are settled — the first
-   question is "what does the agent need to know to work safely in each
-   sub-project?", not "what stack?" or "is it scaffolded?".
+3. Browse `10xDevsLekcje/Module1/` to confirm what L5 actually wants (the
+   `infra/deploy` label is a placeholder).
+4. Start L5: plan CI/CD + deployment per `tech-stack.md` §CI/CD. Agent-doc
+   shape is settled — don't re-litigate `AGENTS.md` structure; if you find a
+   real issue, `/10x-rule-review` is the tool.
