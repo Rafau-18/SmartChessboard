@@ -1,94 +1,124 @@
-# Smart Chessboard — Session Handoff (2026-05-28)
+# Smart Chessboard — Session Handoff (updated 2026-05-28)
 
 ## Status
 
-PRD chain + `tech-stack.md` complete. M1L2 (`/10x-tech-stack-selector`) and
-M1L3 (`/10x-bootstrapper`) were skipped intentionally — the KMP + ESP32 +
-Supabase stack has no entry in the starter registry. See
-`context/foundation/lessons.md` lesson #1 for the full rationale.
+Module 1 lessons **L1–L3 complete**. Next session continues at **L4 — Agent
+Onboarding**. The KMP + ESP32 + Supabase stack has no starter-registry entry, so
+`/10x-tech-stack-selector` and `/10x-bootstrapper` were intentionally skipped;
+all three sub-projects were bootstrapped manually via official tooling and
+verified. See `context/foundation/lessons.md` lesson #1 for the rationale.
 
-## Canonical files (all under `claude/`)
-
-- `context/foundation/prd.md` — mobile + system PRD (v1, updated 2026-05-27)
-- `context/foundation/prd-firmware.md` — ESP32 firmware PRD
-- `context/foundation/tech-stack.md` — hand-written, extends bootstrapper
-  schema with Architecture Overview, per-sub-project tables, CI/CD, and
-  Open / Deferred decisions
-- `context/foundation/lessons.md` — recurring rules (M1L4 `/10x-lesson` format)
-  - Lesson 1: skip selector + bootstrapper for this stack
-  - Lesson 2: web target is digital-only (no BLE on web)
-- `docs/reference/contract-surfaces.md` — BLE GATT protocol, REST shapes,
-  RLS scoping (contract between mobile / firmware / backend)
-- `context/archive/prd-pre-firmware-split.md` — pre-split PRD for history
-
-## Persistence layers (already active)
-
-- Auto-memory in `~/.claude/projects/-Users-rurbaniak-Projects-Private-10xDevs/memory/`:
-  - `project_smart-chessboard-workflow-deviation.md` (project memory)
-  - `reference_smart-chessboard-lessons-md.md` (reference pointer)
-  - Both indexed in `MEMORY.md` and always-loaded in new sessions
-- `lessons.md` ready for `/10x-lesson` appends once M1L4 runs
-
-## Next step — manual bootstrap of three sub-projects (monorepo)
-
-1. **Mobile (`composeApp/`)**
-   - KMP wizard at <https://kmp.jetbrains.com>
-   - Targets: Android + iOS + WasmJS
-   - Project name: `smart-chessboard`
-   - Download .zip, unpack into repo root → produces `composeApp/` + `iosApp/`
-
-2. **Firmware (`firmware/`)**
-   - `pio project init -d firmware --board <TBD> --project-option "framework=espidf"`
-   - ESP32 variant TBD until physical prototype is checked (FW-1)
-   - Will use NimBLE (IDF 5.x default)
-
-3. **Backend (`supabase/`)**
-   - `supabase init`
-   - `supabase start` to verify Docker stack runs locally
-   - Region (Frankfurt) configured later via CLI / dashboard when a remote
-     project is created
-
-After scaffolding completes, write
-`context/changes/bootstrap-verification/verification.md` by hand:
-three sections (mobile / firmware / backend), each with command run,
-exit code, audit findings.
-
-## Open decisions deliberately deferred
-
-Full list in `context/foundation/tech-stack.md` § "Open / Deferred decisions":
-
-1. ESP32 variant (FW-1)
-2. Power source for firmware (FW-2)
-3. Reed-switch matrix wiring topology (FW-3)
-4. GATT service / characteristic UUIDs (FW-5)
-5. Mobile distribution path (TestFlight + Play Internal vs APK sideload)
-6. Compose Multiplatform Web viability (freeze if blocking)
-7. UI architecture pattern — MVVM vs MVI (spike 2–3 screens first)
-8. DI library — Koin KMP vs hand-rolled service locator (decide in M1L4)
-9. Maestro E2E — post-MVP unless a later course lesson requires it earlier
-
-## Course context
-
-Module 1 progress:
+## Module 1 progress
 
 - **L1** PRD ✓
-- **L2** tech-stack ✓ (manual)
-- **L3** bootstrap → **NEXT** (manual path)
-- **L4** agent onboarding — CLAUDE.md per sub-project, `/10x-rule-review`,
-  `/10x-lesson` to start appending to `lessons.md`
-- **L5** infra/deploy — `/10x-infra-research` (re-profiled for Supabase +
-  Cloudflare Pages + mobile distribution), Plan Mode
+- **L2** tech-stack ✓ (hand-written, no selector)
+- **L3** bootstrap ✓ — **DONE this session** (manual path): three sub-project
+  scaffolds + verification + permission policy. All three gates satisfied.
+- **L4** agent onboarding → **NEXT**
+- **L5** infra/deploy — later
 
-## How to resume in a fresh session
+## Monorepo layout (actual, as built)
 
-Auto-memory loads the workflow-deviation summary automatically (no action
-needed). For full context in the new session:
+Three sub-projects live as siblings **under `claude/`** (subdir layout chosen
+over root-merge to keep the docs repo and code separate):
 
-1. Read `claude/context/foundation/lessons.md` (≤ 2 minutes)
-2. Skim `claude/context/foundation/tech-stack.md` — frontmatter +
-   extension table sections
-3. Pick one sub-project to bootstrap. They are independent — any order or
-   in parallel works.
+```
+claude/
+├── AGENTS.md, CLAUDE.md           # CLAUDE.md is still the M1L1 lesson text — replace in L4
+├── context/foundation/            # prd.md, prd-firmware.md, tech-stack.md, lessons.md
+├── docs/                          # bootstrap-verification.md, reference/contract-surfaces.md
+├── SmartChessboard/               # mobile (KMP) — the wizard scaffold
+├── firmware/                      # ESP32 diagnostic firmware (PlatformIO + ESP-IDF)
+└── supabase/                      # backend skeleton (config.toml)
+```
 
-Stack and per-sub-project library choices are settled. The first session
-question should be "which sub-project starts?", not "what tech stack?".
+(The old plan said `composeApp/` at repo root — superseded; mobile is
+`claude/SmartChessboard/`.)
+
+## Sub-project state
+
+| Sub-project | State | Verified |
+|---|---|---|
+| Mobile `SmartChessboard/` | ✅ scaffold, tests green | `./gradlew tasks` + host/iOS/wasm smoke tests |
+| Firmware `firmware/` | ✅ bringup flashed on hardware, **parked** | reed-matrix scan live on DevKit V1 |
+| Backend `supabase/` | 🟡 skeleton + tooling + Docker | `supabase init`; `supabase start` = Module 2 |
+
+### Mobile (`SmartChessboard/`)
+- KMP wizard (kmp.jetbrains.com); targets **Android + iOS + WasmJS**. The
+  wizard's Kotlin/JS web target was **removed** — web is WasmJS-only.
+- Tests pass on JVM host, iOS simulator (arm64), and wasm.
+- **IDE split** (AGP 9.0.1 vs IntelliJ which tops out at 9.0.0-alpha06):
+  edit `androidApp/` in **Android Studio**, `shared/`+`webApp/` in IntelliJ,
+  `iosApp/` in Xcode. Do not load `androidApp` into IntelliJ.
+
+### Firmware (`firmware/`) — parked
+- Diagnostic reed-matrix bringup; **flashed & verified on the DevKit V1**
+  (ESP32-D0WDQ6). Serial console renders the 8×8 board, change-driven + debounced.
+- `src/pins.h` uses the **existing prototype wiring** (rows D32→D13, cols D19→D15);
+  file-g column moved off GPIO2 (onboard LED) to **GPIO21**. GPIO12 (ROW6,
+  flash-strapping) is a documented watch item. Migration to the hazard-free map
+  in `firmware/PINOUT.md`/`WIRING.md` is a TODO.
+- **4 reed switches found broken** — user repairing on the side. Firmware phase
+  intentionally paused; don't resume unless the user asks.
+- Hardware inventory + per-board pinouts + wiring sheet: `firmware/HARDWARE.md`,
+  `PINOUT.md`, `WIRING.md`. Boards: DevKitC V4 (primary), DevKit V1 (backup),
+  ESP-12E (ESP8266 — unsuitable, no BLE).
+
+### Backend (`supabase/`)
+- `supabase init` done (`config.toml` + `.gitignore`). Supabase CLI v2.101.0
+  installed; Docker Desktop installed & running (v29.5.2).
+- `supabase start` (local Postgres/Auth/PostgREST/Edge Runtime/Studio) and the
+  schema / RLS / `lichess-eval` Edge Function are **Module 2** work.
+- **No Supabase account needed** until a hosted project is created (Module 2).
+
+## Canonical files (under `claude/`)
+
+- `context/foundation/prd.md` — mobile + system PRD
+- `context/foundation/prd-firmware.md` — ESP32 firmware PRD
+- `context/foundation/tech-stack.md` — hand-written stack hand-off (architecture, per-sub-project tables, CI/CD, open decisions)
+- `context/foundation/lessons.md` — recurring rules (`/10x-lesson` format); L4 will append more
+- `docs/reference/contract-surfaces.md` — BLE GATT + REST + RLS contract between sub-projects
+- `docs/bootstrap-verification.md` — **M1L3 verification log** (mobile/firmware/backend + §4 permission policy)
+- `context/archive/prd-pre-firmware-split.md` — pre-split PRD (history)
+
+## Permissions / harness (M1L3 in-execution gate)
+
+Policy lives **globally** at `~/.claude/settings.json` (all four tool profiles):
+allow = npm/npx/node + local-only git + Read/Edit/Write + `Bash(./gradlew *)` +
+`Bash(pio *)`; ask = curl/wget/git push; deny = `rm -rf *`. Eval order
+deny→ask→allow. Documented in `docs/bootstrap-verification.md` §4.
+
+## Persistence (auto-loaded in new sessions)
+
+Auto-memory at `~/.claude/projects/-Users-rurbaniak-Projects-Private-10xDevs/memory/`:
+- `project_smart-chessboard-workflow-deviation.md` — why selector/bootstrapper skipped
+- `project_smart-chessboard-firmware-parked.md` — firmware done & paused
+- `reference_smart-chessboard-lessons-md.md` — pointer to lessons.md
+- `feedback_subproject-skill-locations.md` / `feedback_android-cli-skills-install.md` — skill install rules (incl. `npx skills --agent <token>` clean per-profile install)
+- All indexed in `MEMORY.md`, always loaded.
+
+## Next step — L4 Agent Onboarding
+
+1. **`/10x-agents-md`** — generate a real `AGENTS.md` (the current `claude/CLAUDE.md`
+   is still the M1L1 lesson text, not project onboarding). Consider per-sub-project
+   rules given the three very different stacks (KMP / ESP-IDF / Supabase).
+2. **`/10x-rule-review`** — score the rules file(s).
+3. **`/10x-lesson`** — start appending recurring rules to `lessons.md` as they surface.
+4. Decisions tagged for L4: **DI library** (Koin KMP vs hand-rolled service locator);
+   keep **MVVM vs MVI** as a 2–3 screen spike for feature work.
+
+## Open decisions deferred
+
+Full list in `tech-stack.md` § "Open / Deferred decisions": ESP32 variant (FW-1),
+firmware power (FW-2), reed-matrix wiring topology (FW-3), GATT UUIDs (FW-5),
+mobile distribution path, Compose-Web viability, MVVM vs MVI, DI library, Maestro E2E.
+
+## How to resume
+
+Auto-memory loads the deviation + firmware-parked summaries automatically. For
+full context:
+1. Read this file.
+2. Skim `context/foundation/lessons.md` and `docs/bootstrap-verification.md`.
+3. Start L4: run `/10x-agents-md`. Stack and bootstrap are settled — the first
+   question is "what does the agent need to know to work safely in each
+   sub-project?", not "what stack?" or "is it scaffolded?".
