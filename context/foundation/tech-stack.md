@@ -43,7 +43,7 @@ The sections below are **not** consumed by `/10x-bootstrapper` — that skill wa
 
 The project is a monorepo with three sub-projects, kept under one git history because cross-cutting changes (BLE protocol revisions, schema changes touching firmware + mobile + backend at once) are frequent in MVP and atomic commits across sub-projects are valuable:
 
-- `composeApp/` — KMP shared module + Android/iOS/WasmJS targets (mobile)
+- `SmartChessboard/` — Compose Multiplatform app (Android/iOS/WasmJS); Gradle multi-module: `:androidApp`, `:shared`, `:webApp` (mobile). *(Wizard output landed here; the old plan said `composeApp/` — superseded.)*
 - `firmware/` — ESP32 firmware project (PlatformIO + ESP-IDF)
 - `supabase/` — Postgres migrations + one Edge Function (no bespoke server)
 - `docs/reference/contract-surfaces.md` — protocol contract between sub-projects (BLE GATT, REST/Edge Function shapes, RLS scoping)
@@ -64,7 +64,7 @@ The mobile app follows **Clean Architecture** layering, with boundaries enforced
 
 Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architecture — they are too small and too tightly bound to their respective platforms. Firmware is structured around FreeRTOS tasks (matrix-scan task, BLE-server task, button-event task). Backend is SQL migrations + RLS policies + one Edge Function, no application layer.
 
-## Mobile sub-project (`composeApp/`)
+## Mobile sub-project (`SmartChessboard/`)
 
 | Concern | Choice | Notes |
 |---|---|---|
@@ -119,7 +119,7 @@ Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architectur
 | Edge Function runtime | Deno + TypeScript | only option; one function in MVP: Lichess Cloud Eval proxy per `contract-surfaces.md` §3.3 |
 | Per-user data scoping | Postgres Row-Level Security (RLS) | every game/eval row carries `user_id`; policies enforced at the database, not in app code |
 | Testing — DB / RLS | **pgTAP** via `supabase test db` | tests RLS policies, migration correctness, schema constraints; critical because RLS bugs cannot be caught by mocked tests |
-| Testing — Edge Function | **Deno built-in test** (`deno test`) | tests Lichess proxy in `supabase/functions/eval-proxy/`; runs locally and in CI without network egress to real Lichess |
+| Testing — Edge Function | **Deno built-in test** (`deno test`) | tests Lichess proxy in `supabase/functions/lichess-eval/`; runs locally and in CI without network egress to real Lichess |
 | Realtime / Storage | not used in MVP | game sync is plain CRUD over REST; presence/live-updates explicitly out of scope |
 
 ## CI/CD
@@ -129,7 +129,7 @@ Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architectur
 | Primary CI | GitHub Actions | macOS runner for iOS, ubuntu-latest for Android + firmware + Supabase E2E |
 | Supabase in CI | `supabase/setup-cli@v1` + `supabase start` in runner | enables real RLS / migration / Edge Function tests (no mocks) |
 | Default deployment flow | manual-promotion | nothing auto-deploys on merge in MVP — even web Cloudflare Pages publish is gated by a manual workflow trigger or release tag |
-| Web hosting | Cloudflare Pages | static WasmJS bundle from `composeApp/build/dist/wasmJs/productionExecutable/`; preview deploys per PR, manual prod promotion |
+| Web hosting | Cloudflare Pages | static WasmJS bundle from `SmartChessboard/webApp/build/dist/wasmJs/productionExecutable/`; preview deploys per PR, manual prod promotion |
 | Mobile distribution | **TBD** — debug build only in MVP CI | TestFlight (Apple Dev $99/yr) and/or Play Internal Testing ($25 one-time) is a post-MVP decision once debug build is green |
 | Code quality | ktlint + detekt jobs in GH Actions | CI is the only gate; no local pre-commit hook |
 | Secondary CI (learning) | Bitbucket Pipelines | mirror from GitHub via `pixta-dev/repository-mirroring-action`; reduced scope: Android debug build + ktlint + detekt only (no iOS / no Supabase / no firmware); meant for learning the BB ecosystem, not redundant production CI |

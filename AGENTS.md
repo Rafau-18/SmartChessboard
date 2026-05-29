@@ -9,7 +9,7 @@ Smart Chessboard — a docs-and-context layer over three sibling sub-projects:
 
 - `SmartChessboard/` — Kotlin Multiplatform app (Android + iOS + WasmJS). Package `org.rurbaniak.smartchessboard`.
 - `firmware/` — ESP32 reed-matrix firmware (C++, PlatformIO + ESP-IDF). **Parked** — don't resume unless asked.
-- `supabase/` — backend skeleton (`config.toml` only). The local stack (`supabase start`) is Module 2 work — don't start it yet.
+- `supabase/` — Supabase project defined as code: `config.toml` + (incoming) `migrations/*.sql` + one Edge Function `lichess-eval`. **Supabase Cloud is the backend** — this dir is *not* a separate server. Canon & conventions: [`supabase/AGENTS.md`](supabase/AGENTS.md).
 
 Canonical context: `context/foundation/` (`prd.md`, `prd-firmware.md`, `tech-stack.md`) and `docs/` (`bootstrap-verification.md`, `reference/contract-surfaces.md`). Recurring rules live in `context/foundation/lessons.md` — consult it before research, planning, or implementation.
 
