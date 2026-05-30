@@ -5,7 +5,7 @@ project_name: smart-chessboard
 hints:
   language_family: multi
   team_size: solo
-  deployment_target: cloudflare-pages
+  deployment_target: cloudflare-workers-static-assets
   ci_provider: github-actions
   ci_default_flow: manual-promotion
   bootstrapper_confidence: best-effort
@@ -128,8 +128,8 @@ Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architectur
 |---|---|---|
 | Primary CI | GitHub Actions | macOS runner for iOS, ubuntu-latest for Android + firmware + Supabase E2E |
 | Supabase in CI | `supabase/setup-cli@v1` + `supabase start` in runner | enables real RLS / migration / Edge Function tests (no mocks) |
-| Default deployment flow | manual-promotion | nothing auto-deploys on merge in MVP — even web Cloudflare Pages publish is gated by a manual workflow trigger or release tag |
-| Web hosting | Cloudflare Pages | static WasmJS bundle from `SmartChessboard/webApp/build/dist/wasmJs/productionExecutable/`; preview deploys per PR, manual prod promotion |
+| Default deployment flow | manual-promotion | nothing auto-deploys on merge in MVP — even the web publish is gated by a manual workflow trigger or release tag |
+| Web hosting | **Cloudflare — Workers Static Assets** (`wrangler deploy`, assets-only Worker) | static WasmJS bundle from `SmartChessboard/webApp/build/dist/wasmJs/productionExecutable/`; built in GitHub Actions, then `wrangler deploy` (Cloudflare cannot run the Gradle/KMP build). **COOP/COEP headers are mandatory** on both the local dev server and the host for Room OPFS — see `lessons.md` and `infrastructure.md`. Chosen over Cloudflare Pages: unmetered free static bandwidth, auto `application/wasm` MIME + compression, and a real `wrangler rollback`. Full decision + risk register: `context/foundation/infrastructure.md`. Preview deploys per branch; manual prod promotion |
 | Mobile distribution | **TBD** — debug build only in MVP CI | TestFlight (Apple Dev $99/yr) and/or Play Internal Testing ($25 one-time) is a post-MVP decision once debug build is green |
 | Code quality | ktlint + detekt jobs in GH Actions | CI is the only gate; no local pre-commit hook |
 | Secondary CI (learning) | Bitbucket Pipelines | mirror from GitHub via `pixta-dev/repository-mirroring-action`; reduced scope: Android debug build + ktlint + detekt only (no iOS / no Supabase / no firmware); meant for learning the BB ecosystem, not redundant production CI |
@@ -160,5 +160,6 @@ The substitute: scaffold each sub-project through its official wizard, then writ
 
 - PRD: `context/foundation/prd.md`
 - Firmware PRD: `context/foundation/prd-firmware.md`
+- Infrastructure decision (web hosting): `context/foundation/infrastructure.md`
 - Cross-sub-project contracts: `docs/reference/contract-surfaces.md`
 - Archived pre-split PRD: `context/archive/prd-pre-firmware-split.md`
