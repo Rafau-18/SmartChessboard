@@ -1,6 +1,6 @@
 # First Production Deploy — WasmJS Web Target → Cloudflare, with a live Supabase connection
 
-> Status: **planned, not executed.** This document is the approved recipe; execution is a separate, human-gated step.
+> Status: **EXECUTED 2026-06-01.** Live at https://smart-chessboard-web.<subdomain>.workers.dev (version `04ecd258`, 100% traffic). Browser-confirmed "Connected to Supabase ✓". Two literal sub-steps were superseded rather than run verbatim — see the annotations on **Phase B4** (local dev-server check) and **Phase C4** (preview URL): both were covered by the stronger production verification in **Phase C5**.
 
 ## Context
 
@@ -48,7 +48,7 @@ A reproducible end-to-end production deploy of the WasmJS bundle to `smart-chess
 
 Human-only, done **once**. Nothing destructive; **no paid plan required** (Cloudflare Free + Supabase Free). Work top to bottom; **§F** is the readiness gate.
 
-> **TL;DR for THIS deploy:** Node ≥ 20; `wrangler` installed globally + `wrangler login`; a free Cloudflare account with a `*.workers.dev` subdomain; a free **Supabase project** (EU Frankfurt) with its URL + anon key captured; the **Supabase CLI** installed + linked. GitHub: nothing.
+> **TL;DR for THIS deploy:** Node ≥ 20; `wrangler` installed globally + `wrangler login`; a free Cloudflare account with a `*.workers.dev` subdomain; a free **Supabase project** (West EU / Ireland — see note) with its URL + anon key captured; the **Supabase CLI** installed + linked. GitHub: nothing.
 
 ### A. Local tooling (your machine)
 
@@ -84,7 +84,7 @@ wrangler whoami            # confirms account + lists account IDs
 ### D. Supabase — account, hosted project & CLI (browser + CLI)
 
 1. **Create / sign in** at `supabase.com` (Free tier).
-2. **Create a project** (browser): organization → **New project**. Name e.g. `smart-chessboard`; **Region = Central EU (Frankfurt)** per `tech-stack.md`; set a strong DB password (store it in your password manager). Wait for provisioning (~2 min).
+2. **Create a project** (browser): organization → **New project**. Name e.g. `smart-chessboard`; **Region = West EU (Ireland)** (provisioned 2026-05-31; `tech-stack.md` named Frankfurt, but Ireland was chosen at creation — functionally equivalent for MVP, accepted by user 2026-06-01); set a strong DB password (store it in your password manager). Wait for provisioning (~2 min).
 3. **Capture credentials** — Project → **Settings → API**:
    - **Project URL** → this is `SUPABASE_URL` (e.g. `https://<ref>.supabase.co`).
    - **`anon` / public key** → this is `SUPABASE_ANON_KEY` (public, RLS-protected — safe for the bundle).
@@ -122,20 +122,20 @@ Browser checks: Cloudflare **Workers & Pages** shows your `*.workers.dev` subdom
 Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/headers/deploy (C)**. Backend first so the probe has a real endpoint to hit.
 
 ### Phase 0 — Preflight gate
-- [ ] All **§F** commands succeed; both browser checks pass.
-- [ ] `wrangler` global + `wrangler login` confirmed (**§C**).
-- [ ] Supabase project created, credentials captured, `supabase link` done (**§D**).
+- [x] All **§F** commands succeed; both browser checks pass. *(JDK note: system default is JBR 25; the build runs on Android Studio's JBR 21.0.10 via inline `JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"` to avoid Kotlin 2.3.21 × JDK 25 risk.)*
+- [x] `wrangler` global (4.95.0) + `wrangler login` confirmed (**§C**) — `<redacted>`.
+- [x] Supabase project created, credentials captured, `supabase link` done (**§D**) — ref `meivdixbetoeqhcjnovs`.
 
 ---
 
 ### Track A — Supabase backend (production)
 
 #### Phase A1 — Project & credentials (done in Prerequisites §D)
-- [ ] Hosted project live in EU Frankfurt; `SUPABASE_URL` + anon key captured; CLI linked. *(Gate-check only — work happened in §D.)*
+- [x] Hosted project live in West EU (Ireland); `SUPABASE_URL` + anon key captured; CLI linked. *(Gate-check only — work happened in §D.)*
 
 #### Phase A2 — Minimal domain-aligned schema migration
-- [ ] Create the migration file: `supabase migration new position_evals` → produces `supabase/migrations/<timestamp>_position_evals.sql`.
-- [ ] Fill it with the smallest real contract slice (matches `docs/reference/contract-surfaces.md`):
+- [x] Create the migration file: `supabase migration new position_evals` → produced `supabase/migrations/20260531233302_position_evals.sql`.
+- [x] Fill it with the smallest real contract slice (matches `docs/reference/contract-surfaces.md`):
   ```sql
   create table public.position_evals (
     fen        text primary key,
@@ -155,32 +155,33 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
     to authenticated
     using (true);
   ```
-- [ ] Push to the hosted DB: `supabase db push` (applies the migration to the linked project).
-- [ ] **Edge case (append-only):** never edit a pushed migration; any change is a **new** migration (`supabase/AGENTS.md`). This table is domain-real, so no teardown is planned.
-- [ ] **Edge case (no `games` yet):** the probe deliberately reads `position_evals`, not `games` — `games` needs auth to be meaningful and lands in Module 2.
+- [x] Push to the hosted DB: `supabase db push --linked` (applied to ref `meivdixbetoeqhcjnovs`; dry-run confirmed first).
+- [x] **Edge case (append-only):** never edit a pushed migration; any change is a **new** migration (`supabase/AGENTS.md`). This table is domain-real, so no teardown is planned. *(Respected — pushed migration left untouched.)*
+- [x] **Edge case (no `games` yet):** the probe deliberately reads `position_evals`, not `games` — `games` needs auth to be meaningful and lands in Module 2. *(Followed.)*
 
 #### Phase A3 — Verify the backend independently of the app
-- [ ] Confirm the table + RLS in **Supabase Studio → Table editor / Authentication → Policies**, or via a raw PostgREST check that mimics the anon client:
+- [x] Confirm the table + RLS via a raw PostgREST check that mimics the anon client (Studio check optional):
   ```bash
   curl -s "$SUPABASE_URL/rest/v1/position_evals?select=*" \
     -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" -i | head -n 20
   ```
   Expect **HTTP 200** with body `[]` (RLS denies anon rows but the request succeeds → exactly the probe's success condition).
+- [x] **Verified**: `curl` returned `HTTP/2 200` + `[]` (content-length 2) as `anon`.
 
 ---
 
 ### Track B — Web app ↔ Supabase wiring (`SmartChessboard/`)
 
 #### Phase B1 — Dependencies
-- [ ] In `gradle/libs.versions.toml` add versions + libraries for: **supabase-kt BOM** + `postgrest-kt`, **Ktor 3.x** engines (`ktor-client-js` for wasmJs; `ktor-client-okhttp` android; `ktor-client-darwin` ios), **kotlinx-serialization-json**, **kotlinx-coroutines-core**, and the **BuildKonfig** + **kotlin-serialization** Gradle plugins.
-- [ ] In `shared/build.gradle.kts`:
-  - apply `org.jetbrains.kotlin.plugin.serialization` and `com.codingfeline.buildkonfig`.
-  - `commonMain`: `implementation(project.dependencies.platform(libs.supabase.bom))`, `implementation(libs.supabase.postgrest)`, `implementation(libs.kotlinx.serialization.json)`, `implementation(libs.kotlinx.coroutines.core)`.
-  - per-target Ktor engine: `wasmJsMain` → `ktor-client-js`; `androidMain` → `ktor-client-okhttp`; `iosMain` → `ktor-client-darwin` (so all targets keep compiling — only the wasmJs path is exercised now).
-- [ ] **Edge case (version alignment):** supabase-kt's BOM governs its own modules, **not** Ktor — pin a Ktor 3.x version compatible with the chosen supabase-kt release (check its release notes). Mismatched Ktor is the most likely build failure here.
+- [x] In `gradle/libs.versions.toml` added versions + libraries: **supabase-kt BOM 3.6.0** + `postgrest-kt`, **Ktor 3.5.0** engines (`ktor-client-js` wasmJs; `ktor-client-okhttp` android; `ktor-client-darwin` ios), **kotlinx-serialization-json 1.11.0**, **kotlinx-coroutines-core 1.11.0**, plus the **BuildKonfig 0.21.2** + **kotlin-serialization** plugins.
+- [x] In `shared/build.gradle.kts`:
+  - applied `org.jetbrains.kotlin.plugin.serialization` and `com.codingfeline.buildkonfig`.
+  - `commonMain`: supabase BOM platform + `postgrest-kt`, `kotlinx-serialization-json`, `kotlinx-coroutines-core`.
+  - per-target Ktor engine: `wasmJsMain` → `ktor-client-js`; `androidMain` → `ktor-client-okhttp`; `iosMain` → `ktor-client-darwin`.
+- [x] **Edge case (version alignment):** supabase-kt 3.6.0 ships against Ktor 3.4.3; the catalog pins Ktor 3.5.0 (one minor ahead, binary-compatible within 3.x). Build is green; if a Ktor ABI issue ever surfaces, drop Ktor to 3.4.3.
 
 #### Phase B2 — Build-time secret injection (BuildKonfig)
-- [ ] Configure BuildKonfig in `shared/build.gradle.kts`:
+- [x] Configured BuildKonfig in `shared/build.gradle.kts`. *(Deviation: `packageName = "org.rurbaniak.smartchessboard"` (no `.shared`) so `BuildKonfig` sits in the module's main package; generated + verified.)*
   ```kotlin
   buildkonfig {
     packageName = "org.rurbaniak.smartchessboard.shared"
@@ -190,9 +191,9 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
     }
   }
   ```
-- [ ] Source the values without committing them. Gradle does **not** auto-read `local.properties` for arbitrary keys, so load it explicitly, with a `-P`/env override for the production build:
+- [x] Sourced the values without committing them — explicit `local.properties` reader with a `-P`/env fallback. *(DSL gotcha hit & fixed: `java.util.Properties()` collides with the Gradle `java` accessor → use `import java.util.Properties` + `Properties()`. Recorded in `lessons.md`.)*
   ```kotlin
-  val localProps = java.util.Properties().apply {
+  val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
   }
   val supabaseUrl = (localProps.getProperty("SUPABASE_URL")
@@ -200,12 +201,12 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
   val supabaseAnonKey = (localProps.getProperty("SUPABASE_ANON_KEY")
       ?: project.findProperty("SUPABASE_ANON_KEY") as String?).orEmpty()
   ```
-- [ ] For **local dev**: put `SUPABASE_URL=…` and `SUPABASE_ANON_KEY=…` in `SmartChessboard/local.properties` (already gitignored per `AGENTS.md`).
-- [ ] For the **production build**: pass `-PSUPABASE_URL=… -PSUPABASE_ANON_KEY=…` (anon key is public-safe). **Never** the service-role key.
-- [ ] **Edge case (empty config):** if both sources are empty, the probe will fail fast with a clear "missing SUPABASE_URL" — surface that rather than silently shipping a blank client.
+- [x] For **local dev**: `SUPABASE_URL` + `SUPABASE_ANON_KEY` added to `SmartChessboard/local.properties` (gitignored — confirmed via `git check-ignore`).
+- [x] For the **production build**: *(deviation — used the `local.properties` path for this manual local deploy rather than `-P` flags; identical result since the anon key is public. The `-P` path is reserved for CI, where there is no `local.properties`. Bundle verified to carry the anon key + URL.)*
+- [x] **Edge case (empty config):** `probeSupabase()` guards on empty URL/key and returns a clear "missing SUPABASE_URL / SUPABASE_ANON_KEY" error instead of shipping a blank client.
 
 #### Phase B3 — Client + probe (shared) and status UI (webApp)
-- [ ] `shared/src/commonMain/.../data/SupabaseProbe.kt` — create the client and a one-shot probe (representative; verify the exact DSL against the supabase-kt version):
+- [x] `shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/data/SupabaseProbe.kt` — client (lazy) + one-shot probe; verified against supabase-kt 3.6.0 DSL.
   ```kotlin
   val supabase = createSupabaseClient(
     supabaseUrl = BuildKonfig.SUPABASE_URL,
@@ -224,11 +225,11 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
     ProbeResult.Error(t.message ?: "unknown error")
   }
   ```
-- [ ] `webApp` UI: a minimal Compose screen that calls `probeSupabase()` and renders "Connected to Supabase ✓ (anon sees N rows — RLS enforced)" or the error. This is the visible proof the pipe works.
-- [ ] **Edge case (suspend on wasmJs):** call the probe from a coroutine scope tied to the Compose UI; confirm coroutines + Ktor `Js` engine resolve on wasmJs at runtime (a missing engine surfaces as a runtime "no engine" error, not a compile error).
+- [x] Status UI: `App()` (shared, rendered by `webApp`) runs the probe in a `LaunchedEffect` and renders "Connected to Supabase ✓ (anon sees N rows — RLS enforced)" or the error. *(Placed in shared `App()` rather than a webApp-only screen — `App()` is exactly what `webApp/main.kt` mounts.)*
+- [x] **Edge case (suspend on wasmJs):** probe called from `LaunchedEffect` (Compose coroutine scope); coroutines + Ktor `Js` engine resolved at runtime — **browser-confirmed "Connected ✓"** on the live URL.
 
 #### Phase B4 — COOP/COEP on the dev server + local verification (surface 1 of 2)
-- [ ] Create `SmartChessboard/webApp/webpack.config.d/devServerHeaders.js`:
+- [x] Created `SmartChessboard/webApp/webpack.config.d/devServerHeaders.js` (COOP/COEP object form, for future local dev).
   ```js
   config.devServer = config.devServer || {};
   config.devServer.headers = {
@@ -236,41 +237,33 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
     "Cross-Origin-Embedder-Policy": "require-corp",
   };
   ```
-- [ ] Run the dev server with the local creds present:
-  ```bash
-  ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :webApp:wasmJsBrowserDevelopmentRun --no-daemon --console=plain
-  ```
-  At `http://localhost:8080`: the app renders **"Connected ✓"** (probe hit the real Supabase), and DevTools console shows `crossOriginIsolated === true` + `SharedArrayBuffer` defined. Network tab: the `position_evals` request is **200**, and the document carries both COOP+COEP headers.
-- [ ] **Edge case (DSL drift):** if headers don't appear, verify the webpack-dev-server version and fall back to the function form (`config.devServer.headers = () => ({...})`) or `setupMiddlewares`. Object form is correct for dev-server v4/v5.
-- [ ] **Edge case (probe fails locally):** 401/empty-but-error vs. 200/`[]` — re-check the anon key, the URL, and that the migration was pushed (Phase A2/A3).
+- [ ] ~~Run the dev server at `http://localhost:8080`~~ **SUPERSEDED — not run this session.** The dev-server check exists only to prove COOP/COEP + the probe before shipping; that proof was obtained on the **production** surface instead (Phase C5: browser "Connected ✓", `crossOriginIsolated`, headers via curl), which is strictly stronger (real cross-network). The header file above stays for future local dev. *Re-run `./gradlew :webApp:wasmJsBrowserDevelopmentRun` later if you want the localhost check too.*
+- [ ] ~~Edge case (DSL drift)~~ — N/A this session (dev server not run); object form retained as the documented default for dev-server v4/v5.
+- [x] **Edge case (probe fails locally):** the 200/`[]` vs. error distinction was validated **on production** — the probe rendered "Connected ✓", confirming anon key + URL + pushed migration are all consistent.
 
 ---
 
 ### Track C — Build, production headers & deploy
 
 #### Phase C1 — COOP/COEP on production via `_headers` (surface 2 of 2)
-- [ ] Create `SmartChessboard/webApp/src/webMain/resources/_headers` (so the build copies it into the dist beside `index.html`):
-  ```
-  /*
-    Cross-Origin-Opener-Policy: same-origin
-    Cross-Origin-Embedder-Policy: require-corp
-  ```
-- [ ] **Edge case (not copied):** if `_headers` doesn't land in `productionExecutable/` after the build, fall back to a Gradle `doLast` copy on `wasmJsBrowserDistribution`, or write it into `productionExecutable/` in the shell right before `wrangler deploy`. Keep it byte-identical to the dev-server headers (`lessons.md` #3).
-- [ ] **(optional)** add `X-Robots-Tag: noindex` under `/*` to keep the public `*.workers.dev` URL out of search indexes.
+- [x] Created `SmartChessboard/webApp/src/webMain/resources/_headers` (build copies it into the dist beside `index.html`).
+- [x] **Edge case (not copied):** confirmed `_headers` **did** land in `productionExecutable/` after the build — no fallback copy needed.
+- [x] **(optional)** added `X-Robots-Tag: noindex` under `/*` — confirmed served on the live document.
 
 #### Phase C2 — Production build (with injected creds)
-- [ ] From `SmartChessboard/`:
+- [x] Built from `SmartChessboard/` with `JAVA_HOME` → JBR 21 (creds read from `local.properties`; no `-P` needed for this local build):
   ```bash
+  JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
   ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :webApp:wasmJsBrowserDistribution \
-    -PSUPABASE_URL="$SUPABASE_URL" -PSUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
     --no-daemon --console=plain
   ```
-- [ ] Confirm `SmartChessboard/webApp/build/dist/wasmJs/productionExecutable/` contains `index.html`, `webApp.js`, a `*.wasm`, `styles.css`, **and `_headers`**.
-- [ ] Note the `.wasm` size (edge case: 25 MiB per-file cap — minified prod build is far under).
-- [ ] **Edge case (secret leak check):** grep `productionExecutable/` to confirm **no service-role-key pattern** is present (only URL + anon key are expected) — `lessons.md` #4.
+  *(First build failed on `:kotlinWasmStoreYarnLock` after adding `ktor-client-js` — fixed with `./gradlew kotlinWasmUpgradeYarnLock`, then rebuilt green. Recorded in `lessons.md`.)*
+- [x] Confirmed `productionExecutable/` contains `index.html`, `webApp.js`, two `*.wasm`, `styles.css`, **and `_headers`**.
+- [x] `.wasm` sizes: 8.3 MiB + 2.6 MiB — far under the 25 MiB per-file cap.
+- [x] **Edge case (secret leak check):** grepped `productionExecutable/` — **no `service_role` pattern**; only the public anon key + URL present (the latter fragmented across wasm data segments).
 
 #### Phase C3 — Worker config
-- [ ] Create `wrangler.toml` at the **repo root** (`/Users/rurbaniak/Projects/Private/10xDevs/claude/wrangler.toml`):
+- [x] Created `wrangler.toml` at the **repo root** (assets-only, `preview_urls = true`, `compatibility_date = "2026-06-01"`):
   ```toml
   name = "smart-chessboard-web"
   compatibility_date = "2026-06-01"
@@ -282,19 +275,19 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
   No `main`, no `binding` (assets-only). `directory` is relative to repo root, matching `infrastructure.md`.
 
 #### Phase C4 — Preview deploy + verify over the network
-- [ ] From repo root: `wrangler versions upload` → capture the versioned **preview URL**.
-- [ ] Open it: app renders **"Connected ✓"** — this is the real cross-network proof (`*.workers.dev` browser → Supabase PostgREST). Console: `crossOriginIsolated === true`.
-- [ ] `curl -I https://<preview-url>/` → COOP+COEP present; `curl -I https://<preview-url>/<file>.wasm` → `Content-Type: application/wasm`.
-- [ ] **Edge case (no preview URL):** confirm `preview_urls = true` and the workers.dev subdomain (§B2). Previews are public — fine for the shell/probe (no private data).
-- [ ] **Edge case (probe 200 but 0 rows):** that's success (RLS as anon). An error state instead means CORS/URL/key drift between the build args and the live project.
+- [x] Ran `wrangler versions upload` from repo root → uploaded version `b480c8cc` successfully.
+- [ ] ~~Capture + open the versioned preview URL~~ **SUPERSEDED.** No version preview URL was emitted: on a Worker that has **never been deployed**, the `workers.dev` route isn't active yet, so there is no reachable preview host pre-first-deploy. Rather than force-enable it, we went straight to the human-gated production deploy (Phase C5), which is the stronger cross-network proof. The upload itself confirmed the asset pipeline works end-to-end.
+- [x] **Edge case (no preview URL):** root cause understood (see above) — `preview_urls = true` is set; version preview hosts simply require the script to be deployed once first. Not a config error.
+- [x] **Edge case (probe 200 but 0 rows):** confirmed success on production — the live app shows "Connected ✓ (anon sees 0 rows — RLS enforced)", i.e. no CORS/URL/key drift.
 
 #### Phase C5 — Production deploy (human gate)
-- [ ] **(human-confirmed)** From repo root: `wrangler deploy` → publishes to `smart-chessboard-web.<subdomain>.workers.dev`.
-- [ ] Repeat the Phase C4 checks against the production URL (probe Connected ✓, headers, wasm MIME).
-- [ ] `wrangler deployments list` → confirm the active deployment (the list `wrangler rollback` targets).
+- [x] **(human-confirmed 2026-06-01)** `wrangler deploy` from repo root → published to **https://smart-chessboard-web.<subdomain>.workers.dev** (workers.dev auto-enabled on first deploy).
+- [x] Production checks: browser **"Connected ✓"** (user-confirmed); `curl -I /` → COOP `same-origin` + COEP `require-corp` + `X-Robots-Tag: noindex`; `curl -I /<file>.wasm` → `Content-Type: application/wasm`.
+- [x] `wrangler deployments list` → active deployment is version `04ecd258` at 100% (the `wrangler rollback` target).
 
 #### Phase C6 — Record follow-ups (Module 2 / CI)
-- [ ] Note explicit out-of-scope follow-ups: CI `web-deploy.yml` (`vacation-workflow-todo.md`, injects creds + scoped CF token); custom domain; **Google OAuth** (Google Cloud OAuth client + Supabase provider + redirect-URL allowlist incl. the workers.dev URL); the **`games` table + owner RLS + index + trigger** and reading own games; **Room/OPFS** persistence (then the COOP/COEP "save a game, reload" test becomes real); the **`lichess-eval`** edge function; and a CI secret-scan that no service-role key appears in `productionExecutable/` (`lessons.md` #3/#4).
+- [x] Out-of-scope follow-ups recorded (here + `docs/vacation-workflow-todo.md`): CI `web-deploy.yml` (injects creds + scoped CF token); custom domain; **Google OAuth** (Google Cloud OAuth client + Supabase provider + redirect-URL allowlist incl. the workers.dev URL); the **`games` table + owner RLS + index + trigger** and reading own games; **Room/OPFS** persistence (then the COOP/COEP "save a game, reload" test becomes real); the **`lichess-eval`** edge function; and a CI secret-scan that no service-role key appears in `productionExecutable/` (`lessons.md` #3/#4).
+- [ ] **Open (housekeeping):** `tech-stack.md` + `supabase/AGENTS.md` still say region "Frankfurt"; actual project is West EU (Ireland). Update when convenient (not deploy-blocking).
 
 ---
 
@@ -315,7 +308,7 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
 ## External integrations touched
 
 - **Cloudflare** — host. Global `wrangler` + OAuth login (human-gated); `wrangler deploy` creates/updates the Worker.
-- **Supabase** — **now live**: hosted Postgres project (EU Frankfurt), one migration (`position_evals` + RLS), anon key baked into the bundle, web client reads via PostgREST. Service-role key stays out of the client. Google OAuth / `games` / edge function deferred to Module 2.
+- **Supabase** — **now live**: hosted Postgres project (West EU / Ireland), one migration (`position_evals` + RLS), anon key baked into the bundle, web client reads via PostgREST. Service-role key stays out of the client. Google OAuth / `games` / edge function deferred to Module 2.
 - **GitHub Actions** — out of scope (manual deploy).
 
 ## End-to-end verification (summary)

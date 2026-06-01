@@ -1,0 +1,6 @@
+name = "smart-chessboard-web"
+compatibility_date = "2026-06-01"
+preview_urls = true
+
+[assets]
+directory = "./SmartChessboard/webApp/build/dist/wasmJs/productionExecutable"

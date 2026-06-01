@@ -43,3 +43,13 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: Only `SUPABASE_URL` and the Supabase **anon key** (RLS-protected) may reach the web bundle, injected at build time from GitHub Actions secrets. The **service-role key never** goes near the web build. Add a CI check that no service-role key pattern appears in `productionExecutable/`. The Cloudflare deploy token is separate (a scoped `CLOUDFLARE_API_TOKEN`, Workers Scripts edit for this one project only) and lives in GH Secrets / env — never committed to `.mcp.json` or pasted into chat.
 
 - **Applies to**: web build configuration, secret injection in CI, RLS policy design in `supabase/`, and any agent session with deploy access.
+
+## After adding an npm-backed dependency to a wasmJs/js target, actualize yarn.lock
+
+- **Context**: Any change that adds (or removes) an npm-backed dependency on a Kotlin Multiplatform `wasmJs`/`js` target in `SmartChessboard/` — e.g. a Ktor JS engine (`ktor-client-js`) or any JS-interop library pulled in for `wasmJsMain`.
+
+- **Problem**: The build fails on `:kotlinWasmStoreYarnLock` with `Lock file was changed. Run the kotlinWasmUpgradeYarnLock task` because the new dependency mutated `kotlin-js-store/yarn.lock`, which Gradle enforces against drift. In an IDE this surfaces as a failed "Gradle sync" and looks mysterious, but the root cause is the stale lock — not the IDE.
+
+- **Rule**: After adding/removing a wasmJs/js npm-backed dependency, run `./gradlew kotlinWasmUpgradeYarnLock` once to actualize `kotlin-js-store/yarn.lock`, then rebuild. The agent can and should run this from the CLI — no IDE "sync" is required. (Separate but co-occurring DSL gotcha: in a Gradle Kotlin DSL build script, `java.util.Properties()` collides with the Gradle `java` plugin accessor and fails with `Unresolved reference 'util'` — use `import java.util.Properties` and call `Properties()` instead.)
+
+- **Applies to**: implement, impl-review
