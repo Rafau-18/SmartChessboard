@@ -1,4 +1,3 @@
-
 # AGENTS.md
 
 Guidance for AI coding agents working in this repository. This file is the source of truth; CLAUDE.md is a thin import of it.
@@ -39,3 +38,5 @@ ktlint is the formatter; rules live in `SmartChessboard/.editorconfig`. Format m
 - **KMP module rules** (web is WasmJS-only; BLE / physical-board code only in `androidMain` + `iosMain`) are canonical in [`SmartChessboard/AGENTS.md`](SmartChessboard/AGENTS.md).
 - **Skills are mirrored** across `.claude/`, `.agents/`, `.kiro/` (multi-tool repo). When adding a skill, install it into the matching dir per tool — don't leave it in only one.
 - Local files agents won't see (all gitignored): `SmartChessboard/local.properties`, `firmware/sdkconfig`, `supabase/.env.local`.
+
+
