@@ -135,7 +135,7 @@ Mobile sends `SET_MODE(mode=diagnostic)`. Board:
 
 Mobile renders a live 8×8 grid of reed-switch states. This is the user-facing
 support tool for resolving the "illegal/ambiguous sequence" error path
-(PRD FR-009/FR-010).
+(PRD FR-010/FR-011).
 
 Mobile exits with `SET_MODE(mode=game)`.
 
@@ -148,7 +148,7 @@ On disconnect:
 
 - Mobile pauses move acceptance immediately.
 - Mobile shows a visible non-blocking status: "Board disconnected — attempting
-  to reconnect" (PRD FR-011-equivalent for BLE).
+  to reconnect" (PRD FR-012).
 - Mobile attempts automatic reconnect using BLE central reconnection (typically
   resolves in < 5 s if board is in range).
 
@@ -158,7 +158,7 @@ On reconnect:
 - Mobile compares received snapshot to expected position derived from PGN.
 - **Match** → resume normal play.
 - **Mismatch** → automatically enter diagnostic mode, prompt user to restore
-  the previous legal position (FR-009/FR-010 path), and require a successful
+  the previous legal position (FR-010/FR-011 path), and require a successful
   confirmation before further moves are accepted.
 
 **Invariant**: no move is saved during the disconnect window. Moves accepted
@@ -255,7 +255,7 @@ create policy "position_evals_select_authenticated"
 
 | Index | Purpose |
 | --- | --- |
-| `games_user_created_idx on games (user_id, created_at desc)` | Chronological own-games list (PRD FR-013) |
+| `games_user_created_idx on games (user_id, created_at desc)` | Chronological own-games list (PRD FR-015) |
 | Implicit PK index on `position_evals(fen)` | Cache lookup |
 
 ### 2.6 Triggers
@@ -290,10 +290,10 @@ Listed as conceptual operations; SDK call shapes vary by language.
 | Operation | SQL-equivalent | Used by (PRD ref) |
 | --- | --- | --- |
 | Create game | `INSERT INTO games (mode, status, pgn, white_label, black_label) VALUES (...)` | FR-003 |
-| List my games (chronological) | `SELECT ... FROM games ORDER BY created_at DESC` (RLS scopes) | FR-013 |
-| Get one game | `SELECT ... FROM games WHERE id = $1` | FR-014, FR-015 |
-| Auto-save move | `UPDATE games SET pgn = $1, status = $2, result = $3 WHERE id = $4` | FR-012 |
-| Mark finished (manual) | `UPDATE games SET status = 'finished', result = $1 WHERE id = $2` | FR-016 (manual end-of-game) |
+| List my games (chronological) | `SELECT ... FROM games ORDER BY created_at DESC` (RLS scopes) | FR-015 |
+| Get one game | `SELECT ... FROM games WHERE id = $1` | FR-015, FR-016 |
+| Auto-save move | `UPDATE games SET pgn = $1, status = $2, result = $3 WHERE id = $4` | FR-014 |
+| Mark finished (manual) | `UPDATE games SET status = 'finished', result = $1 WHERE id = $2` | FR-018 (manual end-of-game) |
 | Delete game | `DELETE FROM games WHERE id = $1` | User cleanup (not a numbered FR) |
 
 Mobile does **not** pass `user_id` explicitly on any write — Postgres reads it
@@ -427,7 +427,7 @@ plus a small mobile SDK call; no schema or backend code change.
 ### 5.1 PGN as source of truth
 
 PGN (Portable Game Notation) is the durable, lossless representation of a
-game (PRD FR-012). All other game-state representations (FEN per move, move
+game (PRD FR-014). All other game-state representations (FEN per move, move
 list arrays, ply counts) are derived from PGN.
 
 ### 5.2 PGN header tags
@@ -478,9 +478,8 @@ Transitions:
 
 - `in_progress → finished` automatically on checkmate or stalemate detected
   by the legality engine (PRD FR-007).
-- `in_progress → finished` manually via user action (PRD FR-016 /
-  FR-018-equivalent) for draws by threefold/50-move/insufficient material or
-  resignations.
+- `in_progress → finished` manually via user action (PRD FR-018) for draws
+  by threefold/50-move/insufficient material or resignations.
 
 ---
 
@@ -534,7 +533,7 @@ Covered in detail in 1.7. Summary:
 - Cross-device concurrent editing of the same game (single-device by design
   per PRD FR-013).
 - Auto-detection of threefold repetition / 50-move rule / insufficient
-  material draws (manual end-of-game per PRD FR-016 / OQ-2 resolution).
+  material draws (manual end-of-game per PRD FR-018 / OQ-2 resolution).
 - OTA firmware updates over BLE.
 - Multi-board / multi-user-per-board scenarios.
 - Time control / clock semantics (PRD non-goal).
