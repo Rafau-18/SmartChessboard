@@ -39,4 +39,3 @@ ktlint is the formatter; rules live in `SmartChessboard/.editorconfig`. Format m
 - **Skills are mirrored** across `.claude/`, `.agents/`, `.kiro/` (multi-tool repo). When adding a skill, install it into the matching dir per tool — don't leave it in only one.
 - Local files agents won't see (all gitignored): `SmartChessboard/local.properties`, `firmware/sdkconfig`, `supabase/.env.local`.
 
-
