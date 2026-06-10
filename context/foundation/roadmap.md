@@ -99,7 +99,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 
 ### S-01: Sign in with Google and see own game history
 
-- **Outcome:** User can sign in with Google (account auto-created on first sign-in), sign out, and see their own private, chronologically ordered game list; unauthenticated users reach no game views.
+- **Outcome:** User can sign in with Google (account auto-created on first sign-in), sign out, and see their own private, chronologically ordered game list; unauthenticated users reach no game views. Per the S-01 plan decision (2026-06-10), the same sign-in + history surface is also wired on the web target — a deliberate small sliver of parked FR-020.
 - **Change ID:** google-signin-own-history
 - **PRD refs:** FR-001, FR-002, FR-015, US-03
 - **Prerequisites:** —
@@ -131,8 +131,9 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Parallel with:** F-01, F-02, S-04
 - **Blockers:** —
 - **Unknowns:**
-  - The external evaluation service may hold no stored evaluation for arbitrary amateur positions — what is the on-miss experience? — Owner: team (decide in `/10x-plan`). Block: no.
-- **Risk:** Completes the review loop end-to-end with zero hardware and zero rules engine involved; the server-side eval cache table is already deployed, so the open scope is the serverless eval proxy plus the replay-side display.
+  - Chess-API.com (the fallback eval provider decided 2026-06-10) is a free community service — no SLA, undocumented rate limits; smoke-test both providers during `/10x-plan` research (designated alternate: stockfish.online) — Owner: team. Block: no.
+  - UX for the residual case where both eval providers fail for a position — Owner: team (decide in `/10x-plan`). Block: no.
+- **Risk:** Completes the review loop end-to-end with zero hardware and zero rules engine involved; the eval chain is two providers deep by decision of 2026-06-10 (cache → Lichess Cloud Eval → Chess-API.com, per `contract-surfaces.md` §3.3) because Lichess alone has no eval for most amateur positions — open scope is the serverless eval proxy, a constraint-widening migration on the deployed `position_evals` table, and the replay-side display.
 - **Status:** proposed
 
 ### S-04: Digital pass-and-play with durable record
@@ -231,10 +232,11 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 
 ## Parked
 
-- **Web target for the digital subset (FR-020, nice-to-have)** — Why parked: `main_goal: speed` keeps the strict must-have sequence first, and the user confirmed (2026-06-10) mobile is the primary target; the deployed web shell stays live, and the shared codebase keeps this cheap to pick up post-MVP.
+- **Web target for the digital subset (FR-020, nice-to-have)** — Why parked: `main_goal: speed` keeps the strict must-have sequence first, and the user confirmed (2026-06-10) mobile is the primary target; the deployed web shell stays live, and the shared codebase keeps this cheap to pick up post-MVP. Exception: S-01 pulls a small sliver forward (Google sign-in + empty history surface on web) per its plan decision of 2026-06-10; the rest of FR-020 stays parked.
 - **BLE disconnect auto-recovery (FR-012, nice-to-have)** — Why parked: does not block MVP acceptance; its semantics are already specified in the contract document and it becomes relevant only together with S-09.
 - **Store/TestFlight mobile distribution** — Why parked: user decision (2026-06-10): iOS/Android are installed locally during MVP; distribution is a post-MVP decision per `infrastructure.md`.
 - **CI pipeline (build/test/deploy workflows)** — Why parked: not PRD scope; manual local builds and manual web deploy suffice for MVP; a plan already exists in `docs/vacation-workflow-todo.md` for when it earns its keep.
+- **Local Stockfish per platform (offline / high-depth analysis)** — Why parked: the Chess-API.com fallback (decided 2026-06-10) closes the eval-coverage gap for MVP; a bundled engine (per-platform `expect`/`actual`: ready-made WASM engine build on web, natively compiled Stockfish C++ on iOS/Android) becomes worthwhile only for offline analysis, stricter privacy, or higher depth — PRD OQ-3.
 - **Live engine bar during play** — Why parked: PRD §Non-Goals (post-MVP, configurable if added).
 - **Online/remote play, matchmaking, external platforms** — Why parked: PRD §Non-Goals (MVP play is local).
 - **AI opponent / local engine play** — Why parked: PRD §Non-Goals.

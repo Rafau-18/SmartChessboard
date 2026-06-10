@@ -207,16 +207,22 @@ before the disconnect remain persisted.
 | `fen` | `text` | PK | Cache key — exact FEN |
 | `eval_cp` | `integer` | NULL | Centipawn evaluation, White POV |
 | `best_move` | `text` | NULL | UCI notation (e.g., `e2e4`) |
-| `depth` | `integer` | NULL | Search depth reported by Lichess |
-| `source` | `text` | NOT NULL, CHECK in (`'lichess'`, `'unknown'`) | `'unknown'` = Lichess returned no eval |
+| `depth` | `integer` | NULL | Search depth reported by the eval provider |
+| `source` | `text` | NOT NULL, CHECK in (`'lichess'`, `'chess-api'`, `'unknown'`) | `'unknown'` = no provider returned an eval |
 | `fetched_at` | `timestamptz` | NOT NULL, `default now()` | For staleness checks |
 
 Notes:
 
 - No `user_id` — cache is global. FEN is identical regardless of which user
-  reached the position; sharing the cache is correct and saves Lichess calls.
-- `source='unknown'` rows are negative-cache entries (position not in Lichess
-  Cloud Eval). Cached for a shorter TTL than positive entries to allow retry.
+  reached the position; sharing the cache is correct and saves upstream
+  eval-provider calls.
+- `source='unknown'` rows are negative-cache entries (Lichess had no eval AND
+  the Chess-API.com fallback failed or was unavailable). Cached for a shorter
+  TTL than positive entries to allow retry.
+- Migration note: the deployed `position_evals` table
+  (`supabase/migrations/20260531233302_position_evals.sql`) predates the
+  `'chess-api'` source value (added 2026-06-10) — widening the CHECK
+  constraint requires a new migration before the eval proxy ships.
 
 ### 2.4 Row-Level Security
 
@@ -316,27 +322,44 @@ Anonymous calls rejected with 401.
 
 | Status | Body | Meaning |
 | --- | --- | --- |
-| `200` | `{ "fen", "eval_cp", "best_move", "depth", "source": "cache" \| "lichess", "fetched_at" }` | Evaluation available |
-| `200` | `{ "fen", "source": "unknown" }` | Position not known to Lichess; record cached as negative entry |
+| `200` | `{ "fen", "eval_cp", "best_move", "depth", "source": "cache" \| "lichess" \| "chess-api", "fetched_at" }` | Evaluation available |
+| `200` | `{ "fen", "source": "unknown" }` | No provider returned an eval; record cached as negative entry |
 | `400` | `{ "error": "invalid_fen" }` | FEN failed validation |
 | `401` | `{ "error": "unauthenticated" }` | Missing or invalid JWT |
-| `429` | `{ "error": "rate_limited", "retry_after_seconds": N }` | Lichess upstream rate limit hit |
-| `502` | `{ "error": "upstream_unavailable" }` | Lichess returned a non-2xx, non-recoverable error |
+| `429` | `{ "error": "rate_limited", "retry_after_seconds": N }` | Upstream rate limit hit |
+| `502` | `{ "error": "upstream_unavailable" }` | Both providers returned non-2xx, non-recoverable errors |
 
-**Function logic**:
+**Function logic** (eval chain decided 2026-06-10: cache → Lichess →
+Chess-API.com → `unknown`):
 
 1. Parse and validate FEN.
 2. Look up `position_evals` by FEN.
    - If hit and `fetched_at` within freshness window (suggest: 30 days for
-     `source='lichess'`, 24 hours for `source='unknown'`): return cached row
-     with `source: 'cache'`.
+     `source='lichess'` / `source='chess-api'`, 24 hours for
+     `source='unknown'`): return cached row with `source: 'cache'`.
 3. On miss / stale: call `https://lichess.org/api/cloud-eval?fen=<urlencoded>`.
-4. Upsert result into `position_evals` (`source='lichess'` on hit,
-   `source='unknown'` on Lichess "no eval"). Return appropriate response.
+   On eval: upsert with `source='lichess'` and return. (Lichess stores only
+   positions already known to its database — mostly opening theory and popular
+   positions — so misses are the common case for amateur games.)
+4. On Lichess "no eval" or upstream error: call the fallback
+   `POST https://chess-api.com/v1` with `{ "fen": <fen> }` (Stockfish 18 NNUE,
+   computes arbitrary positions; no API key; short timeout; depth ≤ 18).
+   On eval: upsert with `source='chess-api'` and return.
+5. If the fallback also fails: when Lichess answered "no eval", upsert
+   `source='unknown'` (negative cache) and return the `unknown` response;
+   when both providers errored (rate limit / 5xx), return `429`/`502` without
+   caching.
+
+**Fallback provider caveat**: Chess-API.com is a free community service (no
+SLA, undocumented rate limits). It sits behind the shared cache, and outages
+degrade gracefully to `source='unknown'`. Designated alternate if it
+disappears: `https://stockfish.online`. A locally bundled Stockfish is the
+post-MVP endgame — PRD Open Question 3.
 
 **Secrets**: function uses `LICHESS_TOKEN` (if Lichess requires; cloud-eval is
 public but a token raises rate limit) and `SUPABASE_SERVICE_ROLE_KEY` to write
 the cache. Both set via `supabase secrets set ...`; never bundled in mobile.
+Chess-API.com requires no API key — the fallback adds no new secret.
 
 ### 3.4 Offline-first sync
 
