@@ -1,9 +1,11 @@
 ---
 change_id: google-signin-own-history
+title: Google sign-in and own game history
 roadmap_id: S-01
 status: planned
 created: 2026-06-10
 updated: 2026-06-10
+archived_at: null
 ---
 
 # Change: Google sign-in and own game history
