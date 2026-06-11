@@ -2,7 +2,7 @@
 change_id: google-signin-own-history
 title: Google sign-in and own game history
 roadmap_id: S-01
-status: impl_reviewed
+status: implemented
 created: 2026-06-10
 updated: 2026-06-11
 archived_at: null
