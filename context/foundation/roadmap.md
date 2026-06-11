@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-06-10
+updated: 2026-06-11
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -31,8 +31,8 @@ The author and a small circle of friends play chess on a physical wooden board, 
 
 | ID   | Change ID                     | Outcome (user can …)                                                      | Prerequisites          | PRD refs                                              | Status   |
 | ---- | ----------------------------- | ------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------- | -------- |
-| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection           | —                      | FR-005, FR-007, Guardrails                             | ready    |
-| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware           | —                      | PRD OQ-1 (resolved), US-02                             | ready    |
+| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection           | —                      | FR-005, FR-007, Guardrails                             | in progress |
+| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware           | —                      | PRD OQ-1 (resolved), US-02                             | in progress |
 | S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | ready    |
 | S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | proposed |
 | S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | proposed |
@@ -80,7 +80,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Largest pure-logic block in the project; sequenced parallel to the review loop so it never delays the north star — if it slips, only play/physical slices slip. Must be verified by its own test corpus before any UI consumes it.
-- **Status:** ready
+- **Status:** in progress — change folder opened 2026-06-11 (`context/changes/chess-rules-engine/`); next: `/10x-plan`.
 
 ### F-02: Reed-switch board emulator
 
@@ -93,7 +93,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Emulator fidelity bounds how much surprise the real board can still spring; keep its event stream message-identical to the documented board contract so verification done on S-06–S-08 transfers to hardware.
-- **Status:** ready
+- **Status:** in progress — change folder opened 2026-06-11 (`context/changes/reed-board-emulator/`); next: `/10x-plan`.
 
 ## Slices
 
