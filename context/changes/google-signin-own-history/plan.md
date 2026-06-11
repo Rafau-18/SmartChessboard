@@ -406,20 +406,20 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Manual
 
-- [x] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud)
-- [x] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080
-- [x] 2.3 `supabase/.env.local` holds Google client credentials for local stack
-- [x] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing)
-- [x] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls`
+- [x] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud) — 95eff2c
+- [x] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080 — 95eff2c
+- [x] 2.3 `supabase/.env.local` holds Google client credentials for local stack — 95eff2c
+- [x] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing) — 95eff2c
+- [x] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls` — 95eff2c
 
 ### Phase 3: Shared auth core — Koin, Auth plugin, repositories, ViewModels, tests
 
 #### Automated
 
-- [ ] 3.1 `:shared:testAndroidHostTest` green
-- [ ] 3.2 `:shared:wasmJsTest` green
-- [ ] 3.3 `:shared:iosSimulatorArm64Test` green
-- [ ] 3.4 ktlint clean
+- [x] 3.1 `:shared:testAndroidHostTest` green
+- [x] 3.2 `:shared:wasmJsTest` green
+- [x] 3.3 `:shared:iosSimulatorArm64Test` green
+- [x] 3.4 ktlint clean
 
 ### Phase 4: UI + platform wiring — screens, deep links, web redirect, E2E
 

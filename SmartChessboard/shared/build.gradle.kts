@@ -87,11 +87,16 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(project.dependencies.platform(libs.supabase.bom))
             implementation(libs.supabase.postgrest)
+            implementation(libs.supabase.auth)
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
