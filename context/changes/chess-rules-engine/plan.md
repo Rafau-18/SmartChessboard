@@ -576,12 +576,12 @@ schema, no dependency additions, no DI wiring.
 
 #### Automated
 
-- [ ] 4.1 Terminal-state tests pass: `:shared:testAndroidHostTest`
-- [ ] 4.2 Formatting clean: `ktlint -F`
+- [x] 4.1 Terminal-state tests pass: `:shared:testAndroidHostTest`
+- [x] 4.2 Formatting clean: `ktlint -F`
 
 #### Manual
 
-- [ ] 4.3 Tests include known checkmate, stalemate, check, ongoing — each FR-007-correct
+- [x] 4.3 Tests include known checkmate, stalemate, check, ongoing — each FR-007-correct
 
 ### Phase 5: Perft corpus & edge-case suite
 

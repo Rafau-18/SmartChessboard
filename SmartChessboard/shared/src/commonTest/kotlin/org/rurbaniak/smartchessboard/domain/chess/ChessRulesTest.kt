@@ -305,4 +305,63 @@ class ChessRulesTest {
     fun startPositionHasTwentyLegalMoves() {
         assertEquals(20, legalMoves(Position.start()).size)
     }
+
+    // --- Terminal-state classification (status, FR-007) ---
+
+    @Test
+    fun startPositionIsOngoing() {
+        assertEquals(GameStatus.Ongoing, status(Position.start()))
+    }
+
+    @Test
+    fun checkWithLegalRepliesIsPlainCheckNotCheckmate() {
+        // White is checked by the e8 rook but can block with the queen — Check, not Checkmate.
+        val position =
+            positionOf(
+                squareOf(4, 0) to white(PieceType.KING),
+                squareOf(3, 0) to white(PieceType.QUEEN),
+                squareOf(4, 7) to black(PieceType.ROOK),
+                squareOf(7, 7) to black(PieceType.KING),
+            )
+        assertEquals(GameStatus.Check, status(position))
+    }
+
+    @Test
+    fun foolsMateIsCheckmate() {
+        // 1. f3 e5 2. g4 Qh4# — the fastest possible checkmate, played through the public API.
+        var position = applied(Position.start(), Move(squareOf(5, 1), squareOf(5, 2)))
+        position = applied(position, Move(squareOf(4, 6), squareOf(4, 4)))
+        position = applied(position, Move(squareOf(6, 1), squareOf(6, 3)))
+        position = applied(position, Move(squareOf(3, 7), squareOf(7, 3)))
+        assertEquals(GameStatus.Checkmate, status(position))
+    }
+
+    @Test
+    fun backRankMateIsCheckmate() {
+        // White king boxed in by its own pawns; the black rook delivers mate along rank 1.
+        val position =
+            positionOf(
+                squareOf(6, 0) to white(PieceType.KING),
+                squareOf(5, 1) to white(PieceType.PAWN),
+                squareOf(6, 1) to white(PieceType.PAWN),
+                squareOf(7, 1) to white(PieceType.PAWN),
+                squareOf(4, 0) to black(PieceType.ROOK),
+                squareOf(6, 7) to black(PieceType.KING),
+            )
+        assertEquals(GameStatus.Checkmate, status(position))
+    }
+
+    @Test
+    fun kingAndPawnEndgameStalemateIsStalemate() {
+        // Classic K+P stalemate: the cornered black king is not in check but has no legal move —
+        // a7 is protected, b7 is covered by the white king, b8 by the pawn.
+        val position =
+            positionOf(
+                squareOf(0, 7) to black(PieceType.KING),
+                squareOf(0, 6) to white(PieceType.PAWN),
+                squareOf(1, 5) to white(PieceType.KING),
+                sideToMove = Color.BLACK,
+            )
+        assertEquals(GameStatus.Stalemate, status(position))
+    }
 }

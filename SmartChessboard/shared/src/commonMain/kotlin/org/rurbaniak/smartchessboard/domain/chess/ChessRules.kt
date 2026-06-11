@@ -44,6 +44,22 @@ fun validate(
 }
 
 /**
+ * Terminal/ongoing classification of [position] (FR-007): with no legal moves the side to move is
+ * checkmated if in check, stalemated otherwise; with moves available the position is plain check
+ * or ongoing. Draws by rule (repetition, 50-move, insufficient material) are never auto-detected —
+ * they are marked manually per FR-018. Pure function of the position, so it classifies a freshly
+ * applied move and a position loaded from elsewhere identically.
+ */
+fun status(position: Position): GameStatus {
+    val inCheck = isInCheck(position, position.sideToMove)
+    return when {
+        legalMoves(position).isNotEmpty() -> if (inCheck) GameStatus.Check else GameStatus.Ongoing
+        inCheck -> GameStatus.Checkmate
+        else -> GameStatus.Stalemate
+    }
+}
+
+/**
  * The next [Position] after playing [move], updating every FEN-relevant field: piece relocation,
  * capture removal (en passant captures on a different square than [Move.to]), rook relocation on
  * castling, promotion replacement, side-to-move flip, castling-rights revocation, en-passant
