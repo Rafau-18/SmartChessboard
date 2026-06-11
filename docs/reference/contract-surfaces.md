@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-05-27
+updated: 2026-06-11
 ---
 
 ## Purpose
@@ -232,16 +232,16 @@ Notes:
 alter table public.games enable row level security;
 
 create policy "games_select_own"  on public.games for select
-  using (auth.uid() = user_id);
+  to authenticated using (auth.uid() = user_id);
 
 create policy "games_insert_own"  on public.games for insert
-  with check (auth.uid() = user_id);
+  to authenticated with check (auth.uid() = user_id);
 
 create policy "games_update_own"  on public.games for update
-  using (auth.uid() = user_id);
+  to authenticated using (auth.uid() = user_id);
 
 create policy "games_delete_own"  on public.games for delete
-  using (auth.uid() = user_id);
+  to authenticated using (auth.uid() = user_id);
 ```
 
 **`public.position_evals`**: enable RLS, read-open for any authenticated user,
@@ -269,14 +269,15 @@ create policy "position_evals_select_authenticated"
 `updated_at` auto-touch on `games` rows:
 
 ```sql
-create or replace function set_updated_at()
-  returns trigger language plpgsql as $$
+create or replace function public.set_updated_at()
+  returns trigger language plpgsql
+  set search_path = '' as $$
 begin new.updated_at = now(); return new; end;
 $$;
 
 create trigger games_set_updated_at
   before update on public.games
-  for each row execute function set_updated_at();
+  for each row execute function public.set_updated_at();
 ```
 
 ---

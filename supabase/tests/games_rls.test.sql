@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(17);
 
 -- Structural ------------------------------------------------------------
 
@@ -24,6 +24,15 @@ select policies_are(
 
 select has_index('public', 'games', 'games_user_created_idx',
   'chronological own-games index exists');
+
+select policy_roles_are('public', 'games', 'games_select_own', array['authenticated'],
+  'games_select_own is scoped to authenticated');
+select policy_roles_are('public', 'games', 'games_insert_own', array['authenticated'],
+  'games_insert_own is scoped to authenticated');
+select policy_roles_are('public', 'games', 'games_update_own', array['authenticated'],
+  'games_update_own is scoped to authenticated');
+select policy_roles_are('public', 'games', 'games_delete_own', array['authenticated'],
+  'games_delete_own is scoped to authenticated');
 
 select has_trigger('public', 'games', 'games_set_updated_at',
   'updated_at auto-touch trigger exists');
@@ -72,6 +81,13 @@ select throws_ok(
     values ('22222222-2222-2222-2222-222222222222', 'digital', 'in_progress')$$,
   '42501', null,
   'A cannot insert a game with B''s user_id'
+);
+
+select throws_ok(
+  $$update public.games set user_id = '22222222-2222-2222-2222-222222222222'
+    where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'$$,
+  '42501', null,
+  'A cannot reassign their own game to B (implicit with check)'
 );
 
 -- RLS silently scopes these to 0 rows; verified after role reset below.

@@ -395,12 +395,12 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Automated
 
-- [x] 1.1 Migrations apply cleanly: `supabase db reset`
-- [x] 1.2 pgTAP suite passes: `supabase test db`
+- [x] 1.1 Migrations apply cleanly: `supabase db reset` — 58f59f6
+- [x] 1.2 pgTAP suite passes: `supabase test db` — 58f59f6
 
 #### Manual
 
-- [x] 1.3 Migration pushed to cloud (`supabase db push`); table + 4 policies visible in Dashboard
+- [x] 1.3 Migration pushed to cloud (`supabase db push`); table + 4 policies visible in Dashboard — 58f59f6
 
 ### Phase 2: Provider configuration (manual console gates)
 
