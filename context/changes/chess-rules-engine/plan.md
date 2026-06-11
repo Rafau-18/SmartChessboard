@@ -564,13 +564,13 @@ schema, no dependency additions, no DI wiring.
 
 #### Automated
 
-- [x] 3.1 Legality + transition tests pass: `:shared:testAndroidHostTest`
-- [x] 3.2 Formatting clean: `ktlint -F`
+- [x] 3.1 Legality + transition tests pass: `:shared:testAndroidHostTest` — 935673a
+- [x] 3.2 Formatting clean: `ktlint -F` — 935673a
 
 #### Manual
 
-- [x] 3.3 Edge cases reviewed: pin, castle-through-check, en passant (+discovers-check), incomplete promotion
-- [x] 3.4 castlingRights / enPassantTarget / counters update correctly
+- [x] 3.3 Edge cases reviewed: pin, castle-through-check, en passant (+discovers-check), incomplete promotion — 935673a
+- [x] 3.4 castlingRights / enPassantTarget / counters update correctly — 935673a
 
 ### Phase 4: Terminal-state detection
 
