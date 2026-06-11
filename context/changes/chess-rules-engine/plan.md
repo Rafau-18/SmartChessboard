@@ -552,20 +552,20 @@ schema, no dependency additions, no DI wiring.
 
 #### Automated
 
-- [x] 2.1 Per-piece generation + attack tests pass: `:shared:testAndroidHostTest`
-- [x] 2.2 Formatting clean: `ktlint -F`
+- [x] 2.1 Per-piece generation + attack tests pass: `:shared:testAndroidHostTest` — 6d0faaf
+- [x] 2.2 Formatting clean: `ktlint -F` — 6d0faaf
 
 #### Manual
 
-- [x] 2.3 Pawn attack-vs-move asymmetry handled
-- [x] 2.4 Spot-checked pseudo-legal list for a tricky position matches expectation
+- [x] 2.3 Pawn attack-vs-move asymmetry handled — 6d0faaf
+- [x] 2.4 Spot-checked pseudo-legal list for a tricky position matches expectation — 6d0faaf
 
 ### Phase 3: Full legality & applyMove
 
 #### Automated
 
-- [ ] 3.1 Legality + transition tests pass: `:shared:testAndroidHostTest`
-- [ ] 3.2 Formatting clean: `ktlint -F`
+- [x] 3.1 Legality + transition tests pass: `:shared:testAndroidHostTest`
+- [x] 3.2 Formatting clean: `ktlint -F`
 
 #### Manual
 
