@@ -539,26 +539,26 @@ schema, no dependency additions, no DI wiring.
 
 #### Automated
 
-- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain`
-- [x] 1.2 Square round-trip + start-position invariant tests pass: `:shared:testAndroidHostTest`
-- [x] 1.3 Formatting clean: `ktlint -F`
+- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain` — 211fd2c
+- [x] 1.2 Square round-trip + start-position invariant tests pass: `:shared:testAndroidHostTest` — 211fd2c
+- [x] 1.3 Formatting clean: `ktlint -F` — 211fd2c
 
 #### Manual
 
-- [x] 1.4 Public type signatures reviewed as a consumable contract (S-04/S-06)
-- [x] 1.5 a1 = 0 convention matches contract §1.3 by eye
+- [x] 1.4 Public type signatures reviewed as a consumable contract (S-04/S-06) — 211fd2c
+- [x] 1.5 a1 = 0 convention matches contract §1.3 by eye — 211fd2c
 
 ### Phase 2: Pseudo-legal move generation & attack detection
 
 #### Automated
 
-- [ ] 2.1 Per-piece generation + attack tests pass: `:shared:testAndroidHostTest`
-- [ ] 2.2 Formatting clean: `ktlint -F`
+- [x] 2.1 Per-piece generation + attack tests pass: `:shared:testAndroidHostTest`
+- [x] 2.2 Formatting clean: `ktlint -F`
 
 #### Manual
 
-- [ ] 2.3 Pawn attack-vs-move asymmetry handled
-- [ ] 2.4 Spot-checked pseudo-legal list for a tricky position matches expectation
+- [x] 2.3 Pawn attack-vs-move asymmetry handled
+- [x] 2.4 Spot-checked pseudo-legal list for a tricky position matches expectation
 
 ### Phase 3: Full legality & applyMove
 
