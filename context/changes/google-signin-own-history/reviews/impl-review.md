@@ -2,7 +2,7 @@
 # Implementation Review: Google Sign-in & Own Game History
 
 - **Plan**: context/changes/google-signin-own-history/plan.md
-- **Scope**: Phases 1 to 4 of 5
+- **Scope**: Phases 1 to 6 of 6
 - **Date**: 2026-06-11
 - **Verdict**: APPROVED
 - **Findings**: 0 critical, 0 warnings, 2 observations
@@ -20,7 +20,7 @@
 
 ## Findings
 
-### O1 — Clean removal of Greeting skeleton and SupabaseProbe
+### F1 — Clean removal of Greeting skeleton and SupabaseProbe
 
 - **Severity**: ℹ️ OBSERVATION
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
@@ -30,7 +30,7 @@
 - **Fix**: None required.
 - **Decision**: PENDING
 
-### O2 — Capitalization change of main.kt to Main.kt in webApp
+### F2 — Capitalization change of main.kt to Main.kt in webApp
 
 - **Severity**: ℹ️ OBSERVATION
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
