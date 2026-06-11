@@ -73,3 +73,13 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: **Koin KMP is the committed DI library.** All new injectable code (clients, repositories, ViewModels, use cases) registers through Koin modules and resolves through Koin; do **not** introduce a parallel service locator, global singletons, or ad-hoc `object` holders for things that belong in a module. The single `initKoin()` entry point is the one bootstrap each platform calls. Tests prefer hand-written fakes (per tech-stack discipline) injected through Koin overrides or direct constructor calls, not a second locator.
 
 - **Applies to**: plan, implement, impl-review — any work adding an injectable dependency in the mobile sub-project. Resolves `tech-stack.md` Open Decision #8. Decided 2026-06-10 (S-01).
+
+## Native Google one-tap needs an Android OAuth client (SHA-1) and an always-visible browser fallback
+
+- **Context**: Any mobile sub-project change adding native Google sign-in via supabase-kt `compose-auth` (Credential Manager / `googleNativeLogin`) — i.e. work touching the `data/supabase` client install + `presentation/auth/SignInScreen`. Web/iOS stay on the browser flow.
+
+- **Problem**: Two distinct failure shapes seen in S-01 Phase 6 (2026-06-11). (1) Missing an OAuth client of type **Android** (package + signing SHA-1) in the same Google Cloud project → GMS `[16] Account reauth failed` / `DEVELOPER_ERROR`, and the flow collapses to a silent `NativeSignInResult.ClosedByUser`. (2) OnePlus/OPPO ROMs (OxygenOS/ColorOS 14) never render the system Credential Manager bottom sheet at all — `GetGoogleIdOperation` succeeds (token retrieved) but no UI shows and the result is a silent `ClosedByUser`; the identical APK shows the sheet fine on the emulator and a stock-Android tablet, proving it is a ROM bug, not app code.
+
+- **Rule**: When wiring native Google one-tap via compose-auth: (a) create an OAuth client of type **Android** (package + each debug/release **SHA-1**) in the **same** Google Cloud project as the Web client ID, and keep the **Web** client ID as `serverClientId`/`GOOGLE_SERVER_CLIENT_ID`; and (b) **always** surface a visible browser-OAuth fallback (`signInWith(Google)` external browser) as the universal escape hatch. compose-auth's `fallback` lambda fires only when native is **unsupported** (iOS/web), NOT when native **errors/cancels** — so it cannot rescue OEM-broken devices.
+
+- **Applies to**: implement, impl-review
