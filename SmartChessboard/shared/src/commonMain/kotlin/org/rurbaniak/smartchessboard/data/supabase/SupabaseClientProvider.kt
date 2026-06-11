@@ -3,6 +3,8 @@ package org.rurbaniak.smartchessboard.data.supabase
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.FlowType
+import io.github.jan.supabase.compose.auth.ComposeAuth
+import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import org.rurbaniak.smartchessboard.BuildKonfig
@@ -20,6 +22,13 @@ fun createAppSupabaseClient(): SupabaseClient {
             flowType = FlowType.PKCE
             scheme = "com.smartchessboard"
             host = "callback"
+        }
+        // Native Google sign-in (Credential Manager) on Android; on iOS/web the platform
+        // has no native provider, so rememberSignInWithGoogle() falls back to the browser
+        // flow. The Web client ID (public, RLS-irrelevant) may be empty — only the Android
+        // native sheet needs it; the browser fallback works regardless.
+        install(ComposeAuth) {
+            googleNativeLogin(BuildKonfig.GOOGLE_SERVER_CLIENT_ID)
         }
     }
 }

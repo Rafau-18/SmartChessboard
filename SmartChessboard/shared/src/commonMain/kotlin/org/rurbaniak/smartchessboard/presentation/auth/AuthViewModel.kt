@@ -50,6 +50,20 @@ class AuthViewModel(
         }
     }
 
+    /**
+     * Native (Credential Manager) sign-in is driven by a Compose-side launcher, not the
+     * repository, so the VM only owns the error surface for it. Called when the user taps
+     * the button: clear any stale failure before the native sheet (or browser fallback) runs.
+     */
+    fun onInteractiveSignInStarted() {
+        _uiState.update { it.copy(signInFailed = false) }
+    }
+
+    /** Native sign-in failed (not a user cancel) — show the friendly retry message. */
+    fun onInteractiveSignInFailed() {
+        _uiState.update { it.copy(isSigningIn = false, signInFailed = true) }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             try {

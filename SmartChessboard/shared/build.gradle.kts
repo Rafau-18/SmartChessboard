@@ -32,6 +32,14 @@ val supabaseAnonKey =
         localProps.getProperty("SUPABASE_ANON_KEY")
             ?: project.findProperty("SUPABASE_ANON_KEY") as String?
     ).orEmpty()
+// Google Web OAuth client ID for the Android native (Credential Manager) sign-in.
+// Public identifier, not a secret — same injection path as the Supabase values.
+// May be empty: the browser OAuth fallback works without it; only the native sheet needs it.
+val googleServerClientId =
+    (
+        localProps.getProperty("GOOGLE_SERVER_CLIENT_ID")
+            ?: project.findProperty("GOOGLE_SERVER_CLIENT_ID") as String?
+    ).orEmpty()
 
 kotlin {
     listOf(
@@ -75,6 +83,10 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.ktor.client.okhttp)
+            // Credential Manager backing for compose-auth's native Google sign-in (Android only).
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.playServicesAuth)
+            implementation(libs.googleid)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -88,6 +100,7 @@ kotlin {
             implementation(project.dependencies.platform(libs.supabase.bom))
             implementation(libs.supabase.postgrest)
             implementation(libs.supabase.auth)
+            implementation(libs.supabase.composeAuth)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel)
@@ -112,6 +125,7 @@ buildkonfig {
     defaultConfigs {
         buildConfigField(STRING, "SUPABASE_URL", supabaseUrl)
         buildConfigField(STRING, "SUPABASE_ANON_KEY", supabaseAnonKey)
+        buildConfigField(STRING, "GOOGLE_SERVER_CLIENT_ID", googleServerClientId)
     }
 }
 

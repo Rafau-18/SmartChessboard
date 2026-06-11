@@ -29,7 +29,10 @@ fun App() {
                 SignInScreen(
                     isSigningIn = uiState.isSigningIn,
                     signInFailed = uiState.signInFailed,
-                    onContinueWithGoogle = authViewModel::signInWithGoogle,
+                    nativeGoogleConfigured = BuildKonfig.GOOGLE_SERVER_CLIENT_ID.isNotEmpty(),
+                    onSignInStarted = authViewModel::onInteractiveSignInStarted,
+                    onSignInFailed = authViewModel::onInteractiveSignInFailed,
+                    onBrowserFallback = authViewModel::signInWithGoogle,
                 )
             }
 

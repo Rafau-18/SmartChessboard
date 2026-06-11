@@ -452,8 +452,8 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Automated
 
-- [ ] 6.1 Test + build tasks green after compose-auth
+- [x] 6.1 Test + build tasks green after compose-auth
 
 #### Manual
 
-- [ ] 6.2 Native account sheet on Android with graceful fallback
+- [x] 6.2 Native account sheet on Android with graceful fallback
