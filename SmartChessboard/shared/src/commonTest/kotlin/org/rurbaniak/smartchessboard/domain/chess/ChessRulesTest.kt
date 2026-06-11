@@ -92,6 +92,23 @@ class ChessRulesTest {
     }
 
     @Test
+    fun blackCastlingLegalBothSidesWhenNothingInterferes() {
+        val e8 = squareOf(4, 7)
+        val position =
+            positionOf(
+                e8 to black(PieceType.KING),
+                squareOf(0, 7) to black(PieceType.ROOK),
+                squareOf(7, 7) to black(PieceType.ROOK),
+                squareOf(4, 0) to white(PieceType.KING),
+                sideToMove = Color.BLACK,
+                castlingRights = CastlingRights(false, false, true, true),
+            )
+        val legal = legalMoves(position)
+        assertContains(legal, Move(e8, squareOf(6, 7)))
+        assertContains(legal, Move(e8, squareOf(2, 7)))
+    }
+
+    @Test
     fun castlingRejectedWhileInCheck() {
         val legal = legalMoves(whiteCastlingPosition(squareOf(4, 5) to black(PieceType.ROOK)))
         assertTrue(legal.none { it.from == squareOf(4, 0) && it.to in setOf(squareOf(6, 0), squareOf(2, 0)) })
@@ -168,6 +185,21 @@ class ChessRulesTest {
     }
 
     // --- Promotion via validate ---
+
+    @Test
+    fun promotionOffersExactlyTheFourTargetPieces() {
+        val a7 = squareOf(0, 6)
+        val a8 = squareOf(0, 7)
+        val position =
+            positionOf(
+                a7 to white(PieceType.PAWN),
+                squareOf(4, 0) to white(PieceType.KING),
+                squareOf(4, 7) to black(PieceType.KING),
+            )
+        val promotions = legalMoves(position).filter { it.from == a7 && it.to == a8 }
+        assertEquals(4, promotions.size)
+        assertEquals(PROMOTION_TARGETS, promotions.mapNotNull { it.promoteTo }.toSet())
+    }
 
     @Test
     fun incompletePromotionIsRejectedWithDedicatedReason() {
