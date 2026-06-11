@@ -32,7 +32,7 @@ On Android, iOS, **and web**, a player taps "Continue with Google", round-trips 
 
 ## Scope
 
-**In scope:** `games` migration + RLS + pgTAP; Google provider config (manual consoles); supabase-kt Auth + Koin + domain/data/presentation skeleton; SignIn + History screens (empty state, sign-out); deep links (Android/iOS) + web redirect; E2E on three surfaces; decision write-back (lessons, tech-stack, contract).
+**In scope:** `games` migration + RLS + pgTAP; Google provider config (manual consoles incl. OAuth consent screen, plus `config.toml` local parity); supabase-kt Auth + Koin + domain/data/presentation skeleton; SignIn + History screens (empty state, sign-out); deep links (Android/iOS) + web redirect; E2E on three surfaces; decision write-back (lessons, tech-stack, contract + dated prd.md change-control note).
 
 **Out of scope:** game creation/replay/seeding (S-02/S-04), Room/offline-first (S-04), Navigation 3 (S-02), Apple Sign In (post-MVP), full web digital subset (FR-020 stays parked), `lichess-eval` (S-03), CI.
 
@@ -45,10 +45,10 @@ Clean Architecture skeleton lands in `commonMain`: `domain/` (AuthRepository, Ga
 | Phase | What it delivers | Key risk |
 | --- | --- | --- |
 | 1. Backend schema + RLS + pgTAP | `games` table provable-private before any UI | pgTAP impersonation setup fiddliness |
-| 2. Provider config (manual) | Google OAuth usable against the cloud project | Console misconfig → cryptic OAuth errors later |
+| 2. Provider config (manual) | Google OAuth usable against the cloud project + `config.toml` local parity | Console misconfig → cryptic OAuth errors; Testing-status consent screen needs both privacy-check accounts as test users |
 | 3. Shared auth core | Koin + repos + VMs + green tests on all targets | wasm yarn.lock / alpha-tooling friction |
 | 4. UI + platform wiring + E2E | Working sign-in/history on Android, iOS, web | Deep-link edge cases; web redirect state loss |
-| 5. Decision records | lessons/tech-stack/contract in sync with reality | None (docs) |
+| 5. Decision records | lessons/tech-stack/contract/prd note in sync with reality | None (docs) |
 | 6. (Optional) Android one-tap | Native sign-in sheet | Extra Google config; skippable |
 
 **Prerequisites:** Supabase cloud project access (exists), a Google Cloud account for the OAuth client (Phase 2, user), local Docker for `supabase test db`.
@@ -57,11 +57,11 @@ Clean Architecture skeleton lands in `commonMain`: `domain/` (AuthRepository, Ga
 ## Open Risks & Assumptions
 
 - supabase-kt 3.6 session persistence is multiplatform-settings/localStorage, not Keychain/Keystore as contract §4.2 currently claims — accepted for MVP, contract gets amended (Phase 5); hardening is post-MVP.
-- Web OAuth assumes the SDK consumes the callback URL on load before the app concludes SignedOut — the explicit `Restoring` state guards this; verify against supabase-kt 3.6 docs during Phase 3.
+- Web OAuth assumes the SDK consumes the callback URL on load before the app concludes SignedOut — the explicit `Restoring` state guards this; confirmed during plan review (2026-06-11): the Auth plugin auto-consumes the callback URL at init and exposes `SessionStatus.Initializing`.
 - Google blocks WebView OAuth — the flow must stay in external browser/custom tab (SDK default).
 
 ## Success Criteria (Summary)
 
 - A player signs in with Google on Android, iOS, and web, sees only their own (empty) list, and stays signed in across restarts; sign-out returns to the gate.
 - `supabase test db` proves two-user RLS isolation on `games`; VM tests prove the gating state machine.
-- lessons.md / tech-stack.md / contract-surfaces.md reflect the committed decisions and implemented flow.
+- lessons.md / tech-stack.md / contract-surfaces.md (+ dated prd.md Implementation Decisions note) reflect the committed decisions and implemented flow.

@@ -53,7 +53,7 @@ Architecture commitments made in this plan (to be recorded in Phase 5): **MVVM b
 
 ### Overview
 
-Land the `games` table exactly as the contract specifies, prove the RLS privacy boundary with pgTAP, and bring `config.toml` to parity for the local stack.
+Land the `games` table exactly as the contract specifies and prove the RLS privacy boundary with pgTAP. (The `config.toml` provider-parity edit lives in Phase 2 — it depends on credentials created there.)
 
 ### Changes Required:
 
@@ -72,14 +72,6 @@ Land the `games` table exactly as the contract specifies, prove the RLS privacy 
 **Intent**: Prove the privacy boundary mechanically: structural assertions (RLS enabled on `games`, all four policies present, index exists) plus behavioral assertions impersonating two seeded `auth.users` via `request.jwt.claims` — user A sees only their own rows, cannot insert rows with B's `user_id`, cannot update/delete B's rows; the `anon` role sees nothing.
 
 **Contract**: `supabase test db` exits 0 with all assertions passing against a `supabase db reset` database.
-
-#### 3. Local-stack provider parity
-
-**File**: `supabase/config.toml`
-
-**Intent**: Add the `[auth.external.google]` block (enabled, `client_id`/`secret` via `env(...)` substitution from gitignored `supabase/.env.local`) and extend `additional_redirect_urls` with the mobile deep link and web dev-server origin, so `supabase start` mirrors the cloud configuration. Secrets never enter git (lessons.md rule).
-
-**Contract**: `[auth.external.google]` enabled; redirect allowlist contains `com.smartchessboard://callback` and `http://localhost:8080`.
 
 ### Success Criteria:
 
@@ -100,21 +92,29 @@ Land the `games` table exactly as the contract specifies, prove the RLS privacy 
 
 ### Overview
 
-The only non-agent-drivable work in the slice: create the OAuth client and configure the Supabase cloud project, per contract §4.1. Checklist for the user; the agent prepares exact values.
+Create the OAuth client and configure the Supabase cloud project, per contract §4.1 — mostly non-agent-drivable console work (checklist for the user; the agent prepares exact values), plus the small `config.toml` parity edit that depends on the credentials created here.
 
 ### Changes Required:
 
 #### 1. Google Cloud Console
 
-**Intent**: Create an OAuth 2.0 Client ID of type **Web application**; authorized redirect URI = `https://<project-ref>.supabase.co/auth/v1/callback`. Record Client ID + Secret (into a password manager and `supabase/.env.local` for the local stack — never into git).
+**Intent**: First configure the **OAuth consent screen** (app name, support email, scopes `openid`/`email`/`profile`; decide publishing status — in **Testing** status only allowlisted test users can sign in, so add both Google accounts used for the Phase 4 privacy check as test users, or publish to Production). Then create an OAuth 2.0 Client ID of type **Web application**; authorized redirect URIs = `https://<project-ref>.supabase.co/auth/v1/callback` (cloud) and `http://127.0.0.1:54321/auth/v1/callback` (local stack parity). Record Client ID + Secret (into a password manager and `supabase/.env.local` for the local stack — never into git).
 
-**Contract**: Contract §4.1 setup, step 1.
+**Contract**: Contract §4.1 setup, step 1, extended with consent-screen setup and the local-stack callback URI.
 
 #### 2. Supabase Dashboard
 
 **Intent**: Authentication → Providers → Google: enable, paste Client ID + Secret. Authentication → URL Configuration: add `com.smartchessboard://callback` (mobile deep link), `https://smart-chessboard-web.<subdomain>.workers.dev` (deployed web), and `http://localhost:8080` (web dev server) to allowed redirect URLs.
 
 **Contract**: Contract §4.1 setup, steps 2–3, extended with the two web origins (web wiring decided 2026-06-10).
+
+#### 3. Local-stack provider parity
+
+**File**: `supabase/config.toml`
+
+**Intent**: Add the `[auth.external.google]` block (enabled, `client_id`/`secret` via `env(...)` substitution from gitignored `supabase/.env.local`) and extend `additional_redirect_urls` with the mobile deep link and web dev-server origin, so `supabase start` mirrors the cloud configuration. Secrets never enter git (lessons.md rule). Done here (not Phase 1) because the env values only exist once the console work above produces them.
+
+**Contract**: `[auth.external.google]` enabled; redirect allowlist contains `com.smartchessboard://callback` and `http://localhost:8080`.
 
 ### Success Criteria:
 
@@ -127,6 +127,8 @@ The only non-agent-drivable work in the slice: create the OAuth client and confi
 - Google provider shows as enabled in Supabase Dashboard
 - Redirect allowlist contains the deep link and both web origins
 - `supabase/.env.local` holds the Google client credentials for the local stack
+- OAuth consent screen configured; while in Testing status, both privacy-check Google accounts are registered test users
+- `config.toml` carries the `[auth.external.google]` block and extended `additional_redirect_urls`
 
 ---
 
@@ -256,6 +258,7 @@ Replace the wizard `App.kt` with the real root: SignIn and History screens drive
 - All Phase 3 test commands still green (`:shared:testAndroidHostTest`, `:shared:wasmJsTest`)
 - Android app builds: `ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :androidApp:assembleDebug --console=plain --no-daemon`
 - Web production bundle builds: `… ./gradlew :webApp:wasmJsBrowserDistribution --console=plain --no-daemon`
+- iOS app compiles: `xcodebuild -project SmartChessboard/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator build`
 
 #### Manual Verification:
 
@@ -263,7 +266,7 @@ Replace the wizard `App.kt` with the real root: SignIn and History screens drive
 - iOS (simulator or device, via Xcode): same round trip incl. restart persistence and sign-out
 - Web (dev server): same round trip; reload keeps the session
 - Web (deployed shell, after a manual `wrangler deploy` of the new bundle): sign-in round trip works on `workers.dev`
-- Privacy check with two Google accounts: seed one `games` row for account A via Supabase SQL editor → A sees exactly that row rendered correctly (date/mode/labels), B sees the empty state
+- Privacy check with two Google accounts (both must be registered test users while the consent screen is in Testing status — Phase 2): seed one `games` row for account A via Supabase SQL editor → A sees exactly that row rendered correctly (date/mode/labels), B sees the empty state
 - OAuth cancel mid-flow (close browser) returns to SignIn with a friendly message, not a crash or stuck spinner
 
 **Implementation Note**: Pause here for manual confirmation of the E2E checks before the docs phase.
@@ -294,13 +297,13 @@ Make the two architecture commitments durable, and bring the contract back in sy
 
 **Contract**: No other rows touched.
 
-#### 3. contract-surfaces.md §4 write-back
+#### 3. contract-surfaces.md §4 write-back + PRD change-control note
 
-**File**: `docs/reference/contract-surfaces.md`
+**File**: `docs/reference/contract-surfaces.md`, `context/foundation/prd.md`
 
-**Intent**: Per the contract's own change-control: record the final deep-link scheme `com.smartchessboard://callback` in §4.1 (replacing "exact scheme determined during mobile implementation"); add the two web redirect origins to §4.1; amend §4.2 step 5 to reflect actual session storage (SDK default multiplatform-settings/localStorage; Keychain/Keystore hardening noted as post-MVP); bump frontmatter `updated`.
+**Intent**: Per the contract's own change-control: record the final deep-link scheme `com.smartchessboard://callback` in §4.1 (replacing "exact scheme determined during mobile implementation"); add the two web redirect origins to §4.1; amend §4.2 step 5 to reflect actual session storage (SDK default multiplatform-settings/localStorage; Keychain/Keystore hardening noted as post-MVP); bump frontmatter `updated`. Then complete change-control steps 2–3: add one dated rationale line to prd.md "Implementation Decisions" (deep-link scheme locked; session storage = SDK default, Keychain/Keystore hardening post-MVP). No user-facing PRD wording changes.
 
-**Contract**: Change-control checklist of the document followed (PRD untouched — no user-facing wording changed).
+**Contract**: All three change-control checklist steps of the document followed.
 
 #### 4. change.md status
 
@@ -318,7 +321,7 @@ Make the two architecture commitments durable, and bring the contract back in sy
 
 #### Manual Verification:
 
-- lessons.md carries both rules; tech-stack.md TBD rows resolved; contract §4 matches the implemented flow and `updated` is bumped
+- lessons.md carries both rules; tech-stack.md TBD rows resolved; contract §4 matches the implemented flow and `updated` is bumped; prd.md Implementation Decisions carries the dated rationale line
 
 ---
 
@@ -388,16 +391,16 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
-### Phase 1: Backend — games schema, RLS, pgTAP
+### Phase 1: Backend — `games` schema, RLS, pgTAP
 
 #### Automated
 
-- [ ] 1.1 Migrations apply cleanly: `supabase db reset`
-- [ ] 1.2 pgTAP suite passes: `supabase test db`
+- [x] 1.1 Migrations apply cleanly: `supabase db reset`
+- [x] 1.2 pgTAP suite passes: `supabase test db`
 
 #### Manual
 
-- [ ] 1.3 Migration pushed to cloud (`supabase db push`); table + 4 policies visible in Dashboard
+- [x] 1.3 Migration pushed to cloud (`supabase db push`); table + 4 policies visible in Dashboard
 
 ### Phase 2: Provider configuration (manual console gates)
 
@@ -406,8 +409,10 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 - [ ] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud)
 - [ ] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080
 - [ ] 2.3 `supabase/.env.local` holds Google client credentials for local stack
+- [ ] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing)
+- [ ] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls`
 
-### Phase 3: Shared auth core
+### Phase 3: Shared auth core — Koin, Auth plugin, repositories, ViewModels, tests
 
 #### Automated
 
@@ -416,13 +421,14 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 - [ ] 3.3 `:shared:iosSimulatorArm64Test` green
 - [ ] 3.4 ktlint clean
 
-### Phase 4: UI + platform wiring + E2E
+### Phase 4: UI + platform wiring — screens, deep links, web redirect, E2E
 
 #### Automated
 
 - [ ] 4.1 Phase 3 test tasks still green
 - [ ] 4.2 `:androidApp:assembleDebug` builds
 - [ ] 4.3 `:webApp:wasmJsBrowserDistribution` builds
+- [ ] 4.10 iosApp compiles via `xcodebuild` (iphonesimulator)
 
 #### Manual
 
@@ -440,6 +446,7 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 - [ ] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended
 - [ ] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated)
 - [ ] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump
+- [ ] 5.4 prd.md Implementation Decisions: dated change-control rationale line
 
 ### Phase 6 (OPTIONAL): Native Google one-tap on Android
 
