@@ -53,3 +53,23 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: After adding/removing a wasmJs/js npm-backed dependency, run `./gradlew kotlinWasmUpgradeYarnLock` once to actualize `kotlin-js-store/yarn.lock`, then rebuild. The agent can and should run this from the CLI — no IDE "sync" is required. (Separate but co-occurring DSL gotcha: in a Gradle Kotlin DSL build script, `java.util.Properties()` collides with the Gradle `java` plugin accessor and fails with `Unresolved reference 'util'` — use `import java.util.Properties` and call `Properties()` instead.)
 
 - **Applies to**: implement, impl-review
+
+## Presentation pattern: MVVM is the default; MVI only for genuinely event-heavy screens, with written justification
+
+- **Context**: `tech-stack.md` deliberately deferred the UI architecture pattern (MVVM vs MVI), leaving it as Open Decision #7 to be settled after spiking a few screens. The S-01 slice (`google-signin-own-history`) built the first real screens — SignIn and History — as MVVM (`AuthViewModel` / `HistoryViewModel` exposing `StateFlow<UiState>`, intents as methods), and that pattern proved a clean fit for the gating state machine and list-load states. Clean Architecture layering (`domain/` / `data/` / `presentation/`) is independent of this choice and stays in force regardless.
+
+- **Problem**: Without a committed default, every new screen reopens the MVVM-vs-MVI debate, and the codebase drifts toward an inconsistent mix where some screens model explicit intents/reducers and others hold mutable state holders — raising the cost of reading any unfamiliar screen and of moving code between them. MVI's ceremony (intent sealed classes, reducers, single immutable state) is real overhead that pays off only when a screen has a genuinely complex event/state machine.
+
+- **Rule**: **MVVM is the default presentation pattern.** A ViewModel exposes UI state as `StateFlow<UiState>` and accepts intents as plain methods; it depends only on `domain/` interfaces (constructor-injected via Koin). **MVI is permitted only for screens with a genuinely complex, event-heavy state machine** (e.g. the live game board, BLE connection/pairing flows), and the choice **must be justified in that change's plan** — not adopted silently. Do not retrofit MVI onto simple form/list screens.
+
+- **Applies to**: plan, implement, impl-review — any work adding or reworking a `presentation/` screen in the mobile sub-project. Resolves `tech-stack.md` Open Decision #7. Decided 2026-06-10 (S-01).
+
+## Dependency injection: Koin KMP is the committed library — no parallel service locators
+
+- **Context**: `tech-stack.md` left dependency injection as Open Decision #8 (Koin KMP vs a hand-rolled service locator), to be picked during onboarding. The S-01 slice wired the shared auth core through Koin: a single `SupabaseClient`, the data-layer repositories, and the ViewModels are all registered in `di/AppModules.kt`, with one `initKoin()` bootstrap called from each platform entry point (Android `Application`, iOS app start, web `main()`), and `koinViewModel()` resolving ViewModels at the composition root on all three targets.
+
+- **Problem**: A solo MVP can drift into two coexisting wiring styles — some objects resolved through Koin modules, others reached via a hand-rolled singleton/service locator — which fragments object lifetimes, makes test substitution inconsistent (some boundaries fakeable via Koin overrides, others hard-wired), and obscures where a given dependency actually comes from.
+
+- **Rule**: **Koin KMP is the committed DI library.** All new injectable code (clients, repositories, ViewModels, use cases) registers through Koin modules and resolves through Koin; do **not** introduce a parallel service locator, global singletons, or ad-hoc `object` holders for things that belong in a module. The single `initKoin()` entry point is the one bootstrap each platform calls. Tests prefer hand-written fakes (per tech-stack discipline) injected through Koin overrides or direct constructor calls, not a second locator.
+
+- **Applies to**: plan, implement, impl-review — any work adding an injectable dependency in the mobile sub-project. Resolves `tech-stack.md` Open Decision #8. Decided 2026-06-10 (S-01).

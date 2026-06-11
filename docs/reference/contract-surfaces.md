@@ -401,21 +401,32 @@ device-local storage. Cloud is the backup/sync layer, not the live source.
 
 **Supabase Dashboard → Authentication → URL Configuration**:
 
-- Add the mobile deep-link scheme to allowed redirect URLs
-  (e.g., `com.smartchessboard://callback` — exact scheme determined during
-  mobile implementation and recorded back here).
+- Mobile deep-link scheme (locked during S-01 implementation, 2026-06-10):
+  `com.smartchessboard://callback`.
+- Web redirect origins (web target wired in S-01): the deployed shell
+  `https://smart-chessboard-web.<subdomain>.workers.dev` and the local dev server
+  `http://localhost:8080`. The local Supabase stack (`config.toml`) carries the
+  same deep link plus `http://localhost:8080`.
 
 ### 4.2 Sign-in flow
 
-1. User taps "Sign in with Google" in the mobile app.
-2. Mobile SDK opens a system browser (or native Google Sign-In SDK depending
-   on platform) to start the OAuth flow.
+1. User taps "Sign in with Google" in the app.
+2. The SDK starts the OAuth flow in an external browser / custom tab (never an
+   embedded WebView — Google blocks WebView OAuth). On Android/iOS this returns
+   via the deep link `com.smartchessboard://callback`; on web it is a full-page
+   redirect to Google and back to the site origin.
 3. User authenticates with Google; Google redirects to Supabase callback.
 4. Supabase exchanges the auth code for tokens, creates a row in `auth.users`
    if first sign-in (auto-account creation per PRD Access Control), and
-   redirects to the mobile deep link with session tokens.
-5. Mobile SDK stores access token + refresh token in platform secure storage
-   (Keychain on iOS, Keystore on Android).
+   redirects back (deep link on mobile, site origin on web) with the session.
+5. The SDK persists the session via its default session manager
+   (multiplatform-settings: SharedPreferences on Android, NSUserDefaults on
+   iOS, localStorage on web). Hardened OS-keystore storage (Keychain on iOS,
+   Keystore on Android) is **post-MVP** — accepted for the small-circle MVP,
+   amended 2026-06-10 to match the implemented S-01 flow. On web, app state is
+   lost across the redirect, so on startup the app must let the SDK consume the
+   callback URL before concluding signed-out (modeled as an explicit
+   `Restoring` auth state).
 6. Subsequent SDK calls include the JWT automatically.
 
 ### 4.3 JWT lifecycle

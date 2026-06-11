@@ -58,9 +58,9 @@ The mobile app follows **Clean Architecture** layering, with boundaries enforced
 - **`data/`** — implementations of repository interfaces: Supabase clients, Room DAOs, the BLE board adapter, the Lichess Cloud Eval client wrapper. Mostly `commonMain` (where supabase-kt and Room 3.0 are KMP), with `expect`/`actual` for BLE platform-specific bits.
 - **`presentation/`** — ViewModels (state holders) + Compose UI. Reads `domain/` use cases, exposes UI state. Never imports `data/` directly.
 
-**UI architecture pattern (MVVM vs MVI) is deliberately deferred** — prototype 2–3 screens in both patterns during early feature work, then commit to one in `lessons.md` so the rest of the project stays consistent. The Clean Architecture layering above is independent of that choice: both MVVM and MVI live entirely in `presentation/` and consume `domain/` use cases identically.
+**UI architecture pattern: MVVM by default** (decided 2026-06-10, S-01) — ViewModels expose UI state as `StateFlow<UiState>` and take intents as methods. MVI is permitted only for screens with a genuinely complex, event-heavy state machine (live game board, BLE flows) and must be justified in that change's plan. The Clean Architecture layering above is independent of that choice: both patterns live entirely in `presentation/` and consume `domain/` use cases identically. Rationale and the full rule are recorded in `lessons.md`.
 
-**Dependency injection: TBD** — pick during M1L4 onboarding. Leading candidates: Koin KMP (multiplatform, runtime DI, well-known) vs hand-rolled service locator (zero dependencies, fine for solo MVP).
+**Dependency injection: Koin KMP** (decided 2026-06-10, S-01) — a single `initKoin()` bootstrap is called from each platform entry point (Android `Application`, iOS app start, web `main()`); clients, repositories, and ViewModels register through Koin modules. No parallel service locators or ad-hoc singletons. Recorded in `lessons.md`.
 
 Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architecture — they are too small and too tightly bound to their respective platforms. Firmware is structured around FreeRTOS tasks (matrix-scan task, BLE-server task, button-event task). Backend is SQL migrations + RLS policies + one Edge Function, no application layer.
 
@@ -81,8 +81,8 @@ Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architectur
 | BLE (realtime transport) | Kable as first try; fallback to `expect`/`actual` with platform-native APIs (Android BluetoothLe + iOS CoreBluetooth) if Kable becomes blocking | realtime event stream from board to app (`SQUARE_EVENT`, `BUTTON_EVENT`, `BOARD_SNAPSHOT`) per `contract-surfaces.md` §1.2. **Not used on WasmJS target** — web has no board connection |
 | Navigation | Navigation 3 (`androidx.navigation3:navigation3-ui` ≥ 1.0.0-alpha05) | requires polymorphic `kotlinx.serialization` sealed-key hierarchy for iOS + WasmJS destinations |
 | ViewModel | `lifecycle-viewmodel-compose` KMP edition | |
-| Architecture pattern | Clean Architecture layers (`domain/` / `data/` / `presentation/`); MVVM vs MVI **TBD** | see "Architecture overview" section; spike 2–3 screens in both patterns before committing |
-| Dependency injection | **TBD** (Koin KMP vs hand-rolled service locator) | decide during M1L4 onboarding |
+| Architecture pattern | Clean Architecture layers (`domain/` / `data/` / `presentation/`); **MVVM by default, MVI only for genuinely event-heavy screens with written justification** | decided 2026-06-10 (S-01); see "Architecture overview" section and `lessons.md` |
+| Dependency injection | **Koin KMP** | decided 2026-06-10 (S-01); one `initKoin()` bootstrap per platform, no parallel service locators — see `lessons.md` |
 | Testing — unit | `kotlin-test` + `kotlinx-coroutines-test` + Turbine | tests in `commonTest`; pure-logic tests fastest on `jvm()` target |
 | Testing — UI | `runComposeUiTest` (Compose Multiplatform UI Test, `compose.ui:ui-test`) | one Compose UI test suite runs across Android + iOS + desktop + web from `commonTest`; **replaces Espresso** (which is XML-View-only, not applicable to Compose) |
 | Mocking | **MocKMP** (KMP-native, compile-time generated) + fakes-first discipline | MocKMP avoids reflection-based gotchas on iOS that MockK has; prefer hand-written fakes for `domain/` boundaries — cleaner test reads, easier to maintain in pure-logic-heavy chess code |
@@ -144,8 +144,8 @@ Carry-overs from `prd-firmware.md` and decisions consciously postponed to later 
 4. **GATT service / characteristic UUIDs** (FW-5) — assigned during firmware implementation, mirror into `contract-surfaces.md` §1.2
 5. **Mobile distribution path** for MVP friends — TestFlight + Play Internal vs APK sideload + iOS-on-dev-machine only
 6. **Compose Multiplatform on Web viability** — if a must-have feature is blocked on web (BLE was already excluded), freeze web development and re-evaluate post-MVP
-7. **UI architecture pattern** — MVVM vs MVI; spike 2–3 screens in both during early feature work, then commit one in `lessons.md`
-8. **Dependency injection library** — Koin KMP vs hand-rolled service locator; pick during M1L4 onboarding
+7. ~~**UI architecture pattern** — MVVM vs MVI~~ — **RESOLVED 2026-06-10 (S-01, `google-signin-own-history`)**: MVVM by default, MVI only for genuinely event-heavy screens with written justification. See "Architecture overview" and `lessons.md`.
+8. ~~**Dependency injection library** — Koin KMP vs hand-rolled service locator~~ — **RESOLVED 2026-06-10 (S-01, `google-signin-own-history`)**: Koin KMP, one `initKoin()` bootstrap per platform, no parallel service locators. See `lessons.md`.
 9. **Maestro E2E** — deferred to post-MVP; add to CI as separate milestone once UI stabilizes (unless a later course lesson requires E2E earlier)
 
 ## Why `/10x-tech-stack-selector` and `/10x-bootstrapper` were skipped

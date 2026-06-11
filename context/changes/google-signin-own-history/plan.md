@@ -425,28 +425,28 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Automated
 
-- [x] 4.1 Phase 3 test tasks still green
-- [x] 4.2 `:androidApp:assembleDebug` builds
-- [x] 4.3 `:webApp:wasmJsBrowserDistribution` builds
-- [x] 4.10 iosApp compiles via `xcodebuild` (iphonesimulator)
+- [x] 4.1 Phase 3 test tasks still green — 84020fa
+- [x] 4.2 `:androidApp:assembleDebug` builds — 84020fa
+- [x] 4.3 `:webApp:wasmJsBrowserDistribution` builds — 84020fa
+- [x] 4.10 iosApp compiles via `xcodebuild` (iphonesimulator) — 84020fa
 
 #### Manual
 
-- [x] 4.4 Android round trip (sign-in → history → restart persistence → sign-out)
-- [x] 4.5 iOS round trip (same checklist)
-- [x] 4.6 Web dev-server round trip incl. reload persistence
-- [x] 4.7 Deployed web round trip after manual `wrangler deploy`
-- [x] 4.8 Two-account privacy check with seeded row
-- [x] 4.9 OAuth cancel → friendly retry state
+- [x] 4.4 Android round trip (sign-in → history → restart persistence → sign-out) — 84020fa
+- [x] 4.5 iOS round trip (same checklist) — 84020fa
+- [x] 4.6 Web dev-server round trip incl. reload persistence — 84020fa
+- [x] 4.7 Deployed web round trip after manual `wrangler deploy` — 84020fa
+- [x] 4.8 Two-account privacy check with seeded row — 84020fa
+- [x] 4.9 OAuth cancel → friendly retry state — 84020fa
 
 ### Phase 5: Decision records & contract write-back
 
 #### Manual
 
-- [ ] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended
-- [ ] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated)
-- [ ] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump
-- [ ] 5.4 prd.md Implementation Decisions: dated change-control rationale line
+- [x] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended
+- [x] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated)
+- [x] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump
+- [x] 5.4 prd.md Implementation Decisions: dated change-control rationale line
 
 ### Phase 6 (OPTIONAL): Native Google one-tap on Android
 
