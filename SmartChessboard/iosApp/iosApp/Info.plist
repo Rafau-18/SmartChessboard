@@ -4,5 +4,16 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>org.rurbaniak.smartchessboard.auth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.smartchessboard</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

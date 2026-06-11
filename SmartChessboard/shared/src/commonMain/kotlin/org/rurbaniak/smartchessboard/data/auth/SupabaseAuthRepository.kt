@@ -39,7 +39,12 @@ class SupabaseAuthRepository(
         }
 
     override suspend fun signInWithGoogle() {
-        client.auth.signInWith(Google)
+        client.auth.signInWith(Google) {
+            // Sign-out clears only the Supabase session — the browser keeps its Google
+            // session, so without this Google silently re-authenticates the same account.
+            // Forcing the account chooser makes sign-out → sign-in-as-someone-else possible.
+            queryParams["prompt"] = "select_account"
+        }
     }
 
     override suspend fun signOut() {

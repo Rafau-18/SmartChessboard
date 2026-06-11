@@ -1,65 +1,55 @@
 package org.rurbaniak.smartchessboard
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import org.jetbrains.compose.resources.painterResource
-import org.rurbaniak.smartchessboard.data.ProbeResult
-import org.rurbaniak.smartchessboard.data.probeSupabase
-import smartchessboard.shared.generated.resources.Res
-import smartchessboard.shared.generated.resources.compose_multiplatform
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
+import org.rurbaniak.smartchessboard.domain.auth.SessionState
+import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
+import org.rurbaniak.smartchessboard.presentation.auth.SignInScreen
+import org.rurbaniak.smartchessboard.presentation.history.HistoryScreen
 
 @Composable
-@Preview
 fun App() {
     MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        var supabaseStatus by remember { mutableStateOf("Connecting to Supabase…") }
-        LaunchedEffect(Unit) {
-            supabaseStatus =
-                when (val result = probeSupabase()) {
-                    is ProbeResult.Ok -> {
-                        "Connected to Supabase ✓ (anon sees ${result.visibleRows} rows — RLS enforced)"
-                    }
+        val authViewModel = koinViewModel<AuthViewModel>()
+        val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
+        when (val session = uiState.sessionState) {
+            SessionState.Restoring -> {
+                RestoringScreen()
+            }
 
-                    is ProbeResult.Error -> {
-                        "Supabase error: ${result.message}"
-                    }
-                }
-        }
-        Column(
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .safeContentPadding()
-                    .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(supabaseStatus)
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+            SessionState.SignedOut -> {
+                SignInScreen(
+                    isSigningIn = uiState.isSigningIn,
+                    signInFailed = uiState.signInFailed,
+                    onContinueWithGoogle = authViewModel::signInWithGoogle,
+                )
             }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
-                }
+
+            is SessionState.SignedIn -> {
+                HistoryScreen(
+                    userId = session.userId,
+                    onSignOut = authViewModel::signOut,
+                )
             }
         }
+    }
+}
+
+/**
+ * Shown while a persisted session (or, on web, the OAuth redirect callback) is
+ * still being consumed — the root must not flash the sign-in screen during this window.
+ */
+@Composable
+private fun RestoringScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
     }
 }
