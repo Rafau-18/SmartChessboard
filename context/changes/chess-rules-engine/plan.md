@@ -587,13 +587,13 @@ schema, no dependency additions, no DI wiring.
 
 #### Automated
 
-- [x] 5.1 Full suite green on host: `:shared:testAndroidHostTest`
-- [x] 5.2 Green on iOS sim: `:shared:iosSimulatorArm64Test`
-- [x] 5.3 Green on WasmJS: `:shared:wasmJsTest`
-- [x] 5.4 Formatting clean: `ktlint -F`
+- [x] 5.1 Full suite green on host: `:shared:testAndroidHostTest` — bb83ff1
+- [x] 5.2 Green on iOS sim: `:shared:iosSimulatorArm64Test` — bb83ff1
+- [x] 5.3 Green on WasmJS: `:shared:wasmJsTest` — bb83ff1
+- [x] 5.4 Formatting clean: `ktlint -F` — bb83ff1
 
 #### Manual
 
-- [x] 5.5 Asserted perft counts match published reference values (start position, Kiwipete)
-- [x] 5.6 Any per-target perft-depth reduction documented in-comment
-- [x] 5.7 Public API surface read as a downstream consumer (enumerate / attempt / classify)
+- [x] 5.5 Asserted perft counts match published reference values (start position, Kiwipete) — bb83ff1
+- [x] 5.6 Any per-target perft-depth reduction documented in-comment — bb83ff1
+- [x] 5.7 Public API surface read as a downstream consumer (enumerate / attempt / classify) — bb83ff1
