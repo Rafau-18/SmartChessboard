@@ -406,11 +406,11 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Manual
 
-- [ ] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud)
-- [ ] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080
-- [ ] 2.3 `supabase/.env.local` holds Google client credentials for local stack
-- [ ] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing)
-- [ ] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls`
+- [x] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud)
+- [x] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080
+- [x] 2.3 `supabase/.env.local` holds Google client credentials for local stack
+- [x] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing)
+- [x] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls`
 
 ### Phase 3: Shared auth core — Koin, Auth plugin, repositories, ViewModels, tests
 
