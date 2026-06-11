@@ -443,10 +443,10 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Manual
 
-- [x] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended
-- [x] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated)
-- [x] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump
-- [x] 5.4 prd.md Implementation Decisions: dated change-control rationale line
+- [x] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended — f165d02
+- [x] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated) — f165d02
+- [x] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump — f165d02
+- [x] 5.4 prd.md Implementation Decisions: dated change-control rationale line — f165d02
 
 ### Phase 6 (OPTIONAL): Native Google one-tap on Android
 
