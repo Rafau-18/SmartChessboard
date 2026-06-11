@@ -569,8 +569,8 @@ schema, no dependency additions, no DI wiring.
 
 #### Manual
 
-- [ ] 3.3 Edge cases reviewed: pin, castle-through-check, en passant (+discovers-check), incomplete promotion
-- [ ] 3.4 castlingRights / enPassantTarget / counters update correctly
+- [x] 3.3 Edge cases reviewed: pin, castle-through-check, en passant (+discovers-check), incomplete promotion
+- [x] 3.4 castlingRights / enPassantTarget / counters update correctly
 
 ### Phase 4: Terminal-state detection
 
