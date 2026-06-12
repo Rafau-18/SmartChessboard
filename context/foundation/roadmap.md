@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-06-12
+updated: 2026-06-13
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -35,7 +35,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware           | —                      | PRD OQ-1 (resolved), US-02                             | in progress |
 | S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | awaiting review |
 | S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | awaiting review |
-| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | proposed |
+| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | awaiting review |
 | S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save                 | F-01, S-01, S-02       | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01  | proposed |
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                         | S-04                   | FR-007, FR-018, US-01                                  | proposed |
 | S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator                         | F-01, F-02, S-04       | FR-005, FR-006, FR-008, FR-009, US-02                  | proposed |
@@ -49,7 +49,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme          | Chain                                          | Note                                                                                      |
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware.     |
+| A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
 | B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. |
 | C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is blocked until firmware work resumes.         |
 
@@ -133,9 +133,9 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Unknowns:**
   - Chess-API.com (the fallback eval provider decided 2026-06-10) is a free community service — no SLA, undocumented rate limits; smoke-test both providers during `/10x-plan` research (designated alternate: stockfish.online) — Owner: team. Block: no.
   - UX for the residual case where both eval providers fail for a position — Owner: team (decide in `/10x-plan`). Block: no.
-  - Tablet/web multi-pane layout (board + eval + move list side-by-side on wide screens) — this slice is the natural home for the app-wide adaptive UI pass: the eval panel is what makes side-by-side pay off. S-02 already made `ChessBoardView` size-driven (no board rewrite needed) and capped/centred it on wide screens; decide in `/10x-plan` whether S-03 ships phone-first or adds multi-pane here (tooling: `adaptive` skill + Nav3 scenes). Owner: team. Block: no.
+  - Tablet/web multi-pane layout (board + eval + move list side-by-side on wide screens) — this slice is the natural home for the app-wide adaptive UI pass: the eval panel is what makes side-by-side pay off. S-02 already made `ChessBoardView` size-driven (no board rewrite needed) and capped/centred it on wide screens; decide in `/10x-plan` whether S-03 ships phone-first or adds multi-pane here (tooling: `adaptive` skill + Nav3 scenes). Owner: team. Block: no. **Resolved:** S-03 added a `BoxWithConstraints` two-pane ReplayScreen at ≥840 dp (board + eval bar | eval panel + move list); no Nav3 scenes, scope confined to inside ReplayScreen.
 - **Risk:** Completes the review loop end-to-end with zero hardware and zero rules engine involved; the eval chain is two providers deep by decision of 2026-06-10 (cache → Lichess Cloud Eval → Chess-API.com, per `contract-surfaces.md` §3.3) because Lichess alone has no eval for most amateur positions — open scope is the serverless eval proxy, a constraint-widening migration on the deployed `position_evals` table, and the replay-side display.
-- **Status:** proposed
+- **Status:** awaiting review — implemented through Phase 5 on `post-game-evals-in-replay` (north star reached): contract + widening migration (`20260612201124`, `aa30597`); the project's first Edge Function `lichess-eval` (cache → Lichess Cloud Eval → Chess-API.com → negative-cache `unknown`, CORS-complete, `46bd258`); `Position.toFen()` + the app-side eval data layer behind `EvalRepository` (`48e909c`); and the replay analysis UI — toggle, eval bar/panel, best-move arrow, two-pane adaptive ReplayScreen ≥840 dp (`dfe2afc`). Backend live on the hosted project (migration in sync; `lichess-eval` ACTIVE, redeploy reports "no change"; `LICHESS_TOKEN` set). Three-surface cloud E2E confirmed 2026-06-13 (Android / iOS / web — analysis toggle, per-ply fetch with instant revisit, terminal label, airplane-mode Retry; web two-pane at desktop width and browser Back unaffected; CORS preflight echo fixes supabase-kt `x-region`). Hosted `position_evals` accumulates rows (`lichess` openings / `chess-api` middlegames). `change.md` status `implemented`. **Waiting on the user's final review before `/10x-archive`** (no time pressure).
 
 ### S-04: Digital pass-and-play with durable record
 

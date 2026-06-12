@@ -113,3 +113,33 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: **Jetpack Navigation 3 multiplatform (JetBrains port) is the committed navigation library.** Pins: `org.jetbrains.androidx.navigation3:navigation3-ui` at the **stable `1.1.1`** (catalog `navigation3 = "1.1.1"`; `navigation3-common` arrives transitively); the companion `org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3` pinned via the **existing** `androidx-lifecycle` version ref (`2.11.0-beta01`) so the whole `org.jetbrains.androidx.lifecycle` group resolves to one version (mixing lifecycle artifact versions is unsupported). Routes are `@Serializable` `NavKey`s with **explicit polymorphic registration** (`Routes.kt`) — iOS/wasm have no reflection, so this is a **permanent multiplatform constraint, not a stability caveat**; omitting it crashes on state save/restore. Web browser-history is **wired** via the **separate** `com.github.terrakok:navigation3-browser:1.1.0` artifact (`wasmJsMain` only; route ↔ URL fragment; **NOT** bundled in `navigation3-ui 1.1.1`) so browser Back/Forward maps to the nav stack. A designed/shareable URL or per-ply deep-link scheme is the only web-routing piece intentionally left out. **Do not introduce a second navigation mechanism** (no parallel hand-rolled stacks, no other nav lib).
 
 - **Applies to**: plan, implement, impl-review — any work adding or reworking navigation / a `presentation/` screen entry in the mobile sub-project. Resolves the navigation-library deferral from S-01. Decided 2026-06-12 (S-02). See also the [terrakok navigation3-browser binds-once] gotcha above for the web sign-out → sign-in caveat.
+
+## External eval providers validate FEN strictly — emit en passant only when capturable, and short-circuit terminal positions before any request
+
+- **Context**: S-03 (`post-game-evals-in-replay`) sends a FEN derived from `Position` (`domain/chess/Fen.kt`, `Position.toFen()`) to the `lichess-eval` Edge Function, which proxies Lichess Cloud Eval and Chess-API.com. Smoke-tested 2026-06-12.
+
+- **Problem**: Chess-API.com validates FEN strictly: a FEN whose en passant field names a square no enemy pawn can actually capture onto returns `INVALID_FEN_VALIDATION_ERROR`, and a *terminal* position (checkmate/stalemate on the board) returns `{"type":"error","error":"INVALID_INPUT"}` instead of an eval. Naive FEN emission (print the en passant target whenever a pawn just advanced two) produces FENs a strict validator rejects, and naively asking a provider to evaluate a mate/stalemate board wastes a round-trip and returns an error that's easy to mis-handle as an outage.
+
+- **Rule**: `Position.toFen()` emits the en passant square **only when an enemy pawn can pseudo-legally capture onto it**, else `-` — this is general FEN hygiene (the serializer stays faithful and S-04-reusable), not an eval-specific hack. Terminal positions are detected client-side via `ChessRules.status()` and short-circuit to a `Terminal` UI state — **never sent to a provider**. The function treats a provider's "cannot evaluate" answer (Chess-API `INVALID_INPUT`) as provider-no-eval, not a 5xx. FEN cache keys normalize the halfmove/fullmove counters to `0 1` so identical positions reached at different move numbers share one cache entry.
+
+- **Applies to**: plan, implement, impl-review — any work serializing a position to FEN, or adding/replacing an eval provider.
+
+## Edge Functions are unit-tested with injected `fetch` + cache fakes — no real egress in `deno test`
+
+- **Context**: `supabase/functions/lichess-eval/` — the project's first Edge Function (Deno 2 + TypeScript), a multi-step decision chain (cache lookup → Lichess → Chess-API → negative-cache) with provider HTTP calls and a Postgres cache. Convention set by `supabase/AGENTS.md`.
+
+- **Problem**: A function whose behavior is defined by network responses and DB state can't be tested deterministically if its tests hit real providers and the real database — they're flaky, slow, rate-limited, and can't exercise the failure paths that matter most (404 → fallback, 429 → rate-limited, 5xx → `502`, negative cache, mate-sign mapping, FEN normalization, CORS preflight).
+
+- **Rule**: Structure the function so `fetch` and the cache client are **injected dependencies** (a `Deps` object), and have `*_test.ts` pass **fakes** — zero real egress. The full decision chain (both cache TTLs, fallback order, negative cache, `400/429/502` mapping, mate mapping from both provider shapes incl. Black-mates, counter-normalized cache keys, `OPTIONS` preflight) is covered by `deno test`. Real-egress verification (opening → `lichess`, middlegame → `chess-api`, repeat → cached, row lands) is a **manual gate against `supabase functions serve`**, deliberately *not* part of `deno test`.
+
+- **Applies to**: implement, impl-review — any new or changed Edge Function in `supabase/functions/`.
+
+## An Edge Function called from the web (supabase-kt) must echo the CORS preflight's requested headers — a static allow-list goes stale and breaks only on web
+
+- **Context**: `supabase/functions/lichess-eval/handler.ts`, invoked from the WasmJS target via supabase-kt `functions.invoke`. Surfaced during the S-03 Phase 4 manual gate (2026-06-12).
+
+- **Problem**: supabase-kt attaches its own headers (notably `x-region`) to *every* `functions.invoke`, which trips a CORS preflight on the browser. A **static** `Access-Control-Allow-Headers` allow-list that doesn't name `x-region` makes the browser reject the request — surfacing as a generic web **"Failed to fetch"** while Android/iOS (which don't preflight) work fine, so the breakage is web-only and easy to miss. Compounding it: on the wasm client a fetch failure surfaces as `kotlin.Error`, not `Exception`, so a `catch (e: Exception)` silently misses it.
+
+- **Rule**: In the `OPTIONS` handler, **echo the incoming `Access-Control-Request-Headers` back as `Access-Control-Allow-Headers`** (with a static fallback when the preflight names none) instead of hardcoding the client's header set — client libraries add headers and any fixed list goes stale the moment one appears. Attach `Access-Control-Allow-Origin` to *every* response. On the wasm client, wrap `functions.invoke` in `catch (Throwable)` (not just `Exception`) so fetch failures map to the "temporarily unavailable" state. COOP/COEP on the web host does **not** block these CORS fetches (CORP applies to embedded subresources), so no `_headers` change is needed.
+
+- **Applies to**: implement, impl-review — any Edge Function invoked from the web target via supabase-kt, and any wasm-side error handling around `functions.invoke`.

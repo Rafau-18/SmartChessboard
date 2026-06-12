@@ -643,30 +643,30 @@ schema.
 
 #### Automated
 
-- [x] 4.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`)
-- [x] 4.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [x] 4.3 Shared suite green on wasm (`:shared:wasmJsTest`)
-- [x] 4.4 ktlint clean
+- [x] 4.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`) — dfe2afc
+- [x] 4.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — dfe2afc
+- [x] 4.3 Shared suite green on wasm (`:shared:wasmJsTest`) — dfe2afc
+- [x] 4.4 ktlint clean — dfe2afc
 
 #### Manual
 
-- [x] 4.5 Android + local stack E2E: toggle, bar/panel/arrow, per-ply fetch, instant revisit, terminal label, airplane-mode Retry
-- [x] 4.6 Web: same flow; two panes at desktop width, single column narrow; browser Back unaffected
-- [x] 4.7 Local `position_evals` rows show expected `source` values
+- [x] 4.5 Android + local stack E2E: toggle, bar/panel/arrow, per-ply fetch, instant revisit, terminal label, airplane-mode Retry — dfe2afc
+- [x] 4.6 Web: same flow; two panes at desktop width, single column narrow; browser Back unaffected — dfe2afc
+- [x] 4.7 Local `position_evals` rows show expected `source` values — dfe2afc
 
 ### Phase 5: Deploy, Cloud E2E & Write-backs
 
 #### Automated
 
-- [ ] 5.1 Regression: all three per-target Gradle suites green
-- [ ] 5.2 Backend regression: `deno test` + `supabase test db` green
+- [x] 5.1 Regression: all three per-target Gradle suites green
+- [x] 5.2 Backend regression: `deno test` + `supabase test db` green
 
 #### Manual
 
-- [ ] 5.3 `supabase db push` + `supabase functions deploy lichess-eval` applied to hosted project
-- [ ] 5.4 `LICHESS_TOKEN` secret set by user
-- [ ] 5.5 Android vs cloud: analysis works on seeded game
-- [ ] 5.6 iOS simulator vs cloud: same flow
-- [ ] 5.7 Web vs cloud: same flow incl. two-pane desktop layout
-- [ ] 5.8 Hosted `position_evals` accumulates rows with expected sources
-- [ ] 5.9 Roadmap / lessons / change.md write-backs reviewed
+- [x] 5.3 `supabase db push` + `supabase functions deploy lichess-eval` applied to hosted project
+- [x] 5.4 `LICHESS_TOKEN` secret set by user
+- [x] 5.5 Android vs cloud: analysis works on seeded game
+- [x] 5.6 iOS simulator vs cloud: same flow
+- [x] 5.7 Web vs cloud: same flow incl. two-pane desktop layout
+- [x] 5.8 Hosted `position_evals` accumulates rows with expected sources
+- [x] 5.9 Roadmap / lessons / change.md write-backs reviewed
