@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,16 +38,24 @@ import org.rurbaniak.smartchessboard.domain.games.GameSummary
 fun HistoryScreen(
     userId: String,
     onSignOut: () -> Unit,
-    onGameClick: (String) -> Unit,
+    onNewGame: () -> Unit,
+    onGameClick: (GameSummary) -> Unit,
 ) {
     // Keyed by user so a sign-out → sign-in as someone else never reuses a stale list.
     val viewModel = koinViewModel<HistoryViewModel>(key = "history-$userId")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Re-fetch whenever this screen re-enters composition — notably on return from a game just
+    // created/played. The ViewModel is retained across the push/pop, so init never re-runs; this
+    // is what makes a fresh game appear without restarting the app.
+    LaunchedEffect(Unit) { viewModel.refresh() }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("My games") },
                 actions = {
+                    TextButton(onClick = onNewGame) {
+                        Text("New game")
+                    }
                     TextButton(onClick = onSignOut) {
                         Text("Sign out")
                     }
@@ -62,7 +71,7 @@ fun HistoryScreen(
 
                 HistoryUiState.Empty -> {
                     Text(
-                        "No games yet — your first game arrives in the next milestone.",
+                        "No games yet — tap \"New game\" to start one.",
                         modifier = Modifier.align(Alignment.Center).padding(24.dp),
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
@@ -89,7 +98,7 @@ fun HistoryScreen(
                 is HistoryUiState.Loaded -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(state.games, key = { it.id }) { game ->
-                            GameRow(game, onClick = { onGameClick(game.id) })
+                            GameRow(game, onClick = { onGameClick(game) })
                         }
                     }
                 }

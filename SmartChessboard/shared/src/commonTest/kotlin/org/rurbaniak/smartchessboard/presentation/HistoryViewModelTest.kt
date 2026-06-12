@@ -100,4 +100,51 @@ class HistoryViewModelTest {
             assertEquals(HistoryUiState.Loaded(repository.games), viewModel.uiState.value)
             assertEquals(2, repository.listCalls)
         }
+
+    @Test
+    fun refreshWhileInitialLoadInFlightIsSkipped() =
+        runTest {
+            val viewModel = HistoryViewModel(repository)
+            // Still Loading (init load not advanced yet) → refresh must not fire a second fetch.
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertEquals(1, repository.listCalls)
+        }
+
+    @Test
+    fun refreshReloadsTheListAfterReturn() =
+        runTest {
+            repository.games = listOf(game("g1", "2026-06-10T12:00:00+00:00"))
+            val viewModel = HistoryViewModel(repository)
+            advanceUntilIdle()
+            assertEquals(HistoryUiState.Loaded(repository.games), viewModel.uiState.value)
+
+            // A new game was created/played while away; the next refresh surfaces it.
+            val withNew = listOf(game("g2", "2026-06-11T12:00:00+00:00")) + repository.games
+            repository.games = withNew
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(HistoryUiState.Loaded(withNew), viewModel.uiState.value)
+            assertEquals(2, repository.listCalls)
+        }
+
+    @Test
+    fun refreshFailureKeepsTheCurrentList() =
+        runTest {
+            val loaded = listOf(game("g1", "2026-06-10T12:00:00+00:00"))
+            repository.games = loaded
+            val viewModel = HistoryViewModel(repository)
+            advanceUntilIdle()
+
+            repository.shouldFail = true
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(
+                HistoryUiState.Loaded(loaded),
+                viewModel.uiState.value,
+                "a refresh failure must not blank the list",
+            )
+        }
 }

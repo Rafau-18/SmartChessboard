@@ -28,6 +28,8 @@ actual fun bindBrowserNavigation(backStack: NavBackStack<NavKey>) {
         saveKey = { key ->
             when (key) {
                 is ReplayKey -> buildBrowserHistoryFragment("replay", mapOf("id" to key.gameId))
+                is PlayKey -> buildBrowserHistoryFragment("play", mapOf("id" to key.gameId))
+                NewGameKey -> buildBrowserHistoryFragment("new")
                 else -> buildBrowserHistoryFragment("history")
             }
         },
@@ -36,6 +38,15 @@ actual fun bindBrowserNavigation(backStack: NavBackStack<NavKey>) {
                 "replay" -> {
                     getBrowserHistoryFragmentParameters(fragment)["id"]
                         ?.let { ReplayKey(it) } ?: HistoryKey
+                }
+
+                "play" -> {
+                    getBrowserHistoryFragmentParameters(fragment)["id"]
+                        ?.let { PlayKey(it) } ?: HistoryKey
+                }
+
+                "new" -> {
+                    NewGameKey
                 }
 
                 "history" -> {

@@ -17,6 +17,8 @@ import org.rurbaniak.smartchessboard.domain.games.GameJournal
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.history.HistoryViewModel
+import org.rurbaniak.smartchessboard.presentation.newgame.NewGameViewModel
+import org.rurbaniak.smartchessboard.presentation.play.PlayViewModel
 import org.rurbaniak.smartchessboard.presentation.replay.ReplayViewModel
 
 val dataModule =
@@ -34,9 +36,15 @@ val presentationModule =
     module {
         viewModelOf(::AuthViewModel)
         viewModelOf(::HistoryViewModel)
+        viewModelOf(::NewGameViewModel)
         // gameId arrives from the Replay nav entry via parametersOf(gameId).
         viewModel { (gameId: String) ->
             ReplayViewModel(gameId = gameId, gamesRepository = get(), evalRepository = get())
+        }
+        // gameId arrives from the Play nav entry via parametersOf(gameId); autoSaver is a
+        // per-screen factory instance (its syncPending tracks this one game).
+        viewModel { (gameId: String) ->
+            PlayViewModel(gameId = gameId, gamesRepository = get(), autoSaver = get())
         }
     }
 

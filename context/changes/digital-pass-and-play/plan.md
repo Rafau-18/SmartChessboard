@@ -613,24 +613,24 @@ rule (e.g. journal durability semantics) via the lessons format.
 
 #### Automated
 
-- [x] 3.1 All three per-target suites green incl. orientation-mapping tests
+- [x] 3.1 All three per-target suites green incl. orientation-mapping tests — 95842bf
 
 #### Manual
 
-- [x] 3.2 Previews show selection, targets, flip, and promotion picker correctly
+- [x] 3.2 Previews show selection, targets, flip, and promotion picker correctly — 95842bf
 
 ### Phase 4: Play & New-Game Screens + Navigation
 
 #### Automated
 
-- [ ] 4.1 All three per-target suites green incl. PlayViewModel/NewGameViewModel tests
+- [x] 4.1 All three per-target suites green incl. PlayViewModel/NewGameViewModel tests
 
 #### Manual
 
-- [ ] 4.2 Android: create → play → promote → flip → kill app → resume at last move
-- [ ] 4.3 Airplane mode: play continues, sync-pending shows, reconnect flushes to Supabase
-- [ ] 4.4 Web dev server: create → play flow; browser Back/Forward sane
-- [ ] 4.5 Checkmate → banner, input blocked, record stays in_progress
+- [x] 4.2 Android: create → play → promote → flip → kill app → resume at last move
+- [x] 4.3 Airplane mode: play continues, sync-pending shows, reconnect flushes to Supabase
+- [x] 4.4 Web dev server: create → play flow; browser Back/Forward sane
+- [x] 4.5 Checkmate → banner, input blocked, record stays in_progress
 
 ### Phase 5: Resume Hardening, Three-Surface E2E & Write-backs
 

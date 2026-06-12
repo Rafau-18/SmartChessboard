@@ -36,6 +36,26 @@ class HistoryViewModel(
         load()
     }
 
+    /**
+     * Silent re-fetch driven by the screen re-entering composition (e.g. returning from a game just
+     * created or played, which the cloud now lists). Unlike [load]/[retry] it does not flash the
+     * Loading spinner and keeps the current list if the refresh fails — a transient error must not
+     * blank a good list. Skipped while the first load is still in flight so it never double-fetches.
+     */
+    fun refresh() {
+        if (_uiState.value is HistoryUiState.Loading) return
+        viewModelScope.launch {
+            try {
+                val games = gamesRepository.listMyGames()
+                _uiState.value = if (games.isEmpty()) HistoryUiState.Empty else HistoryUiState.Loaded(games)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Keep whatever is on screen — a refresh failure shouldn't clobber a loaded list.
+            }
+        }
+    }
+
     private fun load() {
         _uiState.value = HistoryUiState.Loading
         viewModelScope.launch {

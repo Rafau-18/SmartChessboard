@@ -12,6 +12,7 @@ class FakeGamesRepository : GamesRepository {
     var getCalls = 0
     var createdGame: GameRecord? = null
     var createCalls = 0
+    val createLabels = mutableListOf<Pair<String, String>>()
     val updatePgnCalls = mutableListOf<Pair<String, String>>()
     var updatePgnFailures = 0
     var onUpdatePgn: ((String, String) -> Unit)? = null
@@ -33,6 +34,7 @@ class FakeGamesRepository : GamesRepository {
         blackLabel: String,
     ): GameRecord {
         createCalls++
+        createLabels += whiteLabel to blackLabel
         if (shouldFail) throw IllegalStateException("network down")
         return createdGame ?: throw IllegalStateException("no createdGame stubbed")
     }

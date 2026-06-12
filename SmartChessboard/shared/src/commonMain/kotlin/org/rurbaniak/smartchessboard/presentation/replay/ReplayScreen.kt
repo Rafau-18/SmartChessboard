@@ -1,12 +1,9 @@
 package org.rurbaniak.smartchessboard.presentation.replay
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +39,7 @@ import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnHeaders
 import org.rurbaniak.smartchessboard.presentation.board.BoardArrow
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
+import org.rurbaniak.smartchessboard.presentation.components.MoveList
 
 /** Caps the board on wide screens (web/desktop) so it doesn't stretch edge-to-edge. */
 private val BOARD_MAX_WIDTH = 480.dp
@@ -339,52 +337,6 @@ private fun TransportControls(
         }
         Button(onClick = onEnd, enabled = state.canStepForward, modifier = Modifier.weight(1f)) {
             Text(">|")
-        }
-    }
-}
-
-/**
- * Numbered move pairs. The move that produced the current position is highlighted; tapping any move
- * jumps to the position right after it (`jumpTo(plyIndex + 1)`).
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MoveList(
-    sanMoves: List<String>,
-    currentPly: Int,
-    onJump: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (sanMoves.isEmpty()) return
-    FlowRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        sanMoves.forEachIndexed { plyIndex, san ->
-            if (plyIndex % 2 == 0) {
-                Text(
-                    "${plyIndex / 2 + 1}.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            val isCurrent = plyIndex + 1 == currentPly
-            Text(
-                text = san,
-                modifier =
-                    Modifier
-                        .clickable { onJump(plyIndex + 1) }
-                        .padding(horizontal = 4.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                color =
-                    if (isCurrent) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-            )
         }
     }
 }

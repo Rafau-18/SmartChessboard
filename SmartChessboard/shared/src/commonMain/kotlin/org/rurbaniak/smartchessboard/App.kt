@@ -16,13 +16,19 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.auth.SessionState
+import org.rurbaniak.smartchessboard.domain.games.GameMode
+import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.auth.SignInScreen
 import org.rurbaniak.smartchessboard.presentation.history.HistoryScreen
 import org.rurbaniak.smartchessboard.presentation.navigation.HistoryKey
+import org.rurbaniak.smartchessboard.presentation.navigation.NewGameKey
+import org.rurbaniak.smartchessboard.presentation.navigation.PlayKey
 import org.rurbaniak.smartchessboard.presentation.navigation.ReplayKey
 import org.rurbaniak.smartchessboard.presentation.navigation.bindBrowserNavigation
 import org.rurbaniak.smartchessboard.presentation.navigation.navSavedStateConfiguration
+import org.rurbaniak.smartchessboard.presentation.newgame.NewGameScreen
+import org.rurbaniak.smartchessboard.presentation.play.PlayScreen
 import org.rurbaniak.smartchessboard.presentation.replay.ReplayScreen
 
 @Composable
@@ -65,11 +71,36 @@ fun App() {
                                 HistoryScreen(
                                     userId = session.userId,
                                     onSignOut = authViewModel::signOut,
-                                    onGameClick = { gameId -> backStack.add(ReplayKey(gameId)) },
+                                    onNewGame = { backStack.add(NewGameKey) },
+                                    // In-progress digital games resume on the interactive board;
+                                    // everything else opens in Replay (interview decision).
+                                    onGameClick = { game ->
+                                        if (game.status == GameStatus.IN_PROGRESS && game.mode == GameMode.DIGITAL) {
+                                            backStack.add(PlayKey(game.id))
+                                        } else {
+                                            backStack.add(ReplayKey(game.id))
+                                        }
+                                    },
+                                )
+                            }
+                            entry<NewGameKey> {
+                                NewGameScreen(
+                                    onBack = { backStack.removeLastOrNull() },
+                                    // Replace the form with Play so Back from Play returns to History.
+                                    onGameCreated = { gameId ->
+                                        backStack.removeLastOrNull()
+                                        backStack.add(PlayKey(gameId))
+                                    },
                                 )
                             }
                             entry<ReplayKey> { key ->
                                 ReplayScreen(
+                                    gameId = key.gameId,
+                                    onBack = { backStack.removeLastOrNull() },
+                                )
+                            }
+                            entry<PlayKey> { key ->
+                                PlayScreen(
                                     gameId = key.gameId,
                                     onBack = { backStack.removeLastOrNull() },
                                 )
