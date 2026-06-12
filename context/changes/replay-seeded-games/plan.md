@@ -623,11 +623,11 @@ existence.
 
 #### Automated
 
-- [x] 5.1 Regression: all three per-target test tasks green
+- [x] 5.1 Regression: all three per-target test tasks green — 76d38af
 
 #### Manual
 
-- [x] 5.2 Android vs cloud: seeded games listed and replay to known final position
-- [x] 5.3 iOS simulator: same flow
-- [x] 5.4 Web: same flow; browser Back pops Replay → History (not off-site), route in URL fragment
-- [x] 5.5 lessons.md / roadmap.md / attributions write-backs reviewed
+- [x] 5.2 Android vs cloud: seeded games listed and replay to known final position — 76d38af
+- [x] 5.3 iOS simulator: same flow — 76d38af
+- [x] 5.4 Web: same flow; browser Back pops Replay → History (not off-site), route in URL fragment — 76d38af
+- [x] 5.5 lessons.md / roadmap.md / attributions write-backs reviewed — 76d38af
