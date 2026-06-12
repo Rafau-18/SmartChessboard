@@ -2,10 +2,13 @@ package org.rurbaniak.smartchessboard.presentation.replay
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.rurbaniak.smartchessboard.domain.chess.Position
 import org.rurbaniak.smartchessboard.domain.chess.pgn.ReplayGame
 import org.rurbaniak.smartchessboard.domain.chess.pgn.parsePgn
@@ -45,6 +48,10 @@ sealed interface ReplayUiState {
 class ReplayViewModel(
     private val gameId: String,
     private val gamesRepository: GamesRepository,
+    // Injected so tests can pin parsing to a shared TestDispatcher; in production the default keeps
+    // the per-ply legalMoves enumeration off the main thread (Android-Developers coroutines guidance:
+    // never hardcode a dispatcher inside a withContext — inject it).
+    private val parseDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ReplayUiState>(ReplayUiState.Loading)
     val uiState: StateFlow<ReplayUiState> = _uiState.asStateFlow()
@@ -63,7 +70,8 @@ class ReplayViewModel(
             _uiState.value =
                 try {
                     val record = gamesRepository.getGame(gameId)
-                    ReplayUiState.Loaded(game = parsePgn(record.pgn), currentPly = 0)
+                    val game = withContext(parseDispatcher) { parsePgn(record.pgn) }
+                    ReplayUiState.Loaded(game = game, currentPly = 0)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {

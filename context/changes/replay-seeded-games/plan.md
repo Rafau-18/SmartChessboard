@@ -58,9 +58,9 @@ replay a seeded famous game to its known final position on all three surfaces.
   `org.jetbrains.androidx.lifecycle` group and must ride the project's existing lifecycle pin
   (`androidx-lifecycle = 2.11.0-beta01`) so the whole lifecycle group stays in lockstep — the
   project already runs that beta, so this adds no new beta surface. Browser-history integration on
-  web landed in the base library at **1.1.0** (so 1.1.1 has it) via the browser-navigation binding
-  (terrakok integration, `wasmJsMain`, reflects the route in the URL fragment); **this slice wires
-  it** so the browser Back/Forward buttons map to the nav stack (Phase 4 §9) — not deferred.
+  web is provided by a **separate** `com.github.terrakok:navigation3-browser:1.1.0` artifact
+  (`wasmJsMain` only; **not** bundled in the base `navigation3-ui 1.1.1`), wired in Phase 4 §9
+  so the browser Back/Forward buttons map to the nav stack — not deferred.
   `NavKey`s must still be `@Serializable` with explicit polymorphic registration — that is the
   no-reflection-off-JVM constraint (iOS/wasm), not an alpha artifact.
 - `domain/games/GameStatus` (enum) and `domain/chess/GameStatus` (sealed) collide by simple name;
@@ -490,8 +490,9 @@ library — `org.jetbrains.androidx.navigation3:navigation3-ui` pinned at the **
 with the companion `lifecycle-viewmodel-navigation3` pinned via the shared `androidx-lifecycle`
 version ref (lifecycle artifacts must resolve to one version); routes are `@Serializable` NavKeys
 with explicit polymorphic registration (iOS/wasm have no reflection — a permanent constraint, not
-a stability caveat); web browser-history is **wired** via Nav3's browser-navigation binding
-(`wasmJsMain`, route ↔ URL fragment) so browser Back/Forward maps to the nav stack — a designed
+a stability caveat); web browser-history is **wired** via the **separate** `com.github.terrakok:navigation3-browser:1.1.0`
+artifact (`wasmJsMain`, route ↔ URL fragment; **not** in the base `navigation3-ui 1.1.1`) so
+browser Back/Forward maps to the nav stack — a designed
 URL/deep-link scheme is the only web-routing piece left out; do not introduce a second navigation
 mechanism. Roadmap S-02 row/status updated; `change.md` status maintained by the implement ritual.
 
@@ -607,26 +608,26 @@ existence.
 
 #### Automated
 
-- [x] 4.1 Full shared suite green on JVM host (`:shared:testAndroidHostTest`)
-- [x] 4.2 Full shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [x] 4.3 Full shared suite green on wasm (`:shared:wasmJsTest`)
-- [x] 4.4 ktlint clean
+- [x] 4.1 Full shared suite green on JVM host (`:shared:testAndroidHostTest`) — 94ba848
+- [x] 4.2 Full shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 94ba848
+- [x] 4.3 Full shared suite green on wasm (`:shared:wasmJsTest`) — 94ba848
+- [x] 4.4 ktlint clean — 94ba848
 
 #### Manual
 
-- [x] 4.5 Android: history tap → replay with working controls, move list, system back
-- [x] 4.6 ReplayScreen preview with a hand-built corrupted ReplayGame shows the truncation banner; nav clamps to truncated range
-- [x] 4.7 Web (local dev server): browser Back/Forward maps to the nav stack (Replay ↔ History), not off-site
+- [x] 4.5 Android: history tap → replay with working controls, move list, system back — 94ba848
+- [x] 4.6 ReplayScreen preview with a hand-built corrupted ReplayGame shows the truncation banner; nav clamps to truncated range — 94ba848
+- [x] 4.7 Web (local dev server): browser Back/Forward maps to the nav stack (Replay ↔ History), not off-site — 94ba848
 
 ### Phase 5: Cloud Seeding, E2E & Decision Write-backs
 
 #### Automated
 
-- [ ] 5.1 Regression: all three per-target test tasks green
+- [x] 5.1 Regression: all three per-target test tasks green
 
 #### Manual
 
-- [ ] 5.2 Android vs cloud: seeded games listed and replay to known final position
-- [ ] 5.3 iOS simulator: same flow
-- [ ] 5.4 Web: same flow; browser Back pops Replay → History (not off-site), route in URL fragment
-- [ ] 5.5 lessons.md / roadmap.md / attributions write-backs reviewed
+- [x] 5.2 Android vs cloud: seeded games listed and replay to known final position
+- [x] 5.3 iOS simulator: same flow
+- [x] 5.4 Web: same flow; browser Back pops Replay → History (not off-site), route in URL fragment
+- [x] 5.5 lessons.md / roadmap.md / attributions write-backs reviewed

@@ -34,7 +34,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection           | —                      | FR-005, FR-007, Guardrails                             | in progress |
 | F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware           | —                      | PRD OQ-1 (resolved), US-02                             | in progress |
 | S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | ready    |
-| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | proposed |
+| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | in progress |
 | S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | proposed |
 | S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save                 | F-01, S-01, S-02       | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01  | proposed |
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                         | S-04                   | FR-007, FR-018, US-01                                  | proposed |
@@ -120,7 +120,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Unknowns:**
   - Exact stored-record shape consumed by replay (parse the PGN source vs cached per-move position snapshots, as FR-014 permits) — Owner: team (decide in `/10x-plan`). Block: no.
 - **Risk:** The board view and record format born here are reused by play mode — keep PGN-as-source-of-truth assumptions (FR-014) intact so play-generated games later replay identically to seeded ones.
-- **Status:** proposed
+- **Status:** in progress — implemented through Phase 5 on `replay-seeded-games` (PGN replay domain, single-game read + seeds, shared `ChessBoardView`, Navigation 3 + Replay screen). Navigation library committed to Nav3 multiplatform (see `lessons.md`). Manual cloud E2E gate (sign in → seeded games → replay to known final position on Android / iOS / web) pending, then `/10x-archive`.
 
 ### S-03: Position evaluations in replay
 

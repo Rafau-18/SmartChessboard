@@ -3,6 +3,7 @@ package org.rurbaniak.smartchessboard.presentation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -26,6 +27,11 @@ import kotlin.test.assertTrue
 class ReplayViewModelTest {
     private lateinit var repository: FakeGamesRepository
 
+    // One TestDispatcher drives both Main (viewModelScope) and the injected parse dispatcher. Sharing
+    // the scheduler is what lets advanceUntilIdle() run the off-Main parse to completion — without it
+    // a real Dispatchers.Default parse escapes virtual time and the state stays Loading.
+    private lateinit var dispatcher: TestDispatcher
+
     // Four-ply opening; sanMoves.size == 4, positions.size == 5.
     private val openingPgn = "1. e4 e5 2. Nf3 Nc6"
 
@@ -35,7 +41,8 @@ class ReplayViewModelTest {
 
     @BeforeTest
     fun setUp() {
-        Dispatchers.setMain(StandardTestDispatcher())
+        dispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(dispatcher)
         repository = FakeGamesRepository()
     }
 
@@ -63,7 +70,8 @@ class ReplayViewModelTest {
         pgn: String,
     ): ReplayViewModel {
         repository.records = mapOf(id to record(id, pgn))
-        val viewModel = ReplayViewModel(gameId = id, gamesRepository = repository)
+        val viewModel =
+            ReplayViewModel(gameId = id, gamesRepository = repository, parseDispatcher = dispatcher)
         return viewModel
     }
 
@@ -96,7 +104,8 @@ class ReplayViewModelTest {
         runTest {
             repository.records = mapOf("g1" to record("g1", openingPgn))
             repository.shouldFail = true
-            val viewModel = ReplayViewModel(gameId = "g1", gamesRepository = repository)
+            val viewModel =
+                ReplayViewModel(gameId = "g1", gamesRepository = repository, parseDispatcher = dispatcher)
             advanceUntilIdle()
             assertEquals(ReplayUiState.Error, viewModel.uiState.value)
 

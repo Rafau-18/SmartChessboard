@@ -93,3 +93,23 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: Regexes are permitted, but no parsing logic in commonMain counts as "green" until its test suite passes on a Native target (`:shared:iosSimulatorArm64Test`), not just on the JVM host. Run the Native suite before declaring any text-parsing step complete.
 
 - **Applies to**: implement, impl-review
+
+## terrakok navigation3-browser binds once per page session — sign-out → sign-in silently loses browser history sync
+
+- **Context**: WasmJS target using `com.github.terrakok:navigation3-browser:1.1.0` for browser Back/Forward integration. The binding lives inside the SignedIn branch of `App.kt` (S-02 Phase 4). Relevant location: `shared/src/wasmJsMain/.../BrowserNavigation.wasmJs.kt` + upstream library one-shot flag.
+
+- **Problem**: The upstream library sets a process-global `BrowserHistoryIsInUse` flag via `compareAndSet` that is never reset — no `try/finally`, no `onDispose`. When `SignedIn` is disposed on sign-out and recreated on sign-in, the new `rememberNavBackStack` attempts to bind again; `compareAndSet` fails silently. The library logs a warning and returns. For the rest of that page session, browser Back/Forward no longer drive the nav stack and the URL fragment stays stale. Degradation (not a crash or leak); page reload fully recovers.
+
+- **Rule**: Accept this constraint at MVP scope — sign-out → sign-in within one web page session is a rare path and page reload is the recovery. Do not attempt to fix by hoisting a long-lived back stack above the auth gate; it restructures S-01's deliberate simplicity and the saved-state interaction is unverified. Track via upstream issue (flag reset on cancellation). If this becomes unacceptable post-MVP, revisit Fix B from `context/changes/replay-seeded-games/reviews/impl-review-phase-4.md`.
+
+- **Applies to**: impl-review, implement — any wasmJs work touching `App.kt` auth gating or browser-history binding.
+
+## Navigation 3 multiplatform is the committed navigation library — one mechanism, serializable NavKeys, separate browser-history artifact
+
+- **Context**: `App.kt` shipped the first push navigation in S-01 as a bare `SessionState` switch (Restoring / SignIn / History) with no back stack — the navigation library choice was deliberately deferred to S-02. S-02 Phase 4 introduced real stack navigation (History → Replay → back) and had to pick a library that works across Android / iOS / WasmJS.
+
+- **Problem**: Without a committed navigation library the app drifts toward ad-hoc mechanisms — a hand-rolled state switch on one screen, a third-party nav lib on another — which fragments back-stack handling, breaks system-back / iOS edge-pan consistency, and (on iOS/wasm, which have no JVM reflection) crashes on saved-state restore if routes aren't serializable. The browser Back/Forward integration on web is also easy to get wrong: the binding is **not** in the base Nav3 artifact.
+
+- **Rule**: **Jetpack Navigation 3 multiplatform (JetBrains port) is the committed navigation library.** Pins: `org.jetbrains.androidx.navigation3:navigation3-ui` at the **stable `1.1.1`** (catalog `navigation3 = "1.1.1"`; `navigation3-common` arrives transitively); the companion `org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3` pinned via the **existing** `androidx-lifecycle` version ref (`2.11.0-beta01`) so the whole `org.jetbrains.androidx.lifecycle` group resolves to one version (mixing lifecycle artifact versions is unsupported). Routes are `@Serializable` `NavKey`s with **explicit polymorphic registration** (`Routes.kt`) — iOS/wasm have no reflection, so this is a **permanent multiplatform constraint, not a stability caveat**; omitting it crashes on state save/restore. Web browser-history is **wired** via the **separate** `com.github.terrakok:navigation3-browser:1.1.0` artifact (`wasmJsMain` only; route ↔ URL fragment; **NOT** bundled in `navigation3-ui 1.1.1`) so browser Back/Forward maps to the nav stack. A designed/shareable URL or per-ply deep-link scheme is the only web-routing piece intentionally left out. **Do not introduce a second navigation mechanism** (no parallel hand-rolled stacks, no other nav lib).
+
+- **Applies to**: plan, implement, impl-review — any work adding or reworking navigation / a `presentation/` screen entry in the mobile sub-project. Resolves the navigation-library deferral from S-01. Decided 2026-06-12 (S-02). See also the [terrakok navigation3-browser binds-once] gotcha above for the web sign-out → sign-in caveat.

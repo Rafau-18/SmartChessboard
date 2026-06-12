@@ -38,8 +38,12 @@ actual fun bindBrowserNavigation(backStack: NavBackStack<NavKey>) {
                         ?.let { ReplayKey(it) } ?: HistoryKey
                 }
 
-                else -> {
+                "history" -> {
                     HistoryKey
+                }
+
+                else -> {
+                    null
                 }
             }
         },
