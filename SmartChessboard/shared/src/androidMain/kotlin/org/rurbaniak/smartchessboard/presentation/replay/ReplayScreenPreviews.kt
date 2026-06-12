@@ -23,6 +23,7 @@ private fun ReplayTruncatedPreview() {
             onStepForward = {},
             onEnd = {},
             onJump = {},
+            onRetryEval = {},
         )
     }
 }

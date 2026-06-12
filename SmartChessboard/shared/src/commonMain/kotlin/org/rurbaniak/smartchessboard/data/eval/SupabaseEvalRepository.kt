@@ -29,6 +29,7 @@ internal data class EvalResponseDto(
     @SerialName("best_move") val bestMove: String? = null,
     val depth: Int? = null,
     val source: String,
+    val cached: Boolean = false,
     @SerialName("fetched_at") val fetchedAt: String? = null,
 )
 
@@ -81,6 +82,7 @@ internal fun parseEvalSuccess(body: String): EvalOutcome {
         bestMoveUci = dto.bestMove,
         source = dto.source,
         depth = dto.depth,
+        cached = dto.cached,
     )
 }
 

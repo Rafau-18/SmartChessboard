@@ -3,11 +3,14 @@ package org.rurbaniak.smartchessboard.presentation.replay
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,11 +39,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnHeaders
+import org.rurbaniak.smartchessboard.presentation.board.BoardArrow
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
+import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
 
-/** Caps the board on wide screens (web/desktop) so it doesn't stretch edge-to-edge — the one
- * responsive concession this slice (side-by-side multi-pane is the app-wide adaptive follow-up). */
+/** Caps the board on wide screens (web/desktop) so it doesn't stretch edge-to-edge. */
 private val BOARD_MAX_WIDTH = 480.dp
+
+/** Material "expanded" breakpoint — at and above this width ReplayScreen lays out as two panes. */
+private val TWO_PANE_MIN_WIDTH = 840.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +66,22 @@ fun ReplayScreen(
                 navigationIcon = {
                     TextButton(onClick = onBack) {
                         Text("Back")
+                    }
+                },
+                actions = {
+                    (uiState as? ReplayUiState.Loaded)?.let { state ->
+                        TextButton(onClick = viewModel::toggleAnalysis) {
+                            Text(
+                                "Analysis",
+                                fontWeight = if (state.analysisEnabled) FontWeight.Bold else FontWeight.Normal,
+                                color =
+                                    if (state.analysisEnabled) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                            )
+                        }
                     }
                 },
             )
@@ -95,6 +118,7 @@ fun ReplayScreen(
                         onStepForward = viewModel::stepForward,
                         onEnd = viewModel::goToEnd,
                         onJump = viewModel::jumpTo,
+                        onRetryEval = viewModel::retryEval,
                     )
                 }
             }
@@ -110,6 +134,27 @@ internal fun LoadedReplay(
     onStepForward: () -> Unit,
     onEnd: () -> Unit,
     onJump: (Int) -> Unit,
+    onRetryEval: () -> Unit,
+) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        if (maxWidth >= TWO_PANE_MIN_WIDTH) {
+            WideReplay(state, onStart, onStepBack, onStepForward, onEnd, onJump, onRetryEval)
+        } else {
+            NarrowReplay(state, onStart, onStepBack, onStepForward, onEnd, onJump, onRetryEval)
+        }
+    }
+}
+
+/** The phone layout: one scrolling column, the eval section between board and transport controls. */
+@Composable
+private fun NarrowReplay(
+    state: ReplayUiState.Loaded,
+    onStart: () -> Unit,
+    onStepBack: () -> Unit,
+    onStepForward: () -> Unit,
+    onEnd: () -> Unit,
+    onJump: (Int) -> Unit,
+    onRetryEval: () -> Unit,
 ) {
     Column(
         modifier =
@@ -119,15 +164,17 @@ internal fun LoadedReplay(
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
         PlayerLine(state.game.headers)
         Spacer(Modifier.height(12.dp))
-        ChessBoardView(
-            position = state.position,
-            modifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth(),
-        )
+        BoardWithEvalBar(state = state, modifier = sectionModifier)
+        if (state.analysisEnabled) {
+            Spacer(Modifier.height(8.dp))
+            EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = sectionModifier)
+        }
         Spacer(Modifier.height(12.dp))
         if (state.isTruncated) {
-            TruncationBanner(modifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth())
+            TruncationBanner(modifier = sectionModifier)
             Spacer(Modifier.height(12.dp))
         }
         TransportControls(
@@ -136,17 +183,109 @@ internal fun LoadedReplay(
             onBack = onStepBack,
             onForward = onStepForward,
             onEnd = onEnd,
-            modifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth(),
+            modifier = sectionModifier,
         )
         Spacer(Modifier.height(16.dp))
         MoveList(
             sanMoves = state.game.sanMoves,
             currentPly = state.currentPly,
             onJump = onJump,
-            modifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth(),
+            modifier = sectionModifier,
         )
     }
 }
+
+/**
+ * The expanded layout (web/tablet ≥ [TWO_PANE_MIN_WIDTH]): board + eval bar + transport on the
+ * left, eval panel + move list on the right. Same state, no layout-specific behavior.
+ */
+@Composable
+private fun WideReplay(
+    state: ReplayUiState.Loaded,
+    onStart: () -> Unit,
+    onStepBack: () -> Unit,
+    onStepForward: () -> Unit,
+    onEnd: () -> Unit,
+    onJump: (Int) -> Unit,
+    onRetryEval: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
+            PlayerLine(state.game.headers)
+            Spacer(Modifier.height(12.dp))
+            BoardWithEvalBar(state = state, modifier = sectionModifier)
+            Spacer(Modifier.height(12.dp))
+            if (state.isTruncated) {
+                TruncationBanner(modifier = sectionModifier)
+                Spacer(Modifier.height(12.dp))
+            }
+            TransportControls(
+                state = state,
+                onStart = onStart,
+                onBack = onStepBack,
+                onForward = onStepForward,
+                onEnd = onEnd,
+                modifier = sectionModifier,
+            )
+        }
+        Column(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+        ) {
+            if (state.analysisEnabled) {
+                EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = Modifier.fillMaxWidth())
+                Spacer(Modifier.height(16.dp))
+            }
+            MoveList(
+                sanMoves = state.game.sanMoves,
+                currentPly = state.currentPly,
+                onJump = onJump,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/**
+ * The board with the vertical eval bar on its right (the bar matches the board's height via
+ * intrinsics). The bar appears only while analysis is enabled, so the board keeps the full
+ * section width otherwise.
+ */
+@Composable
+private fun BoardWithEvalBar(
+    state: ReplayUiState.Loaded,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ChessBoardView(
+            position = state.position,
+            modifier = Modifier.weight(1f),
+            bestMoveArrow = bestMoveArrowFor(state),
+        )
+        if (state.analysisEnabled) {
+            EvalBar(eval = state.currentEval, modifier = Modifier.fillMaxHeight())
+        }
+    }
+}
+
+/** The arrow renders only for a resolved evaluation of the viewed ply with a parseable best move. */
+private fun bestMoveArrowFor(state: ReplayUiState.Loaded): BoardArrow? =
+    (state.currentEval as? PlyEvalState.Evaluated)?.bestMoveUci?.let(::parseUciArrow)
 
 @Composable
 private fun PlayerLine(headers: PgnHeaders) {

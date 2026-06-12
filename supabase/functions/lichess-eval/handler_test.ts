@@ -10,7 +10,7 @@ function post(body: BodyInit | null): Request {
   });
 }
 
-Deno.test("OPTIONS preflight: 204 with CORS headers", async () => {
+Deno.test("OPTIONS preflight: 204 with CORS headers (static fallback)", async () => {
   const handler = makeHandler(makeDeps({}).deps);
 
   const res = await handler(
@@ -21,11 +21,31 @@ Deno.test("OPTIONS preflight: 204 with CORS headers", async () => {
   assertEquals(res.headers.get("Access-Control-Allow-Origin"), "*");
   assertEquals(
     res.headers.get("Access-Control-Allow-Headers"),
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-region",
   );
   assertEquals(
     res.headers.get("Access-Control-Allow-Methods"),
     "POST, OPTIONS",
+  );
+});
+
+Deno.test("OPTIONS preflight echoes Access-Control-Request-Headers", async () => {
+  const handler = makeHandler(makeDeps({}).deps);
+
+  const res = await handler(
+    new Request("http://localhost/lichess-eval", {
+      method: "OPTIONS",
+      headers: {
+        "Access-Control-Request-Headers":
+          "authorization, content-type, x-region, x-future-header",
+      },
+    }),
+  );
+
+  assertEquals(res.status, 204);
+  assertEquals(
+    res.headers.get("Access-Control-Allow-Headers"),
+    "authorization, content-type, x-region, x-future-header",
   );
 });
 

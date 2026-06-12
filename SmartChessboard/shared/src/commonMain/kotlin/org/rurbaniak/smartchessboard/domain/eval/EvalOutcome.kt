@@ -10,9 +10,11 @@ sealed interface EvalOutcome {
         val mate: Int?,
         /** Best move in UCI notation, e.g. "e2e4". */
         val bestMoveUci: String?,
-        /** Where the eval came from: "cache", "lichess", or "chess-api". */
+        /** The provider that produced the eval ("lichess" / "chess-api") — survives cache hits. */
         val source: String,
         val depth: Int?,
+        /** True when the response was served from the shared cache rather than a live provider call. */
+        val cached: Boolean = false,
     ) : EvalOutcome
 
     /** No provider knows this position (`source: "unknown"`) — a stable answer, not an error. */

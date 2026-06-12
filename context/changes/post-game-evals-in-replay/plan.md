@@ -634,25 +634,25 @@ schema.
 
 #### Automated
 
-- [x] 3.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`)
-- [x] 3.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [x] 3.3 Shared suite green on wasm (`:shared:wasmJsTest`)
-- [x] 3.4 ktlint clean
+- [x] 3.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`) — 48e909c
+- [x] 3.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 48e909c
+- [x] 3.3 Shared suite green on wasm (`:shared:wasmJsTest`) — 48e909c
+- [x] 3.4 ktlint clean — 48e909c
 
 ### Phase 4: Replay Analysis UI & Adaptive Layout
 
 #### Automated
 
-- [ ] 4.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`)
-- [ ] 4.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [ ] 4.3 Shared suite green on wasm (`:shared:wasmJsTest`)
-- [ ] 4.4 ktlint clean
+- [x] 4.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`)
+- [x] 4.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
+- [x] 4.3 Shared suite green on wasm (`:shared:wasmJsTest`)
+- [x] 4.4 ktlint clean
 
 #### Manual
 
-- [ ] 4.5 Android + local stack E2E: toggle, bar/panel/arrow, per-ply fetch, instant revisit, terminal label, airplane-mode Retry
-- [ ] 4.6 Web: same flow; two panes at desktop width, single column narrow; browser Back unaffected
-- [ ] 4.7 Local `position_evals` rows show expected `source` values
+- [x] 4.5 Android + local stack E2E: toggle, bar/panel/arrow, per-ply fetch, instant revisit, terminal label, airplane-mode Retry
+- [x] 4.6 Web: same flow; two panes at desktop width, single column narrow; browser Back unaffected
+- [x] 4.7 Local `position_evals` rows show expected `source` values
 
 ### Phase 5: Deploy, Cloud E2E & Write-backs
 

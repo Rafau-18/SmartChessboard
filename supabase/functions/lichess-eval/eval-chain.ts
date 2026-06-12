@@ -62,7 +62,10 @@ export async function evaluate(
         mate: cached.mate,
         best_move: cached.best_move,
         depth: cached.depth,
-        source: "cache",
+        // Provenance survives the cache: `source` stays the provider that
+        // produced the eval; `cached` says it was served from the shared cache.
+        source: cached.source,
+        cached: true,
         fetched_at: cached.fetched_at,
       },
     };
@@ -135,6 +138,7 @@ async function upsertAndRespond(
       best_move: result.bestMove,
       depth: result.depth,
       source,
+      cached: false,
       fetched_at: fetchedAt,
     },
   };

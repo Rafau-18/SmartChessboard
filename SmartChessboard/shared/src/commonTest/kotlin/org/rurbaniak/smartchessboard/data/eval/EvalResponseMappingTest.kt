@@ -15,7 +15,7 @@ class EvalResponseMappingTest {
         val body =
             """
             {"fen":"$START_FEN","eval_cp":22,"mate":null,"best_move":"e2e4","depth":40,
-             "source":"lichess","fetched_at":"2026-06-12T10:00:00Z"}
+             "source":"lichess","cached":false,"fetched_at":"2026-06-12T10:00:00Z"}
             """.trimIndent()
         assertEquals(
             EvalOutcome.Evaluated(evalCp = 22, mate = null, bestMoveUci = "e2e4", source = "lichess", depth = 40),
@@ -24,10 +24,30 @@ class EvalResponseMappingTest {
     }
 
     @Test
-    fun forcedMateBodyKeepsTheWhitePovSign() {
-        val body = """{"fen":"$START_FEN","eval_cp":null,"mate":-2,"best_move":"d8h4","depth":18,"source":"cache"}"""
+    fun cachedHitKeepsProviderSourceAndCachedFlag() {
+        val body =
+            """
+            {"fen":"$START_FEN","eval_cp":22,"mate":null,"best_move":"e2e4","depth":40,
+             "source":"chess-api","cached":true,"fetched_at":"2026-06-12T10:00:00Z"}
+            """.trimIndent()
         assertEquals(
-            EvalOutcome.Evaluated(evalCp = null, mate = -2, bestMoveUci = "d8h4", source = "cache", depth = 18),
+            EvalOutcome.Evaluated(
+                evalCp = 22,
+                mate = null,
+                bestMoveUci = "e2e4",
+                source = "chess-api",
+                depth = 40,
+                cached = true,
+            ),
+            parseEvalSuccess(body),
+        )
+    }
+
+    @Test
+    fun forcedMateBodyKeepsTheWhitePovSign() {
+        val body = """{"fen":"$START_FEN","eval_cp":null,"mate":-2,"best_move":"d8h4","depth":18,"source":"lichess"}"""
+        assertEquals(
+            EvalOutcome.Evaluated(evalCp = null, mate = -2, bestMoveUci = "d8h4", source = "lichess", depth = 18),
             parseEvalSuccess(body),
         )
     }

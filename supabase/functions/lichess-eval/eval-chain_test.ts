@@ -39,7 +39,7 @@ function unknownRow(fen: string, hoursOld: number): CacheRow {
   };
 }
 
-Deno.test("fresh cache hit: source=cache, no provider call", async () => {
+Deno.test("fresh cache hit: provider source preserved + cached flag, no provider call", async () => {
   const cache = new FakeCache();
   cache.rows.set(START_FEN, positiveRow(START_FEN, 1));
   const { deps, calls } = makeDeps({}, cache);
@@ -47,7 +47,8 @@ Deno.test("fresh cache hit: source=cache, no provider call", async () => {
   const r = await evaluate(deps, START_FEN);
 
   assertEquals(r.status, 200);
-  assertEquals(r.body.source, "cache");
+  assertEquals(r.body.source, "lichess");
+  assertEquals(r.body.cached, true);
   assertEquals(r.body.eval_cp, 22);
   assertEquals(r.body.best_move, "e2e4");
   assertEquals(calls.length, 0);
@@ -61,6 +62,7 @@ Deno.test("stale positive row (>30 days) is refetched", async () => {
   const r = await evaluate(deps, START_FEN);
 
   assertEquals(r.body.source, "lichess");
+  assertEquals(r.body.cached, false);
   assertEquals(calls.length, 1);
   assertEquals(cache.upserts.length, 1);
   assertEquals(cache.upserts[0].fetched_at, NOW.toISOString());
@@ -206,7 +208,8 @@ Deno.test("counter-differing FENs share one cache key (normalization)", async ()
     MIDGAME_FEN.replace(" 4 3", " 11 22"),
   );
 
-  assertEquals(r.body.source, "cache");
+  assertEquals(r.body.source, "lichess");
+  assertEquals(r.body.cached, true);
   assertEquals(second.calls.length, 0);
 });
 

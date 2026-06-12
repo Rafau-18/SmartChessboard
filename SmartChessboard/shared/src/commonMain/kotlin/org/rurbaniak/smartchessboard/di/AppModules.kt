@@ -35,7 +35,9 @@ val presentationModule =
         viewModelOf(::AuthViewModel)
         viewModelOf(::HistoryViewModel)
         // gameId arrives from the Replay nav entry via parametersOf(gameId).
-        viewModel { (gameId: String) -> ReplayViewModel(gameId = gameId, gamesRepository = get()) }
+        viewModel { (gameId: String) ->
+            ReplayViewModel(gameId = gameId, gamesRepository = get(), evalRepository = get())
+        }
     }
 
 val appModules = listOf(platformModule, dataModule, presentationModule)

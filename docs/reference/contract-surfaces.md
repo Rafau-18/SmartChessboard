@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-06-12
+updated: 2026-06-13
 ---
 
 ## Purpose
@@ -331,7 +331,7 @@ Anonymous calls rejected with 401.
 
 | Status | Body | Meaning |
 | --- | --- | --- |
-| `200` | `{ "fen", "eval_cp", "mate", "best_move", "depth", "source": "cache" \| "lichess" \| "chess-api", "fetched_at" }` | Evaluation available. `mate` is the White-POV signed forced-mate distance (negative = Black mates), `null` unless the position is a forced mate (added 2026-06-12) |
+| `200` | `{ "fen", "eval_cp", "mate", "best_move", "depth", "source": "lichess" \| "chess-api", "cached": bool, "fetched_at" }` | Evaluation available. `mate` is the White-POV signed forced-mate distance (negative = Black mates), `null` unless the position is a forced mate (added 2026-06-12). `source` is always the provider that produced the eval — provenance survives cache hits; `cached: true` marks a response served from the shared cache (amended 2026-06-13; previously a cache hit replaced `source` with `"cache"`) |
 | `200` | `{ "fen", "source": "unknown" }` | No provider returned an eval; record cached as negative entry |
 | `400` | `{ "error": "invalid_fen" }` | FEN failed validation |
 | `401` | `{ "error": "unauthenticated" }` | Missing or invalid JWT |
@@ -350,7 +350,8 @@ Chess-API.com → `unknown`):
 3. Look up `position_evals` by normalized FEN.
    - If hit and `fetched_at` within freshness window (suggest: 30 days for
      `source='lichess'` / `source='chess-api'`, 24 hours for
-     `source='unknown'`): return cached row with `source: 'cache'`.
+     `source='unknown'`): return cached row with its stored provider `source`
+     and `cached: true`.
 4. On miss / stale: call `https://lichess.org/api/cloud-eval?fen=<urlencoded>`.
    On eval: upsert with `source='lichess'` and return. (Lichess stores only
    positions already known to its database — mostly opening theory and popular
@@ -373,11 +374,14 @@ already detects checkmate/stalemate via its rules engine and renders the
 terminal state without calling this function. The function does not implement
 terminal detection.
 
-**CORS / preflight** (load-bearing for the web target, documented 2026-06-12):
-the browser client sends `Authorization` + `Content-Type` headers, which
-triggers a preflight. The function answers `OPTIONS` with `204` plus
-`Access-Control-Allow-Origin` and `Access-Control-Allow-Headers:
-authorization, x-client-info, apikey, content-type`, and attaches
+**CORS / preflight** (load-bearing for the web target, documented 2026-06-12,
+amended 2026-06-13): the browser client sends `Authorization` + `Content-Type`
+plus client-library headers (supabase-kt adds `x-region` to every
+`functions.invoke`), which triggers a preflight. The function answers
+`OPTIONS` with `204` plus `Access-Control-Allow-Origin` and
+`Access-Control-Allow-Headers` *echoing the preflight's
+`Access-Control-Request-Headers`* (static fallback when absent:
+`authorization, x-client-info, apikey, content-type, x-region`), and attaches
 `Access-Control-Allow-Origin` to every response. The host's COOP/COEP headers
 do not block CORS fetches — no `_headers` change is needed.
 

@@ -6,9 +6,12 @@ import { type Deps, evaluate } from "./eval-chain.ts";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
 } as const;
+
+// Static fallback when the preflight names no headers. supabase-kt sends
+// `x-region` on every functions.invoke, hence its presence here.
+export const fallbackAllowHeaders =
+  "authorization, x-client-info, apikey, content-type, x-region";
 
 export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
   return async (req) => {
@@ -17,6 +20,12 @@ export function makeHandler(deps: Deps): (req: Request) => Promise<Response> {
         status: 204,
         headers: {
           ...corsHeaders,
+          // Echo whatever the browser intends to send — client libraries add
+          // their own headers (supabase-kt: x-region) and a static list goes
+          // stale the moment one appears.
+          "Access-Control-Allow-Headers":
+            req.headers.get("Access-Control-Request-Headers") ??
+              fallbackAllowHeaders,
           "Access-Control-Allow-Methods": "POST, OPTIONS",
         },
       });
