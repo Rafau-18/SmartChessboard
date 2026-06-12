@@ -97,6 +97,8 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.navigation3.ui)
+            implementation(libs.androidx.lifecycle.viewmodelNavigation3)
             implementation(project.dependencies.platform(libs.supabase.bom))
             implementation(libs.supabase.postgrest)
             implementation(libs.supabase.auth)
@@ -116,6 +118,9 @@ kotlin {
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)
+            // Browser-history binding for Nav3 (not in the base multiplatform library at 1.1.1) —
+            // maps the back stack to browser Back/Forward + URL fragment. wasmJs-only.
+            implementation(libs.navigation3.browser)
         }
     }
 }

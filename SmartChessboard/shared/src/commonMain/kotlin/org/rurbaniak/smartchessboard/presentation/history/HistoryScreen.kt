@@ -1,5 +1,6 @@
 package org.rurbaniak.smartchessboard.presentation.history
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +37,7 @@ import org.rurbaniak.smartchessboard.domain.games.GameSummary
 fun HistoryScreen(
     userId: String,
     onSignOut: () -> Unit,
+    onGameClick: (String) -> Unit,
 ) {
     // Keyed by user so a sign-out → sign-in as someone else never reuses a stale list.
     val viewModel = koinViewModel<HistoryViewModel>(key = "history-$userId")
@@ -87,7 +89,7 @@ fun HistoryScreen(
                 is HistoryUiState.Loaded -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(state.games, key = { it.id }) { game ->
-                            GameRow(game)
+                            GameRow(game, onClick = { onGameClick(game.id) })
                         }
                     }
                 }
@@ -97,11 +99,15 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun GameRow(game: GameSummary) {
+private fun GameRow(
+    game: GameSummary,
+    onClick: () -> Unit,
+) {
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .clickable(onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Text(

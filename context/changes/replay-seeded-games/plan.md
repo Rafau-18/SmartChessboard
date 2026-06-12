@@ -594,29 +594,29 @@ existence.
 
 #### Automated
 
-- [x] 3.1 Square-mapping unit tests green on JVM host
-- [x] 3.2 All targets compile (`:androidApp:assembleDebug`, `:shared:wasmJsBrowserDistribution`)
-- [x] 3.3 ktlint clean
+- [x] 3.1 Square-mapping unit tests green on JVM host — 17317d2
+- [x] 3.2 All targets compile (`:androidApp:assembleDebug`, `:shared:wasmJsBrowserDistribution`) — 17317d2
+- [x] 3.3 ktlint clean — 17317d2
 
 #### Manual
 
-- [x] 3.4 Start position renders correctly on Android (a1 dark, white at bottom, crisp pieces)
-- [x] 3.5 Same board renders crisp on web (`:webApp:wasmJsBrowserDevelopmentRun`) — vector conversion undistorted
+- [x] 3.4 Start position renders correctly on Android (a1 dark, white at bottom, crisp pieces) — 17317d2
+- [x] 3.5 Same board renders crisp on web (`:webApp:wasmJsBrowserDevelopmentRun`) — vector conversion undistorted — 17317d2
 
 ### Phase 4: Navigation 3 & Replay Screen
 
 #### Automated
 
-- [ ] 4.1 Full shared suite green on JVM host (`:shared:testAndroidHostTest`)
-- [ ] 4.2 Full shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [ ] 4.3 Full shared suite green on wasm (`:shared:wasmJsTest`)
-- [ ] 4.4 ktlint clean
+- [x] 4.1 Full shared suite green on JVM host (`:shared:testAndroidHostTest`)
+- [x] 4.2 Full shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
+- [x] 4.3 Full shared suite green on wasm (`:shared:wasmJsTest`)
+- [x] 4.4 ktlint clean
 
 #### Manual
 
-- [ ] 4.5 Android: history tap → replay with working controls, move list, system back
-- [ ] 4.6 ReplayScreen preview with a hand-built corrupted ReplayGame shows the truncation banner; nav clamps to truncated range
-- [ ] 4.7 Web (local dev server): browser Back/Forward maps to the nav stack (Replay ↔ History), not off-site
+- [x] 4.5 Android: history tap → replay with working controls, move list, system back
+- [x] 4.6 ReplayScreen preview with a hand-built corrupted ReplayGame shows the truncation banner; nav clamps to truncated range
+- [x] 4.7 Web (local dev server): browser Back/Forward maps to the nav stack (Replay ↔ History), not off-site
 
 ### Phase 5: Cloud Seeding, E2E & Decision Write-backs
 
