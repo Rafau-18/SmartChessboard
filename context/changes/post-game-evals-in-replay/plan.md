@@ -658,15 +658,15 @@ schema.
 
 #### Automated
 
-- [x] 5.1 Regression: all three per-target Gradle suites green
-- [x] 5.2 Backend regression: `deno test` + `supabase test db` green
+- [x] 5.1 Regression: all three per-target Gradle suites green — b8350c6
+- [x] 5.2 Backend regression: `deno test` + `supabase test db` green — b8350c6
 
 #### Manual
 
-- [x] 5.3 `supabase db push` + `supabase functions deploy lichess-eval` applied to hosted project
-- [x] 5.4 `LICHESS_TOKEN` secret set by user
-- [x] 5.5 Android vs cloud: analysis works on seeded game
-- [x] 5.6 iOS simulator vs cloud: same flow
-- [x] 5.7 Web vs cloud: same flow incl. two-pane desktop layout
-- [x] 5.8 Hosted `position_evals` accumulates rows with expected sources
-- [x] 5.9 Roadmap / lessons / change.md write-backs reviewed
+- [x] 5.3 `supabase db push` + `supabase functions deploy lichess-eval` applied to hosted project — b8350c6
+- [x] 5.4 `LICHESS_TOKEN` secret set by user — b8350c6
+- [x] 5.5 Android vs cloud: analysis works on seeded game — b8350c6
+- [x] 5.6 iOS simulator vs cloud: same flow — b8350c6
+- [x] 5.7 Web vs cloud: same flow incl. two-pane desktop layout — b8350c6
+- [x] 5.8 Hosted `position_evals` accumulates rows with expected sources — b8350c6
+- [x] 5.9 Roadmap / lessons / change.md write-backs reviewed — b8350c6
