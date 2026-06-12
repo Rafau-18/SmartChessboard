@@ -157,6 +157,26 @@ class PgnParserTest {
         assertEquals(listOf("e4", "e5"), game.sanMoves)
     }
 
+    // --- In-progress documents (S-04 write shapes) ---
+
+    @Test
+    fun inProgressDocumentWithOddPlyCountParses() {
+        val game = parsePgn("[Result \"*\"]\n[Mode \"digital\"]\n\n1. e4 e5 2. Nf3 *")
+        assertComplete(game)
+        assertEquals(listOf("e4", "e5", "Nf3"), game.sanMoves)
+        assertEquals("*", game.headers.result)
+        assertEquals("digital", game.headers.tags["Mode"])
+    }
+
+    @Test
+    fun inProgressDocumentWithEmptyMovetextParses() {
+        val game = parsePgn("[Result \"*\"]\n\n*")
+        assertComplete(game)
+        assertTrue(game.sanMoves.isEmpty())
+        assertEquals(listOf(Position.start()), game.positions)
+        assertEquals("*", game.headers.result)
+    }
+
     // --- Truncation semantics (replay-up-to-error) ---
 
     @Test
