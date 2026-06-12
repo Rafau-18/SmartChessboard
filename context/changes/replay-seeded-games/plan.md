@@ -573,10 +573,10 @@ existence.
 
 #### Automated
 
-- [ ] 1.1 Parser suite green on JVM host (`:shared:testAndroidHostTest`)
-- [ ] 1.2 Parser suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [ ] 1.3 Parser suite green on wasm (`:shared:wasmJsTest`)
-- [ ] 1.4 ktlint clean
+- [x] 1.1 Parser suite green on JVM host (`:shared:testAndroidHostTest`)
+- [x] 1.2 Parser suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
+- [x] 1.3 Parser suite green on wasm (`:shared:wasmJsTest`)
+- [x] 1.4 ktlint clean
 
 ### Phase 2: Seeded Records & Single-Game Read
 

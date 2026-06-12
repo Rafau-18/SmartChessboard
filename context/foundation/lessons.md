@@ -83,3 +83,13 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: When wiring native Google one-tap via compose-auth: (a) create an OAuth client of type **Android** (package + each debug/release **SHA-1**) in the **same** Google Cloud project as the Web client ID, and keep the **Web** client ID as `serverClientId`/`GOOGLE_SERVER_CLIENT_ID`; and (b) **always** surface a visible browser-OAuth fallback (`signInWith(Google)` external browser) as the universal escape hatch. compose-auth's `fallback` lambda fires only when native is **unsupported** (iOS/web), NOT when native **errors/cancels** — so it cannot rescue OEM-broken devices.
 
 - **Applies to**: implement, impl-review
+
+## A commonMain parser is not green until it passes on a Native target — JVM-pass proves nothing about iOS
+
+- **Context**: Any commonMain code in the KMP module that parses text (PGN, FEN, input formats) and compiles to Android/JVM + iOS/Native + WasmJS — `SmartChessboard/shared/src/commonMain`.
+
+- **Problem**: S-02 Phase 1 (2026-06-12): the PGN parser's SAN/tag regexes (optional groups + `matchEntire`) passed 20/20 tests on `:shared:testAndroidHostTest`, then failed 16/20 on `:shared:iosSimulatorArm64Test` — Kotlin/Native's regex engine resolves optional-group backtracking differently from the JVM. The fix was a regex-free, hand-rolled deterministic decomposition.
+
+- **Rule**: Regexes are permitted, but no parsing logic in commonMain counts as "green" until its test suite passes on a Native target (`:shared:iosSimulatorArm64Test`), not just on the JVM host. Run the Native suite before declaring any text-parsing step complete.
+
+- **Applies to**: implement, impl-review
