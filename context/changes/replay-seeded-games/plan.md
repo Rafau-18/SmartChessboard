@@ -582,26 +582,26 @@ existence.
 
 #### Automated
 
-- [x] 2.1 `supabase db reset` applies migrations + seeds cleanly
-- [x] 2.2 Existing pgTAP suite still green (`supabase test db`)
-- [x] 2.3 Shared tests green on JVM host (`:shared:testAndroidHostTest`)
+- [x] 2.1 `supabase db reset` applies migrations + seeds cleanly — 1701d68
+- [x] 2.2 Existing pgTAP suite still green (`supabase test db`) — 1701d68
+- [x] 2.3 Shared tests green on JVM host (`:shared:testAndroidHostTest`) — 1701d68
 
 #### Manual
 
-- [x] 2.4 Seeded rows visible for both test users locally; PGNs match Phase 1 fixtures
+- [x] 2.4 Seeded rows visible for both test users locally; PGNs match Phase 1 fixtures — 1701d68
 
 ### Phase 3: Chessboard View & Piece Assets
 
 #### Automated
 
-- [ ] 3.1 Square-mapping unit tests green on JVM host
-- [ ] 3.2 All targets compile (`:androidApp:assembleDebug`, `:shared:wasmJsBrowserDistribution`)
-- [ ] 3.3 ktlint clean
+- [x] 3.1 Square-mapping unit tests green on JVM host
+- [x] 3.2 All targets compile (`:androidApp:assembleDebug`, `:shared:wasmJsBrowserDistribution`)
+- [x] 3.3 ktlint clean
 
 #### Manual
 
-- [ ] 3.4 Start position renders correctly on Android (a1 dark, white at bottom, crisp pieces)
-- [ ] 3.5 Same board renders crisp on web (`:webApp:wasmJsBrowserDevelopmentRun`) — vector conversion undistorted
+- [x] 3.4 Start position renders correctly on Android (a1 dark, white at bottom, crisp pieces)
+- [x] 3.5 Same board renders crisp on web (`:webApp:wasmJsBrowserDevelopmentRun`) — vector conversion undistorted
 
 ### Phase 4: Navigation 3 & Replay Screen
 
