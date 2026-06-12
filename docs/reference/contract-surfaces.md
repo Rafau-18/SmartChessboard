@@ -190,7 +190,7 @@ before the disconnect remain persisted.
 | Column | Type | Constraints | Notes |
 | --- | --- | --- | --- |
 | `id` | `uuid` | PK, `default gen_random_uuid()` | |
-| `user_id` | `uuid` | NOT NULL, FK → `auth.users(id)` ON DELETE CASCADE | Owner |
+| `user_id` | `uuid` | NOT NULL, FK → `auth.users(id)` ON DELETE CASCADE, `default auth.uid()` | Owner; authenticated INSERTs omit it per §3.2 (default added 2026-06-12, S-04) |
 | `created_at` | `timestamptz` | NOT NULL, `default now()` | |
 | `updated_at` | `timestamptz` | NOT NULL, `default now()` | Trigger updates on each row update |
 | `mode` | `text` | NOT NULL, CHECK in (`'digital'`, `'physical'`) | |

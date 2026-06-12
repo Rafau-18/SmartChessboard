@@ -7,7 +7,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(17);
+select plan(22);
 
 -- Structural ------------------------------------------------------------
 
@@ -36,6 +36,9 @@ select policy_roles_are('public', 'games', 'games_delete_own', array['authentica
 
 select has_trigger('public', 'games', 'games_set_updated_at',
   'updated_at auto-touch trigger exists');
+
+select col_default_is('public', 'games', 'user_id', 'auth.uid()',
+  'user_id defaults to auth.uid() (contract §2.2, amended S-04)');
 
 -- Seed: two users, one game each (timestamps in the past so the trigger
 -- test can observe updated_at moving to now()). Runs as postgres — table
@@ -90,8 +93,33 @@ select throws_ok(
   'A cannot reassign their own game to B (implicit with check)'
 );
 
+-- S-04 write path: INSERT without user_id (column default) and the pgn auto-save UPDATE.
+
+select lives_ok(
+  $$insert into public.games (id, mode, status)
+    values ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'digital', 'in_progress')$$,
+  'A can insert a game without passing user_id (S-04 column default)'
+);
+
+select is(
+  (select user_id from public.games where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'),
+  '11111111-1111-1111-1111-111111111111'::uuid,
+  'defaulted user_id is the caller''s auth.uid()'
+);
+
+update public.games set pgn = '1. e4 *'
+  where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+
+select is(
+  (select pgn from public.games where id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
+  '1. e4 *',
+  'owner can update pgn (auto-save path)'
+);
+
 -- RLS silently scopes these to 0 rows; verified after role reset below.
 update public.games set white_label = 'hacked'
+  where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+update public.games set pgn = 'hacked'
   where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 delete from public.games
   where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
@@ -128,6 +156,12 @@ select is(
   (select count(*) from public.games where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
   1::bigint,
   'A''s delete did not remove B''s row'
+);
+
+select is(
+  (select pgn from public.games where id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
+  '',
+  'A''s pgn update did not touch B''s row'
 );
 
 -- Trigger behavior: updated_at moves to now() on update ------------------

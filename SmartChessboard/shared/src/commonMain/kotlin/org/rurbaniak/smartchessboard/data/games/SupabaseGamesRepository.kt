@@ -36,6 +36,16 @@ private data class GameRecordDto(
     val pgn: String,
 )
 
+// No user_id field — the column default (auth.uid()) owns it server-side (contract §2.2/§3.2).
+@Serializable
+private data class NewGameDto(
+    val mode: String,
+    val status: String,
+    val pgn: String,
+    @SerialName("white_label") val whiteLabel: String,
+    @SerialName("black_label") val blackLabel: String,
+)
+
 class SupabaseGamesRepository(
     private val client: SupabaseClient,
 ) : GamesRepository {
@@ -61,6 +71,38 @@ class SupabaseGamesRepository(
                 filter { eq("id", id) }
             }.decodeSingle<GameRecordDto>()
             .toDomain()
+
+    override suspend fun createGame(
+        whiteLabel: String,
+        blackLabel: String,
+    ): GameRecord =
+        client
+            .from("games")
+            .insert(
+                NewGameDto(
+                    mode = "digital",
+                    status = "in_progress",
+                    pgn = "",
+                    whiteLabel = whiteLabel,
+                    blackLabel = blackLabel,
+                ),
+            ) {
+                select(
+                    Columns.list("id", "created_at", "mode", "status", "result", "white_label", "black_label", "pgn"),
+                )
+            }.decodeSingle<GameRecordDto>()
+            .toDomain()
+
+    override suspend fun updatePgn(
+        id: String,
+        pgn: String,
+    ) {
+        client
+            .from("games")
+            .update({ set("pgn", pgn) }) {
+                filter { eq("id", id) }
+            }
+    }
 }
 
 private fun GameRowDto.toDomain(): GameSummary =

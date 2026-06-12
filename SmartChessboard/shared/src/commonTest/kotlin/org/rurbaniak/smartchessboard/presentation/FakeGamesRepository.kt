@@ -10,6 +10,11 @@ class FakeGamesRepository : GamesRepository {
     var shouldFail = false
     var listCalls = 0
     var getCalls = 0
+    var createdGame: GameRecord? = null
+    var createCalls = 0
+    val updatePgnCalls = mutableListOf<Pair<String, String>>()
+    var updatePgnFailures = 0
+    var onUpdatePgn: ((String, String) -> Unit)? = null
 
     override suspend fun listMyGames(): List<GameSummary> {
         listCalls++
@@ -21,5 +26,28 @@ class FakeGamesRepository : GamesRepository {
         getCalls++
         if (shouldFail) throw IllegalStateException("network down")
         return records[id] ?: throw IllegalStateException("no game with id $id")
+    }
+
+    override suspend fun createGame(
+        whiteLabel: String,
+        blackLabel: String,
+    ): GameRecord {
+        createCalls++
+        if (shouldFail) throw IllegalStateException("network down")
+        return createdGame ?: throw IllegalStateException("no createdGame stubbed")
+    }
+
+    // Records the attempt before failing so retry tests can count attempts.
+    override suspend fun updatePgn(
+        id: String,
+        pgn: String,
+    ) {
+        updatePgnCalls += id to pgn
+        if (shouldFail) throw IllegalStateException("network down")
+        if (updatePgnFailures > 0) {
+            updatePgnFailures--
+            throw IllegalStateException("update failed")
+        }
+        onUpdatePgn?.invoke(id, pgn)
     }
 }

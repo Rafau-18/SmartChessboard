@@ -87,6 +87,8 @@ kotlin {
             implementation(libs.androidx.credentials)
             implementation(libs.androidx.credentials.playServicesAuth)
             implementation(libs.googleid)
+            // androidContext() for the journal's SharedPreferences provisioning.
+            implementation(libs.koin.android)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -109,10 +111,14 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
+            // Durable key-value store backing the game journal (SharedPreferences /
+            // NSUserDefaults / localStorage) — write-ahead half of the §6.2 invariant.
+            implementation(libs.multiplatform.settings)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.multiplatform.settings.test)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

@@ -8,9 +8,12 @@ import org.koin.dsl.module
 import org.rurbaniak.smartchessboard.data.auth.SupabaseAuthRepository
 import org.rurbaniak.smartchessboard.data.eval.SupabaseEvalRepository
 import org.rurbaniak.smartchessboard.data.games.SupabaseGamesRepository
+import org.rurbaniak.smartchessboard.data.journal.SettingsGameJournal
 import org.rurbaniak.smartchessboard.data.supabase.createAppSupabaseClient
 import org.rurbaniak.smartchessboard.domain.auth.AuthRepository
 import org.rurbaniak.smartchessboard.domain.eval.EvalRepository
+import org.rurbaniak.smartchessboard.domain.games.GameAutoSaver
+import org.rurbaniak.smartchessboard.domain.games.GameJournal
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.history.HistoryViewModel
@@ -22,6 +25,9 @@ val dataModule =
         single<AuthRepository> { SupabaseAuthRepository(get()) }
         single<GamesRepository> { SupabaseGamesRepository(get()) }
         single<EvalRepository> { SupabaseEvalRepository(get()) }
+        single<GameJournal> { SettingsGameJournal(get()) }
+        // Per-screen instance: syncPending tracks the one game a Play screen drives.
+        factory { GameAutoSaver(gamesRepository = get(), journal = get()) }
     }
 
 val presentationModule =
@@ -32,7 +38,7 @@ val presentationModule =
         viewModel { (gameId: String) -> ReplayViewModel(gameId = gameId, gamesRepository = get()) }
     }
 
-val appModules = listOf(dataModule, presentationModule)
+val appModules = listOf(platformModule, dataModule, presentationModule)
 
 /** Single Koin bootstrap; each platform entry point (Android Application, iOS entry, web main) calls this once. */
 fun initKoin(config: KoinAppDeclaration? = null) {

@@ -593,21 +593,21 @@ rule (e.g. journal durability semantics) via the lessons format.
 
 #### Automated
 
-- [x] 1.1 Host JVM suite passes (`:shared:testAndroidHostTest`)
-- [x] 1.2 Native suite passes (`:shared:iosSimulatorArm64Test`)
-- [x] 1.3 Web suite passes (`:shared:wasmJsTest`)
+- [x] 1.1 Host JVM suite passes (`:shared:testAndroidHostTest`) — 5a44423
+- [x] 1.2 Native suite passes (`:shared:iosSimulatorArm64Test`) — 5a44423
+- [x] 1.3 Web suite passes (`:shared:wasmJsTest`) — 5a44423
 
 ### Phase 2: Write Path & Local Journal (Data)
 
 #### Automated
 
-- [ ] 2.1 Local stack migrates + pgTAP green (`supabase db reset && supabase test db`)
-- [ ] 2.2 All three per-target suites green incl. GameAutoSaver tests
-- [ ] 2.3 yarn.lock actualized if wasmJs dep required it; clean `:shared:wasmJsTest`
+- [x] 2.1 Local stack migrates + pgTAP green (`supabase db reset && supabase test db`)
+- [x] 2.2 All three per-target suites green incl. GameAutoSaver tests
+- [x] 2.3 yarn.lock actualized if wasmJs dep required it; clean `:shared:wasmJsTest`
 
 #### Manual
 
-- [ ] 2.4 Cloud migration applied to hosted project (`supabase db push`)
+- [x] 2.4 Cloud migration applied to hosted project (`supabase db push`)
 
 ### Phase 3: Interactive Board & Promotion Picker (UI)
 
