@@ -611,24 +611,24 @@ schema.
 
 #### Automated
 
-- [x] 1.1 `supabase db reset` applies the widening migration cleanly
-- [x] 1.2 `supabase test db` green incl. new `position_evals.test.sql`
+- [x] 1.1 `supabase db reset` applies the widening migration cleanly — aa30597
+- [x] 1.2 `supabase test db` green incl. new `position_evals.test.sql` — aa30597
 
 #### Manual
 
-- [x] 1.3 Contract + PRD amendments read and approved
+- [x] 1.3 Contract + PRD amendments read and approved — aa30597
 
 ### Phase 2: Edge Function `lichess-eval`
 
 #### Automated
 
-- [ ] 2.1 `deno test` green (mocked providers, full chain)
-- [ ] 2.2 `supabase test db` still green
+- [x] 2.1 `deno test` green (mocked providers, full chain)
+- [x] 2.2 `supabase test db` still green
 
 #### Manual
 
-- [ ] 2.3 Local-serve smoke with real egress: lichess / chess-api / cache paths observed; row lands in local `position_evals`
-- [ ] 2.4 Mate sign convention verified for Black-mates on both providers; mapping matches White-POV contract
+- [x] 2.3 Local-serve smoke with real egress: lichess / chess-api / cache paths observed; row lands in local `position_evals`
+- [x] 2.4 Mate sign convention verified for Black-mates on both providers; mapping matches White-POV contract
 
 ### Phase 3: FEN Serialization & Eval Data Layer
 

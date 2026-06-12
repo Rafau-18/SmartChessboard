@@ -387,6 +387,12 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+[functions.lichess-eval]
+# Platform-level JWT enforcement — anonymous calls rejected with 401 before
+# the function body runs (contract §3.3). Explicit so local serve mirrors
+# hosted behavior.
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54327
