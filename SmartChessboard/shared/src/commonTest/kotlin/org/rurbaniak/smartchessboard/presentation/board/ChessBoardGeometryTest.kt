@@ -1,6 +1,7 @@
 package org.rurbaniak.smartchessboard.presentation.board
 
 import org.rurbaniak.smartchessboard.domain.chess.Color
+import org.rurbaniak.smartchessboard.domain.chess.PROMOTION_TARGETS
 import org.rurbaniak.smartchessboard.domain.chess.Piece
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
 import org.rurbaniak.smartchessboard.domain.chess.squareOf
@@ -30,6 +31,43 @@ class ChessBoardGeometryTest {
             }
         }
         assertEquals((0..63).toSet(), squares)
+    }
+
+    @Test
+    fun `corner cells map to the right squares with black at the bottom`() {
+        // Black-bottom is the 180° rotation of white-bottom: h1 top-left, a8 bottom-right.
+        assertEquals(squareOf(7, 0), squareAt(column = 0, rowFromTop = 0, orientation = Color.BLACK)) // h1 top-left
+        assertEquals(squareOf(0, 0), squareAt(column = 7, rowFromTop = 0, orientation = Color.BLACK)) // a1 top-right
+        assertEquals(squareOf(7, 7), squareAt(column = 0, rowFromTop = 7, orientation = Color.BLACK)) // h8 bottom-left
+        assertEquals(squareOf(0, 7), squareAt(column = 7, rowFromTop = 7, orientation = Color.BLACK)) // a8 bottom-right
+    }
+
+    @Test
+    fun `black orientation is the 180-degree rotation of white orientation`() {
+        for (rowFromTop in 0..7) {
+            for (column in 0..7) {
+                val white = squareAt(column, rowFromTop, Color.WHITE)
+                val black = squareAt(7 - column, 7 - rowFromTop, Color.BLACK)
+                assertEquals(white, black)
+            }
+        }
+    }
+
+    @Test
+    fun `black orientation cells also cover every square exactly once`() {
+        val squares = mutableSetOf<Int>()
+        for (rowFromTop in 0..7) {
+            for (column in 0..7) {
+                squares += squareAt(column, rowFromTop, Color.BLACK)
+            }
+        }
+        assertEquals((0..63).toSet(), squares)
+    }
+
+    @Test
+    fun `promotion picker order is exactly the engine promotion targets`() {
+        assertEquals(PROMOTION_TARGETS, PROMOTION_ORDER.toSet())
+        assertEquals(PROMOTION_ORDER.size, PROMOTION_ORDER.toSet().size) // no duplicates
     }
 
     @Test

@@ -601,23 +601,23 @@ rule (e.g. journal durability semantics) via the lessons format.
 
 #### Automated
 
-- [x] 2.1 Local stack migrates + pgTAP green (`supabase db reset && supabase test db`)
-- [x] 2.2 All three per-target suites green incl. GameAutoSaver tests
-- [x] 2.3 yarn.lock actualized if wasmJs dep required it; clean `:shared:wasmJsTest`
+- [x] 2.1 Local stack migrates + pgTAP green (`supabase db reset && supabase test db`) — 09dcd1b
+- [x] 2.2 All three per-target suites green incl. GameAutoSaver tests — 09dcd1b
+- [x] 2.3 yarn.lock actualized if wasmJs dep required it; clean `:shared:wasmJsTest` — 09dcd1b
 
 #### Manual
 
-- [x] 2.4 Cloud migration applied to hosted project (`supabase db push`)
+- [x] 2.4 Cloud migration applied to hosted project (`supabase db push`) — 09dcd1b
 
 ### Phase 3: Interactive Board & Promotion Picker (UI)
 
 #### Automated
 
-- [ ] 3.1 All three per-target suites green incl. orientation-mapping tests
+- [x] 3.1 All three per-target suites green incl. orientation-mapping tests
 
 #### Manual
 
-- [ ] 3.2 Previews show selection, targets, flip, and promotion picker correctly
+- [x] 3.2 Previews show selection, targets, flip, and promotion picker correctly
 
 ### Phase 4: Play & New-Game Screens + Navigation
 
