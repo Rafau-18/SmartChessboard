@@ -573,22 +573,22 @@ existence.
 
 #### Automated
 
-- [x] 1.1 Parser suite green on JVM host (`:shared:testAndroidHostTest`)
-- [x] 1.2 Parser suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [x] 1.3 Parser suite green on wasm (`:shared:wasmJsTest`)
-- [x] 1.4 ktlint clean
+- [x] 1.1 Parser suite green on JVM host (`:shared:testAndroidHostTest`) — 3b007e6
+- [x] 1.2 Parser suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 3b007e6
+- [x] 1.3 Parser suite green on wasm (`:shared:wasmJsTest`) — 3b007e6
+- [x] 1.4 ktlint clean — 3b007e6
 
 ### Phase 2: Seeded Records & Single-Game Read
 
 #### Automated
 
-- [ ] 2.1 `supabase db reset` applies migrations + seeds cleanly
-- [ ] 2.2 Existing pgTAP suite still green (`supabase test db`)
-- [ ] 2.3 Shared tests green on JVM host (`:shared:testAndroidHostTest`)
+- [x] 2.1 `supabase db reset` applies migrations + seeds cleanly
+- [x] 2.2 Existing pgTAP suite still green (`supabase test db`)
+- [x] 2.3 Shared tests green on JVM host (`:shared:testAndroidHostTest`)
 
 #### Manual
 
-- [ ] 2.4 Seeded rows visible for both test users locally; PGNs match Phase 1 fixtures
+- [x] 2.4 Seeded rows visible for both test users locally; PGNs match Phase 1 fixtures
 
 ### Phase 3: Chessboard View & Piece Assets
 
