@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-06-11
+updated: 2026-06-12
 ---
 
 ## Purpose
@@ -204,8 +204,9 @@ before the disconnect remain persisted.
 
 | Column | Type | Constraints | Notes |
 | --- | --- | --- | --- |
-| `fen` | `text` | PK | Cache key — exact FEN |
+| `fen` | `text` | PK | Cache key — normalized FEN (see note below) |
 | `eval_cp` | `integer` | NULL | Centipawn evaluation, White POV |
+| `mate` | `integer` | NULL | Forced-mate distance in moves, White-POV signed (negative = Black mates in that many moves); NULL when the position is not a forced mate |
 | `best_move` | `text` | NULL | UCI notation (e.g., `e2e4`) |
 | `depth` | `integer` | NULL | Search depth reported by the eval provider |
 | `source` | `text` | NOT NULL, CHECK in (`'lichess'`, `'chess-api'`, `'unknown'`) | `'unknown'` = no provider returned an eval |
@@ -219,10 +220,17 @@ Notes:
 - `source='unknown'` rows are negative-cache entries (Lichess had no eval AND
   the Chess-API.com fallback failed or was unavailable). Cached for a shorter
   TTL than positive entries to allow retry.
+- The cache key is the **normalized** FEN: the Edge Function zeroes the
+  halfmove/fullmove counters (`… 0 1`) before cache lookup and upstream calls,
+  so identical positions reached at different move numbers share one cache row
+  (added 2026-06-12). Normalization happens in exactly one place — the
+  function; clients send faithful FENs (see §5.4).
 - Migration note: the deployed `position_evals` table
   (`supabase/migrations/20260531233302_position_evals.sql`) predates the
-  `'chess-api'` source value (added 2026-06-10) — widening the CHECK
-  constraint requires a new migration before the eval proxy ships.
+  `'chess-api'` source value (added 2026-06-10) and the `mate` column (added
+  2026-06-12) — both land in one widening migration (S-03 Phase 1) that
+  recreates the CHECK constraint and adds the nullable `mate` column before
+  the eval proxy ships.
 
 ### 2.4 Row-Level Security
 
@@ -323,7 +331,7 @@ Anonymous calls rejected with 401.
 
 | Status | Body | Meaning |
 | --- | --- | --- |
-| `200` | `{ "fen", "eval_cp", "best_move", "depth", "source": "cache" \| "lichess" \| "chess-api", "fetched_at" }` | Evaluation available |
+| `200` | `{ "fen", "eval_cp", "mate", "best_move", "depth", "source": "cache" \| "lichess" \| "chess-api", "fetched_at" }` | Evaluation available. `mate` is the White-POV signed forced-mate distance (negative = Black mates), `null` unless the position is a forced mate (added 2026-06-12) |
 | `200` | `{ "fen", "source": "unknown" }` | No provider returned an eval; record cached as negative entry |
 | `400` | `{ "error": "invalid_fen" }` | FEN failed validation |
 | `401` | `{ "error": "unauthenticated" }` | Missing or invalid JWT |
@@ -333,23 +341,45 @@ Anonymous calls rejected with 401.
 **Function logic** (eval chain decided 2026-06-10: cache → Lichess →
 Chess-API.com → `unknown`):
 
-1. Parse and validate FEN.
-2. Look up `position_evals` by FEN.
+1. Parse and validate FEN (structural validation: ranks/pieces/side to
+   move/castling/en passant shape; position legality stays the providers'
+   problem).
+2. Normalize the FEN for caching and upstream calls: halfmove/fullmove
+   counters zeroed to `0 1` (added 2026-06-12). The function is the single
+   normalization authority — clients send faithful FENs.
+3. Look up `position_evals` by normalized FEN.
    - If hit and `fetched_at` within freshness window (suggest: 30 days for
      `source='lichess'` / `source='chess-api'`, 24 hours for
      `source='unknown'`): return cached row with `source: 'cache'`.
-3. On miss / stale: call `https://lichess.org/api/cloud-eval?fen=<urlencoded>`.
+4. On miss / stale: call `https://lichess.org/api/cloud-eval?fen=<urlencoded>`.
    On eval: upsert with `source='lichess'` and return. (Lichess stores only
    positions already known to its database — mostly opening theory and popular
    positions — so misses are the common case for amateur games.)
-4. On Lichess "no eval" or upstream error: call the fallback
+5. On Lichess "no eval" or upstream error: call the fallback
    `POST https://chess-api.com/v1` with `{ "fen": <fen> }` (Stockfish 18 NNUE,
    computes arbitrary positions; no API key; short timeout; depth ≤ 18).
    On eval: upsert with `source='chess-api'` and return.
-5. If the fallback also fails: when Lichess answered "no eval", upsert
+6. If the fallback also fails: when Lichess answered "no eval", upsert
    `source='unknown'` (negative cache) and return the `unknown` response;
    when both providers errored (rate limit / 5xx), return `429`/`502` without
    caching.
+
+A provider answering "cannot evaluate this position" (e.g. Chess-API.com's
+`INVALID_INPUT` on a terminal position) counts as provider-no-eval, not as an
+upstream error — it follows the no-eval branch above, never `502`.
+
+**Terminal positions are a client-side short-circuit**: the mobile/web client
+already detects checkmate/stalemate via its rules engine and renders the
+terminal state without calling this function. The function does not implement
+terminal detection.
+
+**CORS / preflight** (load-bearing for the web target, documented 2026-06-12):
+the browser client sends `Authorization` + `Content-Type` headers, which
+triggers a preflight. The function answers `OPTIONS` with `204` plus
+`Access-Control-Allow-Origin` and `Access-Control-Allow-Headers:
+authorization, x-client-info, apikey, content-type`, and attaches
+`Access-Control-Allow-Origin` to every response. The host's COOP/COEP headers
+do not block CORS fetches — no `_headers` change is needed.
 
 **Fallback provider caveat**: Chess-API.com is a free community service (no
 SLA, undocumented rate limits). It sits behind the shared cache, and outages
@@ -357,10 +387,12 @@ degrade gracefully to `source='unknown'`. Designated alternate if it
 disappears: `https://stockfish.online`. A locally bundled Stockfish is the
 post-MVP endgame — PRD Open Question 3.
 
-**Secrets**: function uses `LICHESS_TOKEN` (if Lichess requires; cloud-eval is
-public but a token raises rate limit) and `SUPABASE_SERVICE_ROLE_KEY` to write
-the cache. Both set via `supabase secrets set ...`; never bundled in mobile.
-Chess-API.com requires no API key — the fallback adds no new secret.
+**Secrets**: function uses `LICHESS_TOKEN` (cloud-eval works anonymously but a
+token raises the rate limit; decided 2026-06-12: the token is set from day one,
+the function reads it conditionally so a missing secret degrades to anonymous
+calls) and `SUPABASE_SERVICE_ROLE_KEY` to write the cache. Both set via
+`supabase secrets set ...`; never bundled in mobile. Chess-API.com requires no
+API key — the fallback adds no new secret.
 
 ### 3.4 Offline-first sync
 
@@ -499,8 +531,18 @@ implementation).
 
 For evaluation requests, mobile computes the FEN of the requested position
 and sends it to `lichess-eval` (section 3.3). The `position_evals` cache is
-keyed by FEN, so identical positions share evaluations across games and
-users — even across players.
+keyed by normalized FEN (counters zeroed by the function, §2.3), so identical
+positions share evaluations across games and users — even across players.
+
+Eval-FEN derivation rules (added 2026-06-12):
+
+- Mobile derives a **faithful** FEN — all six fields as stored in the engine
+  position, including real halfmove/fullmove counters. Normalization for
+  caching is the Edge Function's job alone.
+- The en passant field names the target square **only when an enemy pawn can
+  pseudo-legally capture onto it**; otherwise `-`. This is general FEN
+  hygiene, and strict provider validators (Chess-API.com rejects FENs naming
+  a non-capturable en passant square) require it.
 
 ### 5.5 In-progress vs finished
 
