@@ -131,9 +131,10 @@ Four additive phases, each a reviewable checkpoint:
   Byte 0 = squares 0–7 (rank 1, a1 = byte 0 bit 0), byte 7 = squares 56–63 (h8 = byte 7
   bit 7). This is the natural extension of §1.3's "bit N = square N" but the byte split is
   currently unwritten — Phase 2 amends `contract-surfaces.md` §1.3 (one sentence) and mirrors a
-  dated note into `prd-firmware.md` per the contract's change-control section. `prd.md` is
-  intentionally not touched: no user-facing wording references snapshot encoding (judgment call,
-  recorded here).
+  dated note into **both** `prd-firmware.md` and `prd.md` per the contract's change-control section
+  (§1 BLE routes to both PRDs). `prd.md` gets a single minimal Implementation-Decisions line
+  recording that the clarification has no user-facing impact — satisfying the change-control rule
+  literally rather than relying on a judgment-call exception.
 - **Golden frames must be hand-derived from §1.3, never produced by the codec.** Example vectors
   (computed by hand, cite the § in test comments): place on e4 → square 28 (0b011100), event
   `01` in high bits → frame `[0x02, 0x5C]`; lift e2 → `[0x02, 0x0C]`; start-position snapshot →
@@ -152,12 +153,21 @@ Four additive phases, each a reviewable checkpoint:
   flagged as a candidate §1 clarification when firmware resumes (not edited now to keep the
   contract delta minimal).
 - **Time-driven behavior runs on an injectable `CoroutineScope`** so `runTest`'s virtual clock
-  drives the 10 Hz diagnostic snapshots and ~30 s `DEVICE_STATUS` deterministically. An optional
-  `eventDelay` (default `Duration.ZERO`) paces emissions for future dev-tool realism — free
-  under virtual time.
+  drives the 10 Hz diagnostic snapshots and the periodic `DEVICE_STATUS` deterministically. The
+  status cadence is itself a constructor parameter — `statusInterval: Duration = 30.seconds`, with
+  `Duration.INFINITE` meaning "no periodic status" — so tests asserting an exact ordered event
+  stream can switch the always-on ~30 s status off and avoid it interleaving with the 10 Hz
+  diagnostic job; the dedicated periodic-status test sets it to 30 s. An optional `eventDelay`
+  (default `Duration.ZERO`) paces emissions for future dev-tool realism — free under virtual time.
 - **Hot stream semantics**: `events` is a no-replay hot flow; subscribers attach before driving
   the board (snapshot-on-connect is missed otherwise). Documented on the port; the demo test
   models the correct usage.
+- **Emulator placement is `commonTest`, not `commonMain`.** `EmulatedBoard` and `BoardScenarios`
+  are test fixtures until a production consumer exists (S-06 dev tooling, not yet built) — the same
+  F-01 "no wiring until a consumer exists" precedent. They live under
+  `shared/src/commonTest/.../data/board/emulator/`; the codec (`data/board/protocol/`) and the port
+  (`domain/board/`) stay in `commonMain` because the codec is reused by the production S-09 BLE
+  adapter. Promote the emulator to `commonMain` only when S-06 actually wires a dev screen to it.
 
 ## Phase 1: Board domain port & event model
 
@@ -293,22 +303,33 @@ S-09 — per the document's own change-control rules.
 **Intent**: Satisfy the contract change-control mirror for §1 changes.
 
 **Contract**: One dated line referencing the §1.3 snapshot bit-packing clarification (under
-FR-FW-005 or an adjacent note). `prd.md` intentionally untouched — rationale recorded in this
-plan's Critical Implementation Details.
+FR-FW-005 or an adjacent note).
+
+#### 5. Mirror note in product PRD
+
+**File**: `context/foundation/prd.md`
+
+**Intent**: Complete the contract change-control mirror for §1 changes — the rule routes §1 BLE
+edits to `prd-firmware.md` *and* `prd.md`.
+
+**Contract**: One dated line in the "Implementation Decisions" (or equivalent) section recording
+that the §1.3 snapshot bit-packing was clarified with **no user-facing impact** (pointer to
+`contract-surfaces.md`). Deliberately minimal: no FR wording changes, since no user-facing
+behavior depends on snapshot encoding.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- Codec + golden-frame tests pass on host: `cd SmartChessboard && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :shared:testAndroidHostTest --console=plain --no-daemon`
+- Codec + golden-frame tests pass on host and iOS-sim: `cd SmartChessboard && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :shared:testAndroidHostTest :shared:iosSimulatorArm64Test --console=plain --no-daemon` (Kotlin/Native is where signed-`Byte`/`Long` bit handling is most likely to diverge; WasmJS stays the Phase 4 final check)
 - Formatting clean: `cd SmartChessboard && ktlint -F`
 
 #### Manual Verification:
 
 - Spot-check 3–4 golden vectors against §1.3 by hand (a green test with a wrong hand-derived
   vector proves nothing) — including the start-position snapshot bytes `FF FF 00 00 00 00 FF FF`.
-- Confirm the contract edit is the minimal one-sentence clarification and the firmware-PRD mirror
-  line is present and dated.
+- Confirm the contract edit is the minimal one-sentence clarification and both PRD mirror lines
+  (firmware-PRD and product-PRD) are present and dated.
 
 **Implementation Note**: Pause for manual confirmation after automated verification passes.
 
@@ -327,19 +348,25 @@ surface, and clock-driven behaviors on an injectable scope.
 
 #### 1. EmulatedBoard
 
-**File**: `SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/data/board/emulator/EmulatedBoard.kt`
+**File**: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/data/board/emulator/EmulatedBoard.kt`
+(test source set — a fixture until S-06 has a production consumer; see Critical Implementation Details)
 
 **Intent**: The driver-facing emulator: holds 64-bit occupancy, exposes script primitives, and
 implements the port so consumers cannot tell it from a real board at the event-stream level.
+Lives in `commonTest`: it sees `commonMain` (port + codec) and is consumed by the `commonTest`
+behavior/demo tests, without shipping in any release binary.
 
 **Contract**: `class EmulatedBoard(scope: CoroutineScope, initialOccupancy: Long =
-STARTING_POSITION_OCCUPANCY, status: EmulatedDeviceStatus = default, eventDelay: Duration =
-ZERO) : BoardConnection`. Driver surface (not on the port): `connect()`, `disconnect()`,
+STARTING_POSITION_OCCUPANCY, status: EmulatedDeviceStatus = default, statusInterval: Duration =
+30.seconds, eventDelay: Duration = ZERO) : BoardConnection` (`statusInterval = Duration.INFINITE`
+disables the periodic `DEVICE_STATUS` job — used by tests that assert an exact ordered stream).
+Driver surface (not on the port): `connect()`, `disconnect()`,
 `lift(square)`, `place(square)`, `pressButton(button)`, `setOccupancy(occupancy)` (disconnected
 only), `val occupancy: Long` (for assertions/dev tooling). Behaviors:
 
 - `connect()` → state CONNECTED, emits `BOARD_SNAPSHOT` then `DEVICE_STATUS` (§1.3 "on connect"),
-  resets mode to GAME, starts the ~30 s periodic `DEVICE_STATUS` job.
+  resets mode to GAME, starts the periodic `DEVICE_STATUS` job at `statusInterval` (skipped when
+  `statusInterval == Duration.INFINITE`).
 - `lift`/`place` → consistency guards (lift requires occupied, place requires empty; violation
   throws), mutate occupancy; emit `SQUARE_EVENT` only while connected (offline mutations are
   silent — Critical Implementation Details).
@@ -365,14 +392,15 @@ only), `val occupancy: Long` (for assertions/dev tooling). Behaviors:
 occupancy tracking; consistency-guard throws (lift empty / place occupied / setOccupancy while
 connected); offline mutation revealed only by post-reconnect snapshot; button no-op while
 disconnected; send-while-disconnected throws; diagnostic mode emits ~10 snapshots per virtually
-advanced second and stops on `SetMode(GAME)`; periodic `DEVICE_STATUS` at ~30 s virtual
-intervals; mode reset to GAME on reconnect.
+advanced second and stops on `SetMode(GAME)` (constructed with `statusInterval = INFINITE` so the
+periodic status does not intrude on the count); periodic `DEVICE_STATUS` at the configured interval
+(its own test sets `statusInterval = 30.seconds`); mode reset to GAME on reconnect.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- Emulator behavior tests pass on host: `cd SmartChessboard && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :shared:testAndroidHostTest --console=plain --no-daemon`
+- Emulator behavior tests pass on host and iOS-sim: `cd SmartChessboard && ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :shared:testAndroidHostTest :shared:iosSimulatorArm64Test --console=plain --no-daemon` (the virtual-time periodic jobs are the most likely Kotlin/Native divergence point; WasmJS stays the Phase 4 final check)
 - Formatting clean: `cd SmartChessboard && ktlint -F`
 
 #### Manual Verification:
@@ -398,11 +426,12 @@ end-to-end and doubles as S-06's usage documentation; the suite goes green on al
 
 #### 1. Scenario helpers
 
-**File**: `SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/data/board/emulator/BoardScenarios.kt`
+**File**: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/data/board/emulator/BoardScenarios.kt`
 
 **Intent**: Make realistic multi-event sequences one-liners, with ordering variants as
 first-class parameters (research: capture lift-order and castling interleavings vary by player).
-Main source (not test), so future dev tooling reuses them.
+Lives in `commonTest` alongside the emulator (test fixtures for now); promote to `commonMain`
+together with `EmulatedBoard` when S-06 dev tooling becomes a real production consumer.
 
 **Contract**: Extension functions on `EmulatedBoard`, all chess-agnostic (caller supplies
 squares; helpers only sequence primitives and inherit their guards):
@@ -424,8 +453,10 @@ exercising every §1.3 message type and both research-mandated ordering variants
 exact ordered typed-event stream received through the port (which, by the Phase 3 pipeline, means
 through §1.3 bytes).
 
-**Contract**: One scenario (plus minimal variants if clearer) covering: connect from
-start-position occupancy (assert snapshot + status); quiet move + white button; reply + black
+**Contract**: One scenario (plus minimal variants if clearer), with the board constructed using
+`statusInterval = Duration.INFINITE` so the periodic ~30 s `DEVICE_STATUS` never interleaves with
+the asserted ordered stream, covering: connect from start-position occupancy (assert snapshot +
+status); quiet move + white button; reply + black
 button; a capture with `CAPTURED_FIRST` and another with `MOVER_FIRST`; a castle variant; an
 `adjust` no-op pair; a `promotionPush` followed by a button press *before* any promotion choice
 (asserting the button event arrives — the blocking rule §1.5 belongs to S-06, the stream just
@@ -474,6 +505,14 @@ manual confirmation.
 - **Phase 3**: behavior matrix of the emulator — lifecycle, guards, offline mutations, command
   surface, periodic jobs on virtual time.
 
+### Cross-target cadence:
+
+- iOS-sim (`iosSimulatorArm64Test`) runs alongside host from Phase 2 onward — Kotlin/Native is the
+  target most likely to diverge on the codec's signed-`Byte` / `Long` bit handling and on
+  coroutines-test virtual time, and physical-board mode ships on iOS. WasmJS is the **optional**
+  final cross-target check at Phase 4 (web never wires physical mode; the emulator runs there only
+  because it is pure Kotlin) — catching a Native divergence early is worth a phase; a Wasm one is not.
+
 ### Integration Tests:
 
 - **Phase 4 demo end-to-end** is the integration proof: script → primitives/helpers → encode →
@@ -494,10 +533,15 @@ disconnect to avoid leaked coroutines (use the injected scope's structured concu
 
 ## Migration Notes
 
-Purely additive in code — new `domain/board/` and `data/board/` packages; no existing file
-changes, no schema, no dependencies, no DI. Two documentation files change under the contract's
-own change-control: `docs/reference/contract-surfaces.md` (§1.3 bit-packing sentence + `updated`
-bump) and `context/foundation/prd-firmware.md` (dated mirror line).
+Purely additive in code — new `domain/board/` (port, `commonMain`) and `data/board/protocol/`
+(codec, `commonMain`) packages, plus `data/board/emulator/` (emulator + scenarios) in the
+`commonTest` source set; no existing file changes, no schema, no dependencies, no DI. The emulator
+sits in `commonTest` because no production consumer exists yet (F-01 precedent); it promotes to
+`commonMain` when S-06 wires a dev screen — a same-package source-set move, no API change. Three
+documentation files change under the contract's own change-control:
+`docs/reference/contract-surfaces.md` (§1.3 bit-packing sentence + `updated` bump),
+`context/foundation/prd-firmware.md` (dated mirror line), and `context/foundation/prd.md` (one
+minimal dated Implementation-Decisions line, no user-facing impact).
 
 ## References
 
@@ -531,19 +575,19 @@ bump) and `context/foundation/prd-firmware.md` (dated mirror line).
 
 #### Automated
 
-- [ ] 2.1 Codec + golden-frame tests pass: `:shared:testAndroidHostTest`
+- [ ] 2.1 Codec + golden-frame tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test`
 - [ ] 2.2 Formatting clean: `ktlint -F`
 
 #### Manual
 
 - [ ] 2.3 Golden vectors spot-checked against §1.3 by hand (incl. start-position snapshot bytes)
-- [ ] 2.4 Contract edit minimal + firmware-PRD mirror line present and dated
+- [ ] 2.4 Contract edit minimal + both PRD mirror lines (firmware + product) present and dated
 
 ### Phase 3: Emulated board core
 
 #### Automated
 
-- [ ] 3.1 Emulator behavior tests pass: `:shared:testAndroidHostTest`
+- [ ] 3.1 Emulator behavior tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test`
 - [ ] 3.2 Formatting clean: `ktlint -F`
 
 #### Manual
