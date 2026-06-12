@@ -31,10 +31,10 @@ The author and a small circle of friends play chess on a physical wooden board, 
 
 | ID   | Change ID                     | Outcome (user can …)                                                      | Prerequisites          | PRD refs                                              | Status   |
 | ---- | ----------------------------- | ------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------- | -------- |
-| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection           | —                      | FR-005, FR-007, Guardrails                             | in progress |
+| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection           | —                      | FR-005, FR-007, Guardrails                             | awaiting review |
 | F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware           | —                      | PRD OQ-1 (resolved), US-02                             | in progress |
-| S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | ready    |
-| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | in progress |
+| S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | awaiting review |
+| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | awaiting review |
 | S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | proposed |
 | S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save                 | F-01, S-01, S-02       | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01  | proposed |
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                         | S-04                   | FR-007, FR-018, US-01                                  | proposed |
@@ -80,7 +80,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Largest pure-logic block in the project; sequenced parallel to the review loop so it never delays the north star — if it slips, only play/physical slices slip. Must be verified by its own test corpus before any UI consumes it.
-- **Status:** in progress — change folder opened 2026-06-11 (`context/changes/chess-rules-engine/`); next: `/10x-plan`.
+- **Status:** awaiting review — implemented and impl-reviewed (approved, `bce5896`); plan closed out (`643c941`), `change.md` status `impl_reviewed`. Code-complete and perft-verified; **waiting on the user's final review before `/10x-archive`** (no time pressure).
 
 ### F-02: Reed-switch board emulator
 
@@ -107,7 +107,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Wires the auth and per-user data scoping that every later slice inherits; includes a short manual console step (OAuth credentials) — the only non-agent-drivable gate in the slice. Also the natural spike ground for the UI-architecture decision deferred in `tech-stack.md`.
-- **Status:** ready
+- **Status:** awaiting review — implemented and impl-reviewed (phase-6 impl-review recorded `3decfa5`), `change.md` status `impl_reviewed`. Web sliver (Google sign-in + history) shipped per the 2026-06-10 plan decision. **Waiting on the user's final review before `/10x-archive`** (no time pressure).
 
 ### S-02: Replay a saved game (seeded snapshots first)
 
@@ -120,7 +120,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Unknowns:**
   - Exact stored-record shape consumed by replay (parse the PGN source vs cached per-move position snapshots, as FR-014 permits) — Owner: team (decide in `/10x-plan`). Block: no.
 - **Risk:** The board view and record format born here are reused by play mode — keep PGN-as-source-of-truth assumptions (FR-014) intact so play-generated games later replay identically to seeded ones.
-- **Status:** in progress — implemented through Phase 5 on `replay-seeded-games` (PGN replay domain, single-game read + seeds, shared `ChessBoardView`, Navigation 3 + Replay screen). Navigation library committed to Nav3 multiplatform (see `lessons.md`). Manual cloud E2E gate (sign in → seeded games → replay to known final position on Android / iOS / web) pending, then `/10x-archive`.
+- **Status:** awaiting review — implemented through Phase 5 on `replay-seeded-games` (`3b007e6` → `81ee442`): PGN replay domain, single-game read + seeds, shared `ChessBoardView`, Navigation 3 + Replay screen. Navigation library committed to Nav3 multiplatform (see `lessons.md`). Three-surface cloud E2E confirmed 2026-06-12 (Android / iOS / web, replay to known final position; browser Back/Forward maps to the nav stack). `change.md` status `implemented`. **Waiting on the user's final review before `/10x-archive`** (no time pressure).
 
 ### S-03: Position evaluations in replay
 
