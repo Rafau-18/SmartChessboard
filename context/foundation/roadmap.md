@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-06-11
+updated: 2026-06-12
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -133,6 +133,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Unknowns:**
   - Chess-API.com (the fallback eval provider decided 2026-06-10) is a free community service — no SLA, undocumented rate limits; smoke-test both providers during `/10x-plan` research (designated alternate: stockfish.online) — Owner: team. Block: no.
   - UX for the residual case where both eval providers fail for a position — Owner: team (decide in `/10x-plan`). Block: no.
+  - Tablet/web multi-pane layout (board + eval + move list side-by-side on wide screens) — this slice is the natural home for the app-wide adaptive UI pass: the eval panel is what makes side-by-side pay off. S-02 already made `ChessBoardView` size-driven (no board rewrite needed) and capped/centred it on wide screens; decide in `/10x-plan` whether S-03 ships phone-first or adds multi-pane here (tooling: `adaptive` skill + Nav3 scenes). Owner: team. Block: no.
 - **Risk:** Completes the review loop end-to-end with zero hardware and zero rules engine involved; the eval chain is two providers deep by decision of 2026-06-10 (cache → Lichess Cloud Eval → Chess-API.com, per `contract-surfaces.md` §3.3) because Lichess alone has no eval for most amateur positions — open scope is the serverless eval proxy, a constraint-widening migration on the deployed `position_evals` table, and the replay-side display.
 - **Status:** proposed
 
