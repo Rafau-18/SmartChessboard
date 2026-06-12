@@ -6,9 +6,11 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.module
 import org.rurbaniak.smartchessboard.data.auth.SupabaseAuthRepository
+import org.rurbaniak.smartchessboard.data.eval.SupabaseEvalRepository
 import org.rurbaniak.smartchessboard.data.games.SupabaseGamesRepository
 import org.rurbaniak.smartchessboard.data.supabase.createAppSupabaseClient
 import org.rurbaniak.smartchessboard.domain.auth.AuthRepository
+import org.rurbaniak.smartchessboard.domain.eval.EvalRepository
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.history.HistoryViewModel
@@ -19,6 +21,7 @@ val dataModule =
         single { createAppSupabaseClient() }
         single<AuthRepository> { SupabaseAuthRepository(get()) }
         single<GamesRepository> { SupabaseGamesRepository(get()) }
+        single<EvalRepository> { SupabaseEvalRepository(get()) }
     }
 
 val presentationModule =

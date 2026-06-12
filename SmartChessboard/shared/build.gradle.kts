@@ -103,6 +103,7 @@ kotlin {
             implementation(libs.supabase.postgrest)
             implementation(libs.supabase.auth)
             implementation(libs.supabase.composeAuth)
+            implementation(libs.supabase.functions)
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel)

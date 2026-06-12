@@ -52,6 +52,7 @@ supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "s
 supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
 supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt" }
 supabase-composeAuth = { module = "io.github.jan-tennert.supabase:compose-auth" }
+supabase-functions = { module = "io.github.jan-tennert.supabase:functions-kt" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }

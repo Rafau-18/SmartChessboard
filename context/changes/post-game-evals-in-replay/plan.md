@@ -622,22 +622,22 @@ schema.
 
 #### Automated
 
-- [x] 2.1 `deno test` green (mocked providers, full chain)
-- [x] 2.2 `supabase test db` still green
+- [x] 2.1 `deno test` green (mocked providers, full chain) — 46bd258
+- [x] 2.2 `supabase test db` still green — 46bd258
 
 #### Manual
 
-- [x] 2.3 Local-serve smoke with real egress: lichess / chess-api / cache paths observed; row lands in local `position_evals`
-- [x] 2.4 Mate sign convention verified for Black-mates on both providers; mapping matches White-POV contract
+- [x] 2.3 Local-serve smoke with real egress: lichess / chess-api / cache paths observed; row lands in local `position_evals` — 46bd258
+- [x] 2.4 Mate sign convention verified for Black-mates on both providers; mapping matches White-POV contract — 46bd258
 
 ### Phase 3: FEN Serialization & Eval Data Layer
 
 #### Automated
 
-- [ ] 3.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`)
-- [ ] 3.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [ ] 3.3 Shared suite green on wasm (`:shared:wasmJsTest`)
-- [ ] 3.4 ktlint clean
+- [x] 3.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`)
+- [x] 3.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`)
+- [x] 3.3 Shared suite green on wasm (`:shared:wasmJsTest`)
+- [x] 3.4 ktlint clean
 
 ### Phase 4: Replay Analysis UI & Adaptive Layout
 

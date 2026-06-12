@@ -6,6 +6,7 @@ import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
 import org.rurbaniak.smartchessboard.BuildKonfig
 
@@ -18,6 +19,8 @@ fun createAppSupabaseClient(): SupabaseClient {
         supabaseKey = BuildKonfig.SUPABASE_ANON_KEY,
     ) {
         install(Postgrest)
+        // Edge Function invocation (lichess-eval, contract §3.3).
+        install(Functions)
         install(Auth) {
             flowType = FlowType.PKCE
             scheme = "com.smartchessboard"
