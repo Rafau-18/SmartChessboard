@@ -623,24 +623,24 @@ rule (e.g. journal durability semantics) via the lessons format.
 
 #### Automated
 
-- [x] 4.1 All three per-target suites green incl. PlayViewModel/NewGameViewModel tests
+- [x] 4.1 All three per-target suites green incl. PlayViewModel/NewGameViewModel tests — 29dc82d
 
 #### Manual
 
-- [x] 4.2 Android: create → play → promote → flip → kill app → resume at last move
-- [x] 4.3 Airplane mode: play continues, sync-pending shows, reconnect flushes to Supabase
-- [x] 4.4 Web dev server: create → play flow; browser Back/Forward sane
-- [x] 4.5 Checkmate → banner, input blocked, record stays in_progress
+- [x] 4.2 Android: create → play → promote → flip → kill app → resume at last move — 29dc82d
+- [x] 4.3 Airplane mode: play continues, sync-pending shows, reconnect flushes to Supabase — 29dc82d
+- [x] 4.4 Web dev server: create → play flow; browser Back/Forward sane — 29dc82d
+- [x] 4.5 Checkmate → banner, input blocked, record stays in_progress — 29dc82d
 
 ### Phase 5: Resume Hardening, Three-Surface E2E & Write-backs
 
 #### Automated
 
-- [ ] 5.1 Full per-target suites green (regression)
-- [ ] 5.2 Supabase reset + pgTAP green (regression)
+- [x] 5.1 Full per-target suites green (regression)
+- [x] 5.2 Supabase reset + pgTAP green (regression)
 
 #### Manual
 
-- [ ] 5.3 E2E passes on Android, iOS, and web against hosted backend
-- [ ] 5.4 Cross-surface check: game played on one surface replays on another
-- [ ] 5.5 Roadmap/lessons/change.md write-backs reviewed
+- [x] 5.3 E2E passes on Android, iOS, and web against hosted backend
+- [x] 5.4 Cross-surface check: game played on one surface replays on another
+- [x] 5.5 Roadmap/lessons/change.md write-backs reviewed

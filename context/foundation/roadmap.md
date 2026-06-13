@@ -36,7 +36,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | awaiting review |
 | S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | awaiting review |
 | S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | awaiting review |
-| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save                 | F-01, S-01, S-02       | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01  | proposed |
+| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save                 | F-01, S-01, S-02       | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01  | awaiting review |
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                         | S-04                   | FR-007, FR-018, US-01                                  | proposed |
 | S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator                         | F-01, F-02, S-04       | FR-005, FR-006, FR-008, FR-009, US-02                  | proposed |
 | S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics                | S-06                   | FR-010, FR-011, US-02                                  | proposed |
@@ -50,7 +50,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | Stream | Theme          | Chain                                          | Note                                                                                      |
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
-| B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. |
+| B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green).** |
 | C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is blocked until firmware work resumes.         |
 
 ## Baseline
@@ -148,7 +148,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Unknowns:**
   - Split between on-device persistence and cloud backup for the durable auto-save (the NFR demands both, available across the player's devices) — Owner: team (decide in `/10x-plan`). Block: no.
 - **Risk:** Heaviest user-facing slice, but one coherent workflow (create → move → validate → persist); the crash-safety guardrail ("a crash must not erase accepted moves") lives in its auto-save path.
-- **Status:** proposed
+- **Status:** awaiting review — implemented through Phase 5 on `digital-pass-and-play`: domain PGN writing (SAN writer + PGN serializer, round-tripped against the S-02 parser/corpus, `5a44423`); the project's first write path — `auth.uid()` column-default migration (`20260612203446`), `createGame`/`updatePgn` repo methods, and the synchronous local write-ahead journal + `GameAutoSaver` realizing the §6.2 ordering invariant (`09dcd1b`); interactive `ChessBoardView` (tap input, legal-target highlights, orientation/flip — backwards-compatible so Replay renders unchanged) + promotion picker (`95842bf`); Play & NewGame screens, MVVM ViewModels (MVVM per `lessons.md`, justified in the plan), `PlayKey`/`NewGameKey` routes with browser-history fragments, and History routing by status/mode (`29dc82d`). Three-surface cloud E2E confirmed 2026-06-13 (Android / iOS / web — create → play with castling/capture/promotion → force-quit mid-game → resume with zero lost moves; airplane-mode sync-pending then reconnect flush; cross-surface replay of the cloud copy; stored PGN carries `[Mode "digital"]`, `[Result "*"]`, labels and date, with `user_id` defaulted server-side). Game end & result stay in S-05; the record remains `in_progress` (mate/stalemate only blocks input + shows a banner). `change.md` status `implemented`. **Waiting on the user's final review before `/10x-archive`** (no time pressure).
 
 ### S-05: Game end and result
 
@@ -233,7 +233,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 
 ## Parked
 
-- **Web target for the digital subset (FR-020, nice-to-have)** — Why parked: `main_goal: speed` keeps the strict must-have sequence first, and the user confirmed (2026-06-10) mobile is the primary target; the deployed web shell stays live, and the shared codebase keeps this cheap to pick up post-MVP. Exception: S-01 pulls a small sliver forward (Google sign-in + empty history surface on web) per its plan decision of 2026-06-10; the rest of FR-020 stays parked.
+- **Web target for the digital subset (FR-020, nice-to-have)** — Why parked: `main_goal: speed` keeps the strict must-have sequence first, and the user confirmed (2026-06-10) mobile is the primary target; the deployed web shell stays live, and the shared codebase keeps this cheap to pick up post-MVP. Exception: S-01 pulls a small sliver forward (Google sign-in + empty history surface on web) per its plan decision of 2026-06-10, and S-04 likewise pulls the FR-020 digital-play sliver forward (interactive pass-and-play + durable record verified on web) per its plan decision of 2026-06-12, mirroring the S-01 precedent; the rest of FR-020 stays parked.
 - **BLE disconnect auto-recovery (FR-012, nice-to-have)** — Why parked: does not block MVP acceptance; its semantics are already specified in the contract document and it becomes relevant only together with S-09.
 - **Store/TestFlight mobile distribution** — Why parked: user decision (2026-06-10): iOS/Android are installed locally during MVP; distribution is a post-MVP decision per `infrastructure.md`.
 - **CI pipeline (build/test/deploy workflows)** — Why parked: not PRD scope; manual local builds and manual web deploy suffice for MVP; a plan already exists in `docs/vacation-workflow-todo.md` for when it earns its keep.
