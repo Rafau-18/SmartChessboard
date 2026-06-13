@@ -636,11 +636,11 @@ rule (e.g. journal durability semantics) via the lessons format.
 
 #### Automated
 
-- [x] 5.1 Full per-target suites green (regression)
-- [x] 5.2 Supabase reset + pgTAP green (regression)
+- [x] 5.1 Full per-target suites green (regression) — 85295e5
+- [x] 5.2 Supabase reset + pgTAP green (regression) — 85295e5
 
 #### Manual
 
-- [x] 5.3 E2E passes on Android, iOS, and web against hosted backend
-- [x] 5.4 Cross-surface check: game played on one surface replays on another
-- [x] 5.5 Roadmap/lessons/change.md write-backs reviewed
+- [x] 5.3 E2E passes on Android, iOS, and web against hosted backend — 85295e5
+- [x] 5.4 Cross-surface check: game played on one surface replays on another — 85295e5
+- [x] 5.5 Roadmap/lessons/change.md write-backs reviewed — 85295e5

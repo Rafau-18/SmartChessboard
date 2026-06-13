@@ -1,7 +1,7 @@
 ---
 change_id: digital-pass-and-play
 title: Digital pass and play
-status: implementing
+status: implemented
 created: 2026-06-12
 updated: 2026-06-13
 archived_at: null
