@@ -580,11 +580,17 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [ ] 4.1 `:shared` + apps build on all three targets
-- [ ] 4.2 Per-target test suites still green
-- [ ] 4.3 ktlint clean
+- [x] 4.1 `:shared` + apps build on all three targets
+- [x] 4.2 Per-target test suites still green
+- [x] 4.3 ktlint clean
 
 #### Manual
+
+> Deferred to Phase 5 (decided 2026-06-16): 4.4–4.6 are UI/navigation checks that Phase 5's
+> three-surface E2E (5.3) re-runs across Android, iOS, and web — auto-mate covers 4.6, manual draw +
+> finished→Replay cover 4.4/4.5 — so they are verified there rather than once here on a single
+> surface. Driving them needs an authenticated session the build/test gate can't perform. The Phase
+> 4 automated gate (4.1–4.3) passed. They stay `- [ ]` until Phase 5.
 
 - [ ] 4.4 End-game button visible only while in progress; picker opens; confirm finalizes; cancel keeps game playable
 - [ ] 4.5 Manual finish: final banner, frozen board, Analyse→Replay (correct result), Back→History (finished)

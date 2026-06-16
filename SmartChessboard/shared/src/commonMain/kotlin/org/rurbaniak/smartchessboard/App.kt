@@ -103,6 +103,19 @@ fun App() {
                                 PlayScreen(
                                     gameId = key.gameId,
                                     onBack = { backStack.removeLastOrNull() },
+                                    // Replace the frozen Play with Replay so Back doesn't return to
+                                    // a finished board.
+                                    onReviewGame = {
+                                        backStack.removeLastOrNull()
+                                        backStack.add(ReplayKey(key.gameId))
+                                    },
+                                    // Pop to the History root (it is the back stack's root) — a
+                                    // finished game shouldn't leave a frozen Play behind it.
+                                    onBackToHistory = {
+                                        while (backStack.size > 1) {
+                                            backStack.removeLastOrNull()
+                                        }
+                                    },
                                 )
                             }
                         },

@@ -18,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import org.koin.core.parameter.parametersOf
 import org.rurbaniak.smartchessboard.domain.chess.Color
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
+import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.presentation.board.BoardInteraction
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
@@ -48,6 +50,9 @@ private val BOARD_MAX_WIDTH = 480.dp
 fun PlayScreen(
     gameId: String,
     onBack: () -> Unit,
+    // Post-finish navigation (S-05): open the finished game in Replay, or return to History.
+    onReviewGame: () -> Unit,
+    onBackToHistory: () -> Unit,
 ) {
     // Keyed by game so reopening a different game never reuses a stale state machine.
     val viewModel = koinViewModel<PlayViewModel>(key = "play-$gameId") { parametersOf(gameId) }
@@ -100,6 +105,12 @@ fun PlayScreen(
                         onSquareTap = viewModel::onSquareTap,
                         onPromotionPick = viewModel::onPromotionPick,
                         onPromotionDismiss = viewModel::onPromotionDismiss,
+                        onEndGameRequest = viewModel::onEndGameRequest,
+                        onResultPick = viewModel::onResultPick,
+                        onConfirmEndGame = viewModel::onConfirmEndGame,
+                        onEndGameDismiss = viewModel::onEndGameDismiss,
+                        onReviewGame = onReviewGame,
+                        onBackToHistory = onBackToHistory,
                     )
                 }
             }
@@ -113,6 +124,12 @@ private fun PlayingContent(
     onSquareTap: (Int) -> Unit,
     onPromotionPick: (PieceType) -> Unit,
     onPromotionDismiss: () -> Unit,
+    onEndGameRequest: () -> Unit,
+    onResultPick: (GameResult) -> Unit,
+    onConfirmEndGame: () -> Unit,
+    onEndGameDismiss: () -> Unit,
+    onReviewGame: () -> Unit,
+    onBackToHistory: () -> Unit,
 ) {
     Column(
         modifier =
@@ -129,9 +146,10 @@ private fun PlayingContent(
             position = state.position,
             modifier = sectionModifier,
             orientation = state.orientation,
-            // A terminal position freezes input — display-only, no highlights.
+            // A terminal position or a finished game freezes input — display-only, no highlights.
+            // A manual end (FR-018) on a non-terminal position is frozen via result, not terminal.
             interaction =
-                if (state.terminal) {
+                if (state.terminal || state.result != null) {
                     null
                 } else {
                     BoardInteraction(
@@ -143,7 +161,15 @@ private fun PlayingContent(
         )
         Spacer(Modifier.height(8.dp))
         SyncIndicator(syncPending = state.syncPending, modifier = sectionModifier)
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
+        EndGameSection(
+            finished = state.result != null,
+            onEndGameRequest = onEndGameRequest,
+            onReviewGame = onReviewGame,
+            onBackToHistory = onBackToHistory,
+            modifier = sectionModifier,
+        )
+        Spacer(Modifier.height(12.dp))
         MoveList(
             sanMoves = state.sanMoves,
             currentPly = state.sanMoves.size,
@@ -158,25 +184,82 @@ private fun PlayingContent(
             onDismiss = onPromotionDismiss,
         )
     }
+
+    state.endGamePrompt?.let { prompt ->
+        EndGameDialog(
+            prompt = prompt,
+            onPick = onResultPick,
+            onConfirm = onConfirmEndGame,
+            onDismiss = onEndGameDismiss,
+        )
+    }
 }
 
-/** Turn indicator while ongoing; check / checkmate / stalemate banner at terminal-or-check states. */
+/**
+ * The end-game control block under the board. While in progress it shows the manual "End game"
+ * affordance (FR-018); once [finished] the board is frozen, so it offers the post-game actions —
+ * open the game in Replay (Analyse) or return to History.
+ */
+@Composable
+private fun EndGameSection(
+    finished: Boolean,
+    onEndGameRequest: () -> Unit,
+    onReviewGame: () -> Unit,
+    onBackToHistory: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (finished) {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Button(onClick = onReviewGame, modifier = Modifier.weight(1f)) {
+                Text("Analyse")
+            }
+            Button(onClick = onBackToHistory, modifier = Modifier.weight(1f)) {
+                Text("Back to history")
+            }
+        }
+    } else {
+        // Secondary, guarded action (the dialog confirms before closing) — outlined to sit quietly
+        // beneath the board without competing with piece interaction.
+        OutlinedButton(onClick = onEndGameRequest, modifier = modifier) {
+            Text("End game")
+        }
+    }
+}
+
+/**
+ * Turn indicator while ongoing; check / checkmate / stalemate banner at terminal-or-check states.
+ * A finished game ([PlayUiState.Playing.result] non-null) shows its recorded result — the
+ * checkmate/stalemate phrasing already carries it for an auto-close, but a manual end (FR-018) on a
+ * non-terminal position would otherwise still read "… to move", so the result is shown explicitly.
+ */
 @Composable
 private fun StatusBanner(
     state: PlayUiState.Playing,
     modifier: Modifier = Modifier,
 ) {
     val sideToMove = state.position.sideToMove
+    val result = state.result
     val (text, emphasized) =
-        when (state.status) {
-            GameStatus.Ongoing -> "${colorName(sideToMove)} to move" to false
+        when {
+            result != null && !state.terminal -> {
+                finalResultText(result) to true
+            }
 
-            GameStatus.Check -> "${colorName(sideToMove)} to move — check" to true
+            else -> {
+                when (state.status) {
+                    GameStatus.Ongoing -> "${colorName(sideToMove)} to move" to false
 
-            // The side to move is mated, so the other color won.
-            GameStatus.Checkmate -> "Checkmate — ${colorName(sideToMove.opposite)} wins" to true
+                    GameStatus.Check -> "${colorName(sideToMove)} to move — check" to true
 
-            GameStatus.Stalemate -> "Stalemate — draw" to true
+                    // The side to move is mated, so the other color won.
+                    GameStatus.Checkmate -> "Checkmate — ${colorName(sideToMove.opposite)} wins" to true
+
+                    GameStatus.Stalemate -> "Stalemate — draw" to true
+                }
+            }
         }
     if (emphasized) {
         Surface(
@@ -224,6 +307,14 @@ private fun SyncIndicator(
 }
 
 private fun colorName(color: Color): String = if (color == Color.WHITE) "White" else "Black"
+
+/** Banner text for a finished game (matches the picker options and History's outcome phrasing). */
+private fun finalResultText(result: GameResult): String =
+    when (result) {
+        GameResult.WHITE -> "White wins"
+        GameResult.BLACK -> "Black wins"
+        GameResult.DRAW -> "Draw"
+    }
 
 private fun titleFor(state: PlayUiState): String =
     when (state) {
