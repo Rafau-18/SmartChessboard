@@ -551,11 +551,11 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [x] 2.1 Auto-saver/journal/repo tests pass on Android host (`:shared:testAndroidHostTest`)
-- [x] 2.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
-- [x] 2.3 Pass on web (`:shared:wasmJsTest`)
-- [x] 2.4 Tests cover finish flush, offline re-flush, cleanup-after-confirm, reconcile re-flush, in-progress path unchanged
-- [x] 2.5 ktlint clean
+- [x] 2.1 Auto-saver/journal/repo tests pass on Android host (`:shared:testAndroidHostTest`) — bbedd14
+- [x] 2.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — bbedd14
+- [x] 2.3 Pass on web (`:shared:wasmJsTest`) — bbedd14
+- [x] 2.4 Tests cover finish flush, offline re-flush, cleanup-after-confirm, reconcile re-flush, in-progress path unchanged — bbedd14
+- [x] 2.5 ktlint clean — bbedd14
 
 #### Manual
 
@@ -570,11 +570,11 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [ ] 3.1 ViewModel tests pass on Android host (`:shared:testAndroidHostTest`)
-- [ ] 3.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
-- [ ] 3.3 Pass on web (`:shared:wasmJsTest`)
-- [ ] 3.4 Tests cover auto-finish results+PGN, manual request→pick→confirm, cancel, input-blocked, single-fire, finished-on-load
-- [ ] 3.5 ktlint clean
+- [x] 3.1 ViewModel tests pass on Android host (`:shared:testAndroidHostTest`)
+- [x] 3.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
+- [x] 3.3 Pass on web (`:shared:wasmJsTest`)
+- [x] 3.4 Tests cover auto-finish results+PGN, manual request→pick→confirm, cancel, input-blocked, single-fire, finished-on-load
+- [x] 3.5 ktlint clean
 
 ### Phase 4: End-game UI & navigation
 

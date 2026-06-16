@@ -16,7 +16,9 @@ import org.rurbaniak.smartchessboard.domain.chess.pgn.writePgn
 import org.rurbaniak.smartchessboard.domain.games.GameAutoSaver
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.domain.games.GameRecord
+import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.JournalEntry
+import org.rurbaniak.smartchessboard.presentation.play.EndGamePrompt
 import org.rurbaniak.smartchessboard.presentation.play.PlayUiState
 import org.rurbaniak.smartchessboard.presentation.play.PlayViewModel
 import kotlin.test.AfterTest
@@ -353,6 +355,227 @@ class PlayViewModelTest {
 
             viewModel.onSquareTap(sq('e', 2)) // a white pawn still on the board — must be ignored
             assertNull(playing(viewModel.uiState.value).selectedSquare)
+        }
+
+    // --- finalization: auto-close (FR-007) ---
+
+    private fun finishedPgn(
+        token: String,
+        sans: List<String>,
+    ) = writePgn(vmMeta.copy(result = token), sans)
+
+    @Test
+    fun checkmateByWhiteAutoClosesAsWhiteWinAndFlushesFinishGame() =
+        runTest {
+            // Scholar's mate, one move short — White to play Qxf7#.
+            val viewModel = playViewModel("g1", "1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6")
+            advanceUntilIdle()
+
+            viewModel.onSquareTap(sq('h', 5)) // the white queen
+            viewModel.onSquareTap(sq('f', 7)) // Qxf7#
+
+            val finished = playing(viewModel.uiState.value)
+            assertEquals(GameResult.WHITE, finished.result)
+            assertEquals(GameStatus.Checkmate, finished.status)
+            assertTrue(finished.terminal)
+            assertTrue(finished.sanMoves.last().endsWith("#"), "got ${finished.sanMoves.last()}")
+
+            val expectedPgn = finishedPgn("1-0", finished.sanMoves)
+            // The offline-safe finish gate: a durable journaled finish before any cloud call.
+            assertEquals(
+                JournalEntry(expectedPgn, dirty = true, result = GameResult.WHITE),
+                journal.entries["g1"],
+            )
+            assertTrue(repository.finishGameCalls.isEmpty(), "journal write must precede the cloud finish")
+            assertTrue(repository.updatePgnCalls.isEmpty(), "a finishing move uses finishGame, not updatePgn")
+
+            advanceUntilIdle()
+            assertEquals(listOf(Triple("g1", GameResult.WHITE, expectedPgn)), repository.finishGameCalls)
+            assertNull(journal.entries["g1"], "entry is cleared only after the confirmed finish flush")
+            assertTrue(journal.clearedIds.contains("g1"))
+            assertFalse(playing(viewModel.uiState.value).syncPending)
+        }
+
+    @Test
+    fun checkmateByBlackAutoClosesAsBlackWin() =
+        runTest {
+            // Fool's mate, one move short — Black to play Qh4#.
+            val viewModel = playViewModel("g1", "1. f3 e5 2. g4")
+            advanceUntilIdle()
+
+            viewModel.onSquareTap(sq('d', 8)) // the black queen
+            viewModel.onSquareTap(sq('h', 4)) // Qh4#
+
+            val finished = playing(viewModel.uiState.value)
+            assertEquals(GameResult.BLACK, finished.result)
+            assertEquals(GameStatus.Checkmate, finished.status)
+            assertTrue(finished.sanMoves.last().endsWith("#"), "got ${finished.sanMoves.last()}")
+
+            advanceUntilIdle()
+            assertEquals(
+                listOf(Triple("g1", GameResult.BLACK, finishedPgn("0-1", finished.sanMoves))),
+                repository.finishGameCalls,
+            )
+        }
+
+    @Test
+    fun stalemateAutoClosesAsDraw() =
+        runTest {
+            // Sam Loyd's 10-move stalemate, one move short — White to play Qe6 (stalemate, no check).
+            val viewModel =
+                playViewModel(
+                    "g1",
+                    "1. e3 a5 2. Qh5 Ra6 3. Qxa5 h5 4. Qxc7 Rah6 5. h4 f6 " +
+                        "6. Qxd7+ Kf7 7. Qxb7 Qd3 8. Qxb8 Qh7 9. Qxc8 Kg6",
+                )
+            advanceUntilIdle()
+
+            viewModel.onSquareTap(sq('c', 8)) // the white queen
+            viewModel.onSquareTap(sq('e', 6)) // Qe6 — stalemate
+
+            val finished = playing(viewModel.uiState.value)
+            assertEquals(GameResult.DRAW, finished.result)
+            assertEquals(GameStatus.Stalemate, finished.status)
+
+            advanceUntilIdle()
+            assertEquals(
+                listOf(Triple("g1", GameResult.DRAW, finishedPgn("1/2-1/2", finished.sanMoves))),
+                repository.finishGameCalls,
+            )
+        }
+
+    @Test
+    fun autoFinishFiresExactlyOnceAndBlocksFurtherInput() =
+        runTest {
+            val viewModel = playViewModel("g1", "1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6")
+            advanceUntilIdle()
+
+            viewModel.onSquareTap(sq('h', 5))
+            viewModel.onSquareTap(sq('f', 7)) // Qxf7#
+            advanceUntilIdle()
+            assertEquals(1, repository.finishGameCalls.size)
+
+            // The game is finished: a tap on a surviving white piece and a stray confirm are no-ops,
+            // so the close never fires twice.
+            viewModel.onSquareTap(sq('e', 1))
+            viewModel.onConfirmEndGame()
+            advanceUntilIdle()
+
+            assertEquals(1, repository.finishGameCalls.size, "the close fires exactly once")
+            assertNull(playing(viewModel.uiState.value).selectedSquare)
+        }
+
+    // --- finalization: manual end (FR-018) ---
+
+    @Test
+    fun manualEndRequestPickConfirmProducesEachResult() =
+        runTest {
+            val cases =
+                listOf(
+                    Triple("gw", GameResult.WHITE, "1-0"),
+                    Triple("gb", GameResult.BLACK, "0-1"),
+                    Triple("gd", GameResult.DRAW, "1/2-1/2"),
+                )
+            val expected = mutableListOf<Triple<String, GameResult, String>>()
+            for ((id, result, token) in cases) {
+                val viewModel = playViewModel(id, "1. e4 e5")
+                advanceUntilIdle()
+
+                viewModel.onEndGameRequest()
+                assertEquals(EndGamePrompt.Picking, playing(viewModel.uiState.value).endGamePrompt)
+
+                viewModel.onResultPick(result)
+                assertEquals(EndGamePrompt.Confirming(result), playing(viewModel.uiState.value).endGamePrompt)
+
+                viewModel.onConfirmEndGame()
+                val finished = playing(viewModel.uiState.value)
+                assertEquals(result, finished.result)
+                assertNull(finished.endGamePrompt)
+                assertEquals(listOf("e4", "e5"), finished.sanMoves, "a manual end appends no move")
+
+                advanceUntilIdle()
+                expected += Triple(id, result, finishedPgn(token, listOf("e4", "e5")))
+            }
+            assertEquals(expected, repository.finishGameCalls)
+        }
+
+    @Test
+    fun manualEndDismissKeepsGameInProgressAndPlayable() =
+        runTest {
+            val viewModel = playViewModel("g1", "1. e4 e5")
+            advanceUntilIdle()
+
+            viewModel.onEndGameRequest()
+            viewModel.onResultPick(GameResult.WHITE)
+            assertEquals(EndGamePrompt.Confirming(GameResult.WHITE), playing(viewModel.uiState.value).endGamePrompt)
+
+            viewModel.onEndGameDismiss()
+            val afterCancel = playing(viewModel.uiState.value)
+            assertNull(afterCancel.endGamePrompt)
+            assertNull(afterCancel.result)
+
+            // Still playable: a legal move is accepted as a normal in-progress save.
+            viewModel.onSquareTap(sq('g', 1)) // the white knight
+            viewModel.onSquareTap(sq('f', 3)) // Nf3
+            advanceUntilIdle()
+
+            assertEquals(listOf("e4", "e5", "Nf3"), playing(viewModel.uiState.value).sanMoves)
+            assertNull(playing(viewModel.uiState.value).result)
+            assertTrue(repository.finishGameCalls.isEmpty(), "a cancelled end-game closes nothing")
+            assertEquals(listOf("g1" to pgn("e4", "e5", "Nf3")), repository.updatePgnCalls)
+        }
+
+    @Test
+    fun manualEndOnNonTerminalPositionFinishesButIsNotTerminalAndBlocksInput() =
+        runTest {
+            val viewModel = playViewModel("g1", "1. e4 e5")
+            advanceUntilIdle()
+
+            viewModel.onEndGameRequest()
+            viewModel.onResultPick(GameResult.DRAW)
+            viewModel.onConfirmEndGame()
+
+            val finished = playing(viewModel.uiState.value)
+            assertEquals(GameResult.DRAW, finished.result)
+            assertFalse(finished.terminal, "a manual end on a non-terminal position is finished, not terminal")
+
+            // Frozen via result != null (not via terminal): a board tap is a no-op.
+            viewModel.onSquareTap(sq('g', 1))
+            assertNull(playing(viewModel.uiState.value).selectedSquare)
+        }
+
+    // --- finalization: finished-on-load ---
+
+    @Test
+    fun finishedRecordOnLoadRendersFrozen() =
+        runTest {
+            val finished = finishedPgn("1-0", listOf("e4", "e5"))
+            repository.records =
+                mapOf(
+                    "g1" to
+                        GameRecord(
+                            id = "g1",
+                            createdAt = "2026-06-12T12:00:00+00:00",
+                            mode = GameMode.DIGITAL,
+                            status = RecordStatus.FINISHED,
+                            result = GameResult.WHITE,
+                            whiteLabel = "White",
+                            blackLabel = "Black",
+                            pgn = finished,
+                        ),
+                )
+            val autoSaver = GameAutoSaver(gamesRepository = repository, journal = journal)
+            val viewModel = PlayViewModel("g1", repository, autoSaver, parseDispatcher = dispatcher)
+            advanceUntilIdle()
+
+            val state = playing(viewModel.uiState.value)
+            assertEquals(GameResult.WHITE, state.result)
+            assertEquals(listOf("e4", "e5"), state.sanMoves)
+
+            // Frozen: a tap on a surviving white piece does nothing, and nothing is re-flushed.
+            viewModel.onSquareTap(sq('g', 1))
+            assertNull(playing(viewModel.uiState.value).selectedSquare)
+            assertTrue(repository.finishGameCalls.isEmpty())
         }
 
     // --- reconcile through the VM ---
