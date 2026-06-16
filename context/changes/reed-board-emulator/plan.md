@@ -575,8 +575,8 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [ ] 2.1 Codec + golden-frame tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test`
-- [ ] 2.2 Formatting clean: `ktlint -F`
+- [x] 2.1 Codec + golden-frame tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test`
+- [x] 2.2 Formatting clean: `ktlint -F`
 
 #### Manual
 

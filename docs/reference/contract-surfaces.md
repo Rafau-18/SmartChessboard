@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-06-13
+updated: 2026-06-16
 ---
 
 ## Purpose
@@ -91,6 +91,12 @@ MTU; larger if MTU negotiated up).
 Square indexing convention (binding across firmware and mobile):
 `index = file + 8 * rank`, where `file` is a–h = 0–7 and `rank` is 1–8 = 0–7.
 So `a1 = 0`, `h1 = 7`, `a8 = 56`, `h8 = 63`.
+
+`BOARD_SNAPSHOT` byte layout (clarified 2026-06-16, F-02): the 8 payload bytes
+are little-endian by square index — byte `i`, bit `j` (LSB-first) = square
+`i*8 + j`. So byte 0 holds squares 0–7 (rank 1, `a1` = byte 0 bit 0) and byte 7
+holds squares 56–63 (`h8` = byte 7 bit 7). This is the natural extension of
+"bit N = square N" above; firmware and mobile must pack/unpack identically.
 
 ### 1.4 Message catalog — mobile → board (via `mobile_command` writes)
 
