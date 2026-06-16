@@ -563,13 +563,13 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain`
-- [x] 1.2 Formatting clean: `ktlint -F`
+- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain` — 42ee77b
+- [x] 1.2 Formatting clean: `ktlint -F` — 42ee77b
 
 #### Manual
 
-- [x] 1.3 Public types read as a consumable contract for S-06 / plausible S-09 target, no chess vocabulary
-- [x] 1.4 Event/command vocabulary maps 1:1 onto §1.3/§1.4
+- [x] 1.3 Public types read as a consumable contract for S-06 / plausible S-09 target, no chess vocabulary — 42ee77b
+- [x] 1.4 Event/command vocabulary maps 1:1 onto §1.3/§1.4 — 42ee77b
 
 ### Phase 2: Wire codec & golden frames
 
