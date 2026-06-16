@@ -587,8 +587,8 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [x] 3.1 Emulator behavior tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test`
-- [x] 3.2 Formatting clean: `ktlint -F`
+- [x] 3.1 Emulator behavior tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test` — 465f5d7
+- [x] 3.2 Formatting clean: `ktlint -F` — 465f5d7
 
 #### Manual
 
@@ -599,10 +599,10 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [ ] 4.1 Full suite green on host: `:shared:testAndroidHostTest`
-- [ ] 4.2 Green on iOS sim: `:shared:iosSimulatorArm64Test`
-- [ ] 4.3 Green on WasmJS: `:shared:wasmJsTest`
-- [ ] 4.4 Formatting clean: `ktlint -F`
+- [x] 4.1 Full suite green on host: `:shared:testAndroidHostTest`
+- [x] 4.2 Green on iOS sim: `:shared:iosSimulatorArm64Test`
+- [x] 4.3 Green on WasmJS: `:shared:wasmJsTest`
+- [x] 4.4 Formatting clean: `ktlint -F`
 
 #### Manual
 
