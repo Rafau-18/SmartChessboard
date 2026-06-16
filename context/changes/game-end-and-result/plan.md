@@ -570,11 +570,11 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [x] 3.1 ViewModel tests pass on Android host (`:shared:testAndroidHostTest`)
-- [x] 3.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
-- [x] 3.3 Pass on web (`:shared:wasmJsTest`)
-- [x] 3.4 Tests cover auto-finish results+PGN, manual request→pick→confirm, cancel, input-blocked, single-fire, finished-on-load
-- [x] 3.5 ktlint clean
+- [x] 3.1 ViewModel tests pass on Android host (`:shared:testAndroidHostTest`) — 18df392
+- [x] 3.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — 18df392
+- [x] 3.3 Pass on web (`:shared:wasmJsTest`) — 18df392
+- [x] 3.4 Tests cover auto-finish results+PGN, manual request→pick→confirm, cancel, input-blocked, single-fire, finished-on-load — 18df392
+- [x] 3.5 ktlint clean — 18df392
 
 ### Phase 4: End-game UI & navigation
 

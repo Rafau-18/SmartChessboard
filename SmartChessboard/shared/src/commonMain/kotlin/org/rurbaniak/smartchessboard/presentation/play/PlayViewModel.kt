@@ -321,10 +321,10 @@ class PlayViewModel(
         }
     }
 
-    /** Advances the open picker to the irreversibility confirmation for [result]. */
+    /** Advances the open picker to the irreversibility confirmation for [result] (strictly Picking → Confirming). */
     fun onResultPick(result: GameResult) {
         _uiState.update { state ->
-            if (state is PlayUiState.Playing && state.result == null && state.endGamePrompt != null) {
+            if (state is PlayUiState.Playing && state.result == null && state.endGamePrompt is EndGamePrompt.Picking) {
                 state.copy(endGamePrompt = EndGamePrompt.Confirming(result))
             } else {
                 state

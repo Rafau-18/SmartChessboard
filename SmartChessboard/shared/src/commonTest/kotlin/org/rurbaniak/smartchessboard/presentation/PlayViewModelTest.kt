@@ -544,6 +544,28 @@ class PlayViewModelTest {
             assertNull(playing(viewModel.uiState.value).selectedSquare)
         }
 
+    @Test
+    fun resultPickAndConfirmAreNoOpsWhenNoPromptIsOpen() =
+        runTest {
+            val viewModel = playViewModel("g1", "1. e4 e5")
+            advanceUntilIdle()
+            val before = playing(viewModel.uiState.value)
+
+            // No picker open: a result pick must not fabricate a Confirming prompt...
+            viewModel.onResultPick(GameResult.WHITE)
+            assertNull(playing(viewModel.uiState.value).endGamePrompt)
+
+            // ...and a stray confirm on an in-progress game with no prompt closes nothing.
+            viewModel.onConfirmEndGame()
+            advanceUntilIdle()
+
+            val after = playing(viewModel.uiState.value)
+            assertNull(after.endGamePrompt)
+            assertNull(after.result)
+            assertEquals(before.sanMoves, after.sanMoves)
+            assertTrue(repository.finishGameCalls.isEmpty(), "no prompt open → nothing closes")
+        }
+
     // --- finalization: finished-on-load ---
 
     @Test
