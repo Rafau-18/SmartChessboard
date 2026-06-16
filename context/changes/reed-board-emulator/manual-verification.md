@@ -10,7 +10,7 @@ shares that mistake, the test stays green and proves nothing (the codec just agr
 Only an independent human recomputation from `docs/reference/contract-surfaces.md` §1.3/§1.4 closes
 that gap. This is the one check a passing test suite cannot replace.
 
-When done, tick the matching boxes in `plan.md` `## Progress` (2.3, 2.4) and delete the
+When done, tick the matching boxes in `plan.md` `## Progress` (2.3, 2.4, 3.3, 3.4) and delete the
 `TODO(F-02, manual gate ...)` comment in `BoardWireCodecTest.kt`.
 
 ---
@@ -49,6 +49,33 @@ The contract's change-control rule routes any §1 (BLE) change into both PRDs, d
   clarification (firmware must pack bytes the same way).
 - [ ] `context/foundation/prd.md` — one dated line in "Implementation Decisions" marked
   **no user-facing impact** (it is an internal wire detail; no FR behavior depends on it).
+
+## [ ] 3.3 — Read the emission pipeline; confirm no event skips encode → decode
+
+The fidelity guarantee is that every event a consumer sees has survived a §1.3 byte round trip, so
+verification against the emulator transfers to the real board. This holds only if there is exactly
+one emission path and it always goes through the codec. Files: `EmulatedBoard.kt`.
+
+- [ ] `_events.emit(...)` appears in **exactly one** place — inside `emitEvent(...)` — and nowhere
+  else (grep the file: the only hit is in `emitEvent`). No driver method emits directly.
+- [ ] `emitEvent` always does `encodeEvent` → `decodeEvent` and emits the **decoded** value; a
+  `Malformed` decode result throws (it is an emulator/codec bug, never a normal outcome).
+- [ ] `send(...)` reacts to the **decoded** command (`encodeCommand` → `decodeCommand`), not to the
+  in-memory `BoardCommand` argument — the same byte round trip on the §1.4 side.
+
+## [ ] 3.4 — Confirm disconnect semantics match §1.7
+
+The real board keeps sensing while the link is down but delivers nothing; the divergence surfaces
+only in the snapshot emitted on the next connect. Files: `EmulatedBoard.kt`, test
+`EmulatedBoardTest.kt::offlineMutationSurfacesOnlyInReconnectSnapshot`.
+
+- [ ] `lift`/`place` mutate `occupancy` unconditionally but emit a `SQUARE_EVENT` only
+  `if (isConnected)` — so an offline lift/place changes state silently.
+- [ ] `pressButton` is a silent no-op while disconnected (a lost press buffers nowhere); `send`
+  while disconnected throws `IllegalStateException` (the mobile cannot write to a dead link).
+- [ ] `connect()` emits `BOARD_SNAPSHOT` (reflecting current occupancy) then `DEVICE_STATUS` — so an
+  offline change made between disconnect and reconnect first becomes visible in that reconnect
+  snapshot, exactly as S-08's reconcile-on-reconnect will rely on.
 
 ## How to re-run the automated checks (optional, no install/deploy needed)
 
