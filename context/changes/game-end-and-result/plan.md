@@ -537,27 +537,31 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [x] 1.1 Mapping + round-trip tests pass on Android host (`:shared:testAndroidHostTest`)
-- [x] 1.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
-- [x] 1.3 Pass on web (`:shared:wasmJsTest`)
-- [x] 1.4 ktlint clean
+- [x] 1.1 Mapping + round-trip tests pass on Android host (`:shared:testAndroidHostTest`) — e266455
+- [x] 1.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — e266455
+- [x] 1.3 Pass on web (`:shared:wasmJsTest`) — e266455
+- [x] 1.4 ktlint clean — e266455
 
 #### Manual
 
-- [x] 1.5 Serialised mate game reads `[Result "1-0"]`, final move `#`, terminator `1-0`
-- [x] 1.6 Serialised 0-move manual draw reads `[Result "1/2-1/2"]` + bare `1/2-1/2` terminator
+- [x] 1.5 Serialised mate game reads `[Result "1-0"]`, final move `#`, terminator `1-0` — e266455
+- [x] 1.6 Serialised 0-move manual draw reads `[Result "1/2-1/2"]` + bare `1/2-1/2` terminator — e266455
 
 ### Phase 2: Finalization persistence (repository + offline-safe journal)
 
 #### Automated
 
-- [ ] 2.1 Auto-saver/journal/repo tests pass on Android host (`:shared:testAndroidHostTest`)
-- [ ] 2.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
-- [ ] 2.3 Pass on web (`:shared:wasmJsTest`)
-- [ ] 2.4 Tests cover finish flush, offline re-flush, cleanup-after-confirm, reconcile re-flush, in-progress path unchanged
-- [ ] 2.5 ktlint clean
+- [x] 2.1 Auto-saver/journal/repo tests pass on Android host (`:shared:testAndroidHostTest`)
+- [x] 2.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`)
+- [x] 2.3 Pass on web (`:shared:wasmJsTest`)
+- [x] 2.4 Tests cover finish flush, offline re-flush, cleanup-after-confirm, reconcile re-flush, in-progress path unchanged
+- [x] 2.5 ktlint clean
 
 #### Manual
+
+> Deferred to Phase 5 (decided 2026-06-16): 2.6/2.7 need the end-game UI (Phase 3/4) to drive a real
+> finish against the hosted backend, so they are exercised in Phase 5's three-surface E2E (the
+> offline-finish flush scenario covers both). They stay `- [ ]` until then.
 
 - [ ] 2.6 Hosted row sets `status='finished'` + `result` + `pgn` in one update
 - [ ] 2.7 Offline finish then reconnect updates the hosted row without a lost result
@@ -594,6 +598,10 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 - [ ] 5.2 Web production build succeeds; ktlint clean
 
 #### Manual
+
+> Reminder: also run the Phase-2 manual checks deferred here — 2.6 (atomic finished+result+pgn
+> UPDATE) and 2.7 (offline finish then reconnect, no lost result). The offline-finish flush in 5.3
+> exercises both.
 
 - [ ] 5.3 E2E (auto-mate, manual draw, offline-finish flush, finished→Replay) passes on Android, iOS, and web
 - [ ] 5.4 `parsePgn(stored_pgn).result` matches row `result`; Replay `PlayerLine` shows the outcome

@@ -22,4 +22,16 @@ interface GamesRepository {
         id: String,
         pgn: String,
     )
+
+    /**
+     * Closes a game in one round-trip (contract §3.2, widened in S-05): sets `status='finished'`,
+     * the [result] token, and the final [pgn] together so the cloud row never sits half-finished
+     * (status set but PGN stale, or vice versa). The caller never passes a user id — RLS scopes
+     * ownership. Propagates failures like [updatePgn].
+     */
+    suspend fun finishGame(
+        id: String,
+        result: GameResult,
+        pgn: String,
+    )
 }

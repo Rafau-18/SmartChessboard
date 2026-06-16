@@ -35,6 +35,21 @@ class GameAutoSaver(
     }
 
     /**
+     * Durably journals a *finished* [pgn] + [result] — the offline-safe finish gate (S-05, extends
+     * §6.2). Synchronous like [acceptMove]: the caller freezes the UI only after this returns, then
+     * launches [sync]. The flush targets [GamesRepository.finishGame] and the entry is cleared only
+     * after the cloud confirms, so an offline finish survives a crash and re-flushes via [reconcile].
+     */
+    fun finishGame(
+        gameId: String,
+        result: GameResult,
+        pgn: String,
+    ) {
+        journal.save(gameId, pgn, dirty = true, result = result)
+        mutableSyncPending.value = true
+    }
+
+    /**
      * Best-effort cloud flush of the journaled PGN with bounded retry. Leaves the entry dirty
      * (and [syncPending] raised) when every attempt fails; the next accepted move's sync or an
      * explicit retry re-enters.
@@ -51,10 +66,15 @@ class GameAutoSaver(
             // journal-ahead path — also drives the indicator while the flush is unconfirmed.
             mutableSyncPending.value = true
             try {
-                gamesRepository.updatePgn(gameId, entry.pgn)
+                if (entry.result != null) {
+                    gamesRepository.finishGame(gameId, entry.result, entry.pgn)
+                } else {
+                    gamesRepository.updatePgn(gameId, entry.pgn)
+                }
                 // A move accepted mid-flight supersedes this upload; leave it dirty for its own sync.
+                // (A finished game accepts no further moves, so its entry always clears here.)
                 if (journal.load(gameId)?.pgn == entry.pgn) {
-                    journal.markSynced(gameId)
+                    if (entry.result != null) journal.clear(gameId) else journal.markSynced(gameId)
                     mutableSyncPending.value = false
                 }
                 return
@@ -71,7 +91,9 @@ class GameAutoSaver(
     /**
      * Resolves journal vs cloud on game load and returns the PGN to play from. Journal strictly
      * ahead → flush it best-effort and play from it; anything else (no journal, cloud ahead,
-     * diverged, or clean) → cloud wins and the journal is overwritten clean (LWW per §3.4).
+     * diverged, or clean) → cloud wins and the journal is overwritten clean (LWW per §3.4). The
+     * flush goes through [sync], so a journaled-but-unsynced *finished* entry re-closes the cloud
+     * copy here (an offline finish that crashed before flush still lands on the next load).
      */
     suspend fun reconcile(game: GameRecord): String {
         val entry = journal.load(game.id)

@@ -8,6 +8,7 @@ import org.rurbaniak.smartchessboard.presentation.FakeGamesRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 private const val GAME_ID = "game-1"
@@ -28,6 +29,11 @@ class GameAutoSaverTest {
         )
 
     private fun pgn(vararg sans: String) = writePgn(meta, sans.toList())
+
+    private fun finishedPgn(
+        result: GameResult,
+        vararg sans: String,
+    ) = writePgn(meta.copy(result = result.toPgnResultToken()), sans.toList())
 
     private fun cloudRecord(pgn: String) =
         GameRecord(
@@ -211,5 +217,76 @@ class GameAutoSaverTest {
             assertEquals(pgn("e4"), resolved)
             assertFalse(journal.entries.getValue(GAME_ID).dirty)
             assertTrue(repository.updatePgnCalls.isEmpty())
+        }
+
+    // --- finishGame: the offline-safe closure gate (S-05) ---
+
+    @Test
+    fun finishGameJournalsTheResultDurablyWithoutTouchingTheCloud() {
+        val finished = finishedPgn(GameResult.DRAW, "e4", "e5")
+
+        saver.finishGame(GAME_ID, GameResult.DRAW, finished)
+
+        assertEquals(
+            JournalEntry(finished, dirty = true, result = GameResult.DRAW),
+            journal.entries[GAME_ID],
+        )
+        assertTrue(repository.finishGameCalls.isEmpty(), "journal write must precede any cloud call")
+        assertTrue(saver.syncPending.value)
+    }
+
+    @Test
+    fun syncFlushesAFinishedEntryViaFinishGameAndClearsIt() =
+        runTest {
+            val finished = finishedPgn(GameResult.WHITE, "e4", "e5", "Qh5", "Nc6", "Qxf7#")
+            saver.finishGame(GAME_ID, GameResult.WHITE, finished)
+
+            saver.sync(GAME_ID)
+
+            assertEquals(listOf(Triple(GAME_ID, GameResult.WHITE, finished)), repository.finishGameCalls)
+            assertTrue(repository.updatePgnCalls.isEmpty(), "a finished entry must not take the updatePgn path")
+            assertEquals(listOf(GAME_ID), journal.clearedIds, "entry removed only after a confirmed flush")
+            assertNull(journal.entries[GAME_ID])
+            assertFalse(saver.syncPending.value)
+        }
+
+    @Test
+    fun offlineFinishStaysDirtyThenReFlushesOnTheNextSync() =
+        runTest {
+            val finished = finishedPgn(GameResult.DRAW, "e4")
+            repository.finishGameFailures = Int.MAX_VALUE
+            saver.finishGame(GAME_ID, GameResult.DRAW, finished)
+
+            saver.sync(GAME_ID)
+
+            assertEquals(4, repository.finishGameCalls.size, "initial attempt + one per retry delay")
+            assertTrue(journal.entries.getValue(GAME_ID).dirty, "an unconfirmed finish must survive")
+            assertTrue(journal.clearedIds.isEmpty(), "entry is not cleared until the cloud confirms")
+            assertTrue(saver.syncPending.value)
+
+            // Reconnect: the dirty finished entry re-flushes and clears.
+            repository.finishGameFailures = 0
+            saver.sync(GAME_ID)
+
+            assertEquals(Triple(GAME_ID, GameResult.DRAW, finished), repository.finishGameCalls.last())
+            assertEquals(listOf(GAME_ID), journal.clearedIds)
+            assertNull(journal.entries[GAME_ID])
+            assertFalse(saver.syncPending.value)
+        }
+
+    @Test
+    fun reconcileReFlushesAJournaledButUnsyncedFinish() =
+        runTest {
+            // Crash window: finished offline (journal dirty + result), the flush never reached the
+            // cloud, which still holds the in-progress document.
+            val finished = finishedPgn(GameResult.BLACK, "e4", "e5")
+            journal.save(GAME_ID, finished, dirty = true, result = GameResult.BLACK)
+
+            val resolved = saver.reconcile(cloudRecord(pgn("e4", "e5")))
+
+            assertEquals(finished, resolved, "play continues from the finished journal")
+            assertEquals(listOf(Triple(GAME_ID, GameResult.BLACK, finished)), repository.finishGameCalls)
+            assertNull(journal.entries[GAME_ID], "the finish lands and the entry clears")
+            assertFalse(saver.syncPending.value)
         }
 }

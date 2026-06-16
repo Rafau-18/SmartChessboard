@@ -103,6 +103,25 @@ class SupabaseGamesRepository(
                 filter { eq("id", id) }
             }
     }
+
+    // One atomic UPDATE: status, result token, and final PGN land together (contract §3.2, S-05).
+    override suspend fun finishGame(
+        id: String,
+        result: GameResult,
+        pgn: String,
+    ) {
+        client
+            .from("games")
+            .update(
+                {
+                    set("status", "finished")
+                    set("result", result.toResultColumn())
+                    set("pgn", pgn)
+                },
+            ) {
+                filter { eq("id", id) }
+            }
+    }
 }
 
 private fun GameRowDto.toDomain(): GameSummary =
@@ -149,4 +168,12 @@ private fun parseResult(result: String?): GameResult? =
         "black" -> GameResult.BLACK
         "draw" -> GameResult.DRAW
         else -> error("Unknown game result: $result")
+    }
+
+// Inverse of parseResult — the column token written on finish (mirrors the §3.2 CHECK domain).
+private fun GameResult.toResultColumn(): String =
+    when (this) {
+        GameResult.WHITE -> "white"
+        GameResult.BLACK -> "black"
+        GameResult.DRAW -> "draw"
     }

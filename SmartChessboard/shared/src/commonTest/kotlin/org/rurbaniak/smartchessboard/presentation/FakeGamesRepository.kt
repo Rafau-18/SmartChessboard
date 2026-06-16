@@ -1,6 +1,7 @@
 package org.rurbaniak.smartchessboard.presentation
 
 import org.rurbaniak.smartchessboard.domain.games.GameRecord
+import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 
@@ -16,6 +17,8 @@ class FakeGamesRepository : GamesRepository {
     val updatePgnCalls = mutableListOf<Pair<String, String>>()
     var updatePgnFailures = 0
     var onUpdatePgn: ((String, String) -> Unit)? = null
+    val finishGameCalls = mutableListOf<Triple<String, GameResult, String>>()
+    var finishGameFailures = 0
 
     override suspend fun listMyGames(): List<GameSummary> {
         listCalls++
@@ -51,5 +54,19 @@ class FakeGamesRepository : GamesRepository {
             throw IllegalStateException("update failed")
         }
         onUpdatePgn?.invoke(id, pgn)
+    }
+
+    // Records the attempt before failing so retry/offline tests can count attempts.
+    override suspend fun finishGame(
+        id: String,
+        result: GameResult,
+        pgn: String,
+    ) {
+        finishGameCalls += Triple(id, result, pgn)
+        if (shouldFail) throw IllegalStateException("network down")
+        if (finishGameFailures > 0) {
+            finishGameFailures--
+            throw IllegalStateException("finish failed")
+        }
     }
 }
