@@ -14,6 +14,7 @@ import org.rurbaniak.smartchessboard.domain.board.BoardEvent
 import org.rurbaniak.smartchessboard.domain.board.BoardMode
 import org.rurbaniak.smartchessboard.domain.board.FirmwareVersion
 import org.rurbaniak.smartchessboard.domain.board.SquareEventType
+import org.rurbaniak.smartchessboard.domain.chess.squareOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -242,8 +243,9 @@ class EmulatedBoardTest {
     }
 
     private companion object {
-        const val E4 = 28 // Square.kt convention (file + 8*rank, 0-based): e4 = 4 + 8*3
-        const val A2 = 8 // a2 = 0 + 8*1
+        // Delegate to the single Square.kt authority instead of re-deriving file + 8*rank here.
+        val E4 = squareOf(file = 4, rank = 3) // e4
+        val A2 = squareOf(file = 0, rank = 1) // a2
 
         val DEFAULT_STATUS = BoardEvent.DeviceStatus(100, FirmwareVersion(1, 0, 0), 0L)
 

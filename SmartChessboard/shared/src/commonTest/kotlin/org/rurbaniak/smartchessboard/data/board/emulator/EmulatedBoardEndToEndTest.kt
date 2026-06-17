@@ -14,6 +14,7 @@ import org.rurbaniak.smartchessboard.domain.board.BoardEvent
 import org.rurbaniak.smartchessboard.domain.board.BoardMode
 import org.rurbaniak.smartchessboard.domain.board.FirmwareVersion
 import org.rurbaniak.smartchessboard.domain.board.SquareEventType
+import org.rurbaniak.smartchessboard.domain.chess.squareOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration
@@ -238,11 +239,11 @@ class EmulatedBoardEndToEndTest {
     }
 
     private companion object {
-        /** Square index from algebraic coordinates, via the Square.kt convention (file + 8*rank, a1 = 0). */
+        /** Square index from algebraic coordinates — delegates to the single Square.kt authority (a1 = 0). */
         fun sq(
             file: Char,
             rank: Int,
-        ): Int = (file - 'a') + 8 * (rank - 1)
+        ): Int = squareOf(file = file - 'a', rank = rank - 1)
 
         fun lift(square: Int) = BoardEvent.SquareEvent(square, SquareEventType.LIFT)
 

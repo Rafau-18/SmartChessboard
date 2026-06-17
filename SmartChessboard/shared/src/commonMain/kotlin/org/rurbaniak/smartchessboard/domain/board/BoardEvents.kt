@@ -16,7 +16,15 @@ sealed interface BoardEvent {
     data class SquareEvent(
         val square: Int,
         val type: SquareEventType,
-    ) : BoardEvent
+    ) : BoardEvent {
+        init {
+            // Reject out-of-range indices at the domain boundary, mirroring BoardSnapshot.isOccupied below.
+            // Without this a hand-built SquareEvent(square = 99) would reach the encoder, whose
+            // (event shl 6) or square packing would silently corrupt the high event bits — a wrong wire
+            // byte with no error. The square is the one field a future S-06/S-09 consumer can get wrong.
+            require(isValidSquare(square)) { "square must be in 0..63, was $square" }
+        }
+    }
 
     /**
      * BUTTON_EVENT (§1.3, tag 0x03): a player pressed their confirm button. Which physical button
