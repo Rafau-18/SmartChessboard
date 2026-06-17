@@ -599,10 +599,10 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [x] 4.1 Full suite green on host: `:shared:testAndroidHostTest`
-- [x] 4.2 Green on iOS sim: `:shared:iosSimulatorArm64Test`
-- [x] 4.3 Green on WasmJS: `:shared:wasmJsTest`
-- [x] 4.4 Formatting clean: `ktlint -F`
+- [x] 4.1 Full suite green on host: `:shared:testAndroidHostTest` — 7f78e6f
+- [x] 4.2 Green on iOS sim: `:shared:iosSimulatorArm64Test` — 7f78e6f
+- [x] 4.3 Green on WasmJS: `:shared:wasmJsTest` — 7f78e6f
+- [x] 4.4 Formatting clean: `ktlint -F` — 7f78e6f
 
 #### Manual
 

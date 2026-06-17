@@ -1,9 +1,9 @@
 ---
 change_id: reed-board-emulator
 title: Reed board emulator
-status: implementing
+status: impl_reviewed
 created: 2026-06-11
-updated: 2026-06-16
+updated: 2026-06-17
 archived_at: null
 ---
 
