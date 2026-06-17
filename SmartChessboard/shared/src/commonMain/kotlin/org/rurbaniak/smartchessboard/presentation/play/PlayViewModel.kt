@@ -168,7 +168,8 @@ class PlayViewModel(
                     }
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (_: Throwable) {
+                    // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
                     PlayUiState.Error
                 }
         }

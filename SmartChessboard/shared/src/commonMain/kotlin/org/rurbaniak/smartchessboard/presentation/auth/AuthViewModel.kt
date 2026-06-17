@@ -44,7 +44,8 @@ class AuthViewModel(
                 _uiState.update { it.copy(isSigningIn = false) }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
+                // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
                 _uiState.update { it.copy(isSigningIn = false, signInFailed = true) }
             }
         }
@@ -70,9 +71,10 @@ class AuthViewModel(
                 authRepository.signOut()
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
                 // Sign-out failure is non-fatal: sessionState remains the single
-                // source of truth for what the UI shows.
+                // source of truth for what the UI shows. Throwable (not Exception):
+                // a wasm Ktor fetch failure is a kotlin.Error.
             }
         }
     }

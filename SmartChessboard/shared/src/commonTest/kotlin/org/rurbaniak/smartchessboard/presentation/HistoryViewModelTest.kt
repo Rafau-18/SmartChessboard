@@ -84,6 +84,18 @@ class HistoryViewModelTest {
         }
 
     @Test
+    fun loadMapsANonExceptionThrowableToError() =
+        runTest {
+            // On wasm a fetch failure surfaces as kotlin.Error (Ktor JsError), not Exception; the VM
+            // must still resolve to Error, not let it escape as an uncaught coroutine exception.
+            repository.shouldFail = true
+            repository.failure = Error("Fail to fetch")
+            val viewModel = HistoryViewModel(repository)
+            advanceUntilIdle()
+            assertEquals(HistoryUiState.Error, viewModel.uiState.value)
+        }
+
+    @Test
     fun retryAfterErrorReloads() =
         runTest {
             repository.shouldFail = true

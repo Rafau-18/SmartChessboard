@@ -53,7 +53,8 @@ class NewGameViewModel(
                     NewGameUiState(creating = false, failed = false, createdGameId = game.id)
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (_: Throwable) {
+                    // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
                     NewGameUiState(creating = false, failed = true, createdGameId = null)
                 }
         }

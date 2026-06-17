@@ -127,7 +127,8 @@ class ReplayViewModel(
                     ReplayUiState.Loaded(game = game, currentPly = 0)
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (_: Throwable) {
+                    // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
                     ReplayUiState.Error
                 }
         }

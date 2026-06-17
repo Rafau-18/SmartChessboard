@@ -12,6 +12,10 @@ class FakeGamesRepository : GamesRepository {
     var games: List<GameSummary> = emptyList()
     var records: Map<String, GameRecord> = emptyMap()
     var shouldFail = false
+
+    // What a shouldFail call throws — default an Exception; set to a non-Exception Throwable (e.g.
+    // Error) to simulate the wasm Ktor JsError that a `catch (Exception)` would silently miss.
+    var failure: Throwable = IllegalStateException("network down")
     var listCalls = 0
     var getCalls = 0
     var createdGame: GameRecord? = null
@@ -28,13 +32,13 @@ class FakeGamesRepository : GamesRepository {
 
     override suspend fun listMyGames(): List<GameSummary> {
         listCalls++
-        if (shouldFail) throw IllegalStateException("network down")
+        if (shouldFail) throw failure
         return games
     }
 
     override suspend fun getGame(id: String): GameRecord {
         getCalls++
-        if (shouldFail) throw IllegalStateException("network down")
+        if (shouldFail) throw failure
         return records[id] ?: throw IllegalStateException("no game with id $id")
     }
 
@@ -44,7 +48,7 @@ class FakeGamesRepository : GamesRepository {
     ): GameRecord {
         createCalls++
         createLabels += whiteLabel to blackLabel
-        if (shouldFail) throw IllegalStateException("network down")
+        if (shouldFail) throw failure
         val created = createdGame ?: throw IllegalStateException("no createdGame stubbed")
         _changes.tryEmit(Unit)
         return created
@@ -56,7 +60,7 @@ class FakeGamesRepository : GamesRepository {
         pgn: String,
     ) {
         updatePgnCalls += id to pgn
-        if (shouldFail) throw IllegalStateException("network down")
+        if (shouldFail) throw failure
         if (updatePgnFailures > 0) {
             updatePgnFailures--
             throw IllegalStateException("update failed")
@@ -71,7 +75,7 @@ class FakeGamesRepository : GamesRepository {
         pgn: String,
     ) {
         finishGameCalls += Triple(id, result, pgn)
-        if (shouldFail) throw IllegalStateException("network down")
+        if (shouldFail) throw failure
         if (finishGameFailures > 0) {
             finishGameFailures--
             throw IllegalStateException("finish failed")

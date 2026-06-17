@@ -57,8 +57,9 @@ class HistoryViewModel(
                 _uiState.value = if (games.isEmpty()) HistoryUiState.Empty else HistoryUiState.Loaded(games)
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
                 // Keep whatever is on screen — a refresh failure shouldn't clobber a loaded list.
+                // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
             }
         }
     }
@@ -72,7 +73,8 @@ class HistoryViewModel(
                     if (games.isEmpty()) HistoryUiState.Empty else HistoryUiState.Loaded(games)
                 } catch (e: CancellationException) {
                     throw e
-                } catch (_: Exception) {
+                } catch (_: Throwable) {
+                    // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
                     HistoryUiState.Error
                 }
         }
