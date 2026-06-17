@@ -299,4 +299,23 @@ class GameAutoSaverTest {
             assertNull(journal.entries[GAME_ID], "the finish lands and the entry clears")
             assertFalse(saver.syncPending.value)
         }
+
+    @Test
+    fun reconcileWithTwoFinishedDocsSameMovesPrefersCloud() =
+        runTest {
+            // F1 follow-up: two *finished* documents, identical moves, different results. Not
+            // reachable in MVP (finishGame clears the journal), but isAhead must resolve it by
+            // status — both finished -> last-writer-wins, cloud wins — not by an accidental
+            // terminator-string prefix.
+            val journalFinished = finishedPgn(GameResult.BLACK, "e4", "e5")
+            val cloudFinished = finishedPgn(GameResult.WHITE, "e4", "e5")
+            journal.save(GAME_ID, journalFinished, dirty = true, result = GameResult.BLACK)
+
+            val resolved = saver.reconcile(cloudRecord(cloudFinished))
+
+            assertEquals(cloudFinished, resolved, "both finished + same moves -> cloud wins")
+            assertEquals(JournalEntry(cloudFinished, dirty = false), journal.entries[GAME_ID])
+            assertTrue(repository.finishGameCalls.isEmpty(), "cloud-wins must not re-flush the journal")
+            assertFalse(saver.syncPending.value)
+        }
 }

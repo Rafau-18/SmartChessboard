@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+private val FINISHED_TERMINATORS = listOf("1/2-1/2", "1-0", "0-1")
+private val RESULT_TERMINATORS = FINISHED_TERMINATORS + "*"
+
 /**
  * Owns the accept-move persistence sequence (contract §6.2): a move is "accepted" only after the
  * synchronous [acceptMove] journal write returns; cloud sync is best-effort, off the acceptance
@@ -118,9 +121,12 @@ class GameAutoSaver(
     }
 
     /**
-     * Both documents come from the same writer, so "journal ahead" reduces to: the cloud movetext
-     * is a proper prefix of the journal movetext (token-aligned). Headers are excluded — they are
-     * constant per game.
+     * Both documents come from the same writer, so "journal ahead" splits into two cases on the
+     * terminator-free movetext: (1) the journal has strictly more moves — its movetext extends the
+     * cloud's; or (2) identical moves but the journal *finished* a game the cloud left open. Keying
+     * on moves + an explicit finished check (rather than on which result token trails the text)
+     * keeps the decision robust: two finished docs with the same moves resolve by status (LWW —
+     * cloud wins), not by an accidental terminator prefix. Headers are excluded — constant per game.
      */
     private fun isAhead(
         journalPgn: String,
@@ -128,13 +134,26 @@ class GameAutoSaver(
     ): Boolean {
         val journalMoves = movetext(journalPgn)
         val cloudMoves = movetext(cloudPgn)
-        return journalMoves != cloudMoves &&
-            (cloudMoves.isEmpty() || journalMoves.startsWith("$cloudMoves "))
+        return if (journalMoves != cloudMoves) {
+            cloudMoves.isEmpty() || journalMoves.startsWith("$cloudMoves ")
+        } else {
+            // Same moves: the journal only leads if it closed a game the cloud copy left open.
+            isFinished(journalPgn) && !isFinished(cloudPgn)
+        }
     }
 
-    /** Movetext without the termination marker; tolerates the empty document a fresh row holds. */
+    /** Movetext without any result terminator; tolerates the empty document a fresh row holds. */
     private fun movetext(pgn: String): String {
-        val body = if (pgn.startsWith("[")) pgn.substringAfter("\n\n", "") else pgn
-        return body.trim().removeSuffix("*").trim()
+        val trimmed = body(pgn).trim()
+        val terminator = RESULT_TERMINATORS.firstOrNull { trimmed == it || trimmed.endsWith(" $it") }
+        return terminator?.let { trimmed.removeSuffix(it).trim() } ?: trimmed
     }
+
+    /** True when the movetext carries one of the three finished result tokens (not the "*" marker). */
+    private fun isFinished(pgn: String): Boolean {
+        val trimmed = body(pgn).trim()
+        return FINISHED_TERMINATORS.any { trimmed == it || trimmed.endsWith(" $it") }
+    }
+
+    private fun body(pgn: String): String = if (pgn.startsWith("[")) pgn.substringAfter("\n\n", "") else pgn
 }
