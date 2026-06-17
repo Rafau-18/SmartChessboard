@@ -130,6 +130,25 @@ class HistoryViewModelTest {
         }
 
     @Test
+    fun repositoryChangeSignalReloadsTheListWithoutAScreenEvent() =
+        runTest {
+            repository.games = listOf(game("g1", "2026-06-10T12:00:00+00:00"))
+            val viewModel = HistoryViewModel(repository)
+            advanceUntilIdle()
+            assertEquals(1, repository.listCalls)
+
+            // A game finished elsewhere (the Play screen) signals the repository changed; the
+            // retained History VM re-fetches on the signal — no lifecycle/composition event needed.
+            val withNew = listOf(game("g2", "2026-06-11T12:00:00+00:00")) + repository.games
+            repository.games = withNew
+            repository.finishGame("g2", GameResult.WHITE, "1-0")
+            advanceUntilIdle()
+
+            assertEquals(2, repository.listCalls)
+            assertEquals(HistoryUiState.Loaded(withNew), viewModel.uiState.value)
+        }
+
+    @Test
     fun refreshFailureKeepsTheCurrentList() =
         runTest {
             val loaded = listOf(game("g1", "2026-06-10T12:00:00+00:00"))

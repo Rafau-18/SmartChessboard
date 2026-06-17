@@ -4,6 +4,9 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.rurbaniak.smartchessboard.domain.games.GameMode
@@ -49,6 +52,11 @@ private data class NewGameDto(
 class SupabaseGamesRepository(
     private val client: SupabaseClient,
 ) : GamesRepository {
+    // replay = 0 + a one-slot buffer so tryEmit never suspends; History subscribes for the whole
+    // session (it is the back-stack root), so emissions are always delivered to it.
+    private val _changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val changes: SharedFlow<Unit> = _changes.asSharedFlow()
+
     // No user_id filter — RLS scopes rows to the authenticated user (contract §3.2).
     override suspend fun listMyGames(): List<GameSummary> =
         client
@@ -92,6 +100,7 @@ class SupabaseGamesRepository(
                 )
             }.decodeSingle<GameRecordDto>()
             .toDomain()
+            .also { _changes.tryEmit(Unit) }
 
     override suspend fun updatePgn(
         id: String,
@@ -121,6 +130,7 @@ class SupabaseGamesRepository(
             ) {
                 filter { eq("id", id) }
             }
+        _changes.tryEmit(Unit)
     }
 }
 

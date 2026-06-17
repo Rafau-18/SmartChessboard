@@ -1,6 +1,17 @@
 package org.rurbaniak.smartchessboard.domain.games
 
+import kotlinx.coroutines.flow.SharedFlow
+
 interface GamesRepository {
+    /**
+     * Emits once after any mutation that changes what the games **list** shows — a new game
+     * ([createGame]) or a game closing ([finishGame]). A retained list screen (History) collects
+     * this to re-fetch, instead of depending on UI composition re-entry or a lifecycle resume —
+     * both diverge across Android / iOS / web. Deliberately NOT emitted for [updatePgn]: that is
+     * movetext-only (the list shows none of it) and fires on every move.
+     */
+    val changes: SharedFlow<Unit>
+
     /** The caller never passes a user id — row scoping is the backend's (RLS) responsibility. */
     suspend fun listMyGames(): List<GameSummary>
 

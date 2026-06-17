@@ -20,7 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,10 +43,11 @@ fun HistoryScreen(
     // Keyed by user so a sign-out → sign-in as someone else never reuses a stale list.
     val viewModel = koinViewModel<HistoryViewModel>(key = "history-$userId")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    // Re-fetch whenever this screen re-enters composition — notably on return from a game just
-    // created/played. The ViewModel is retained across the push/pop, so init never re-runs; this
-    // is what makes a fresh game appear without restarting the app.
-    LaunchedEffect(Unit) { viewModel.refresh() }
+    // List refresh after a game is created/finished is driven by the ViewModel's subscription to
+    // GamesRepository.changes — not a screen-level effect. The screen is retained across the
+    // push/pop on every platform, and composition-re-entry / lifecycle-resume signals diverge
+    // across Android / iOS / web, so neither fires reliably here (a covered entry's composition is
+    // disposed on Android/web but retained on iOS; ON_RESUME tracks the app, not the nav entry).
     Scaffold(
         topBar = {
             TopAppBar(

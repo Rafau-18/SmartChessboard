@@ -1,5 +1,8 @@
 package org.rurbaniak.smartchessboard.presentation
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import org.rurbaniak.smartchessboard.domain.games.GameRecord
 import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
@@ -20,6 +23,9 @@ class FakeGamesRepository : GamesRepository {
     val finishGameCalls = mutableListOf<Triple<String, GameResult, String>>()
     var finishGameFailures = 0
 
+    private val _changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val changes: SharedFlow<Unit> = _changes.asSharedFlow()
+
     override suspend fun listMyGames(): List<GameSummary> {
         listCalls++
         if (shouldFail) throw IllegalStateException("network down")
@@ -39,7 +45,9 @@ class FakeGamesRepository : GamesRepository {
         createCalls++
         createLabels += whiteLabel to blackLabel
         if (shouldFail) throw IllegalStateException("network down")
-        return createdGame ?: throw IllegalStateException("no createdGame stubbed")
+        val created = createdGame ?: throw IllegalStateException("no createdGame stubbed")
+        _changes.tryEmit(Unit)
+        return created
     }
 
     // Records the attempt before failing so retry tests can count attempts.
@@ -68,5 +76,6 @@ class FakeGamesRepository : GamesRepository {
             finishGameFailures--
             throw IllegalStateException("finish failed")
         }
+        _changes.tryEmit(Unit)
     }
 }

@@ -30,6 +30,13 @@ class HistoryViewModel(
 
     init {
         load()
+        // The screen is retained across navigation, so init runs once. Re-fetch on a repository
+        // change signal (a new or finished game) rather than on the screen re-entering composition
+        // or a lifecycle resume — both diverge across Android / iOS / web. refresh() no-ops while
+        // the first load is still in flight.
+        viewModelScope.launch {
+            gamesRepository.changes.collect { refresh() }
+        }
     }
 
     fun retry() {
