@@ -308,7 +308,7 @@ Listed as conceptual operations; SDK call shapes vary by language.
 | List my games (chronological) | `SELECT ... FROM games ORDER BY created_at DESC` (RLS scopes) | FR-015 |
 | Get one game | `SELECT ... FROM games WHERE id = $1` | FR-015, FR-016 |
 | Auto-save move | `UPDATE games SET pgn = $1, status = $2, result = $3 WHERE id = $4` | FR-014 |
-| Mark finished (manual) | `UPDATE games SET status = 'finished', result = $1 WHERE id = $2` | FR-018 (manual end-of-game) |
+| Mark finished | `UPDATE games SET status = 'finished', result = $1, pgn = $2 WHERE id = $3` | FR-007 (auto mate/stalemate), FR-018 (manual end) — one atomic update of status + result + pgn so the row never half-finishes (widened 2026-06-17, S-05) |
 | Delete game | `DELETE FROM games WHERE id = $1` | User cleanup (not a numbered FR) |
 
 Mobile does **not** pass `user_id` explicitly on any write — Postgres reads it

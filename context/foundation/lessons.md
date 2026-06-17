@@ -143,3 +143,43 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 - **Rule**: In the `OPTIONS` handler, **echo the incoming `Access-Control-Request-Headers` back as `Access-Control-Allow-Headers`** (with a static fallback when the preflight names none) instead of hardcoding the client's header set — client libraries add headers and any fixed list goes stale the moment one appears. Attach `Access-Control-Allow-Origin` to *every* response. On the wasm client, wrap `functions.invoke` in `catch (Throwable)` (not just `Exception`) so fetch failures map to the "temporarily unavailable" state. COOP/COEP on the web host does **not** block these CORS fetches (CORP applies to embedded subresources), so no `_headers` change is needed.
 
 - **Applies to**: implement, impl-review — any Edge Function invoked from the web target via supabase-kt, and any wasm-side error handling around `functions.invoke`.
+
+## A retained screen's "refresh on return" must be push-driven (a data-layer signal), not a composition or lifecycle effect
+
+- **Context**: A retained list screen (S-05 `History`) must re-fetch after returning from a child that created or finished a row — Nav3 with `rememberViewModelStoreNavEntryDecorator`, so the ViewModel and (often) its composition survive the push/pop. Surfaced in S-05 three-surface E2E (2026-06-17).
+
+- **Problem**: `LaunchedEffect(Unit) { viewModel.refresh() }` re-fires only on **composition re-entry**, which diverges across targets — a covered Nav3 entry's composition is disposed on Android/web (so it re-fires) but **retained on iOS** (so it never re-fires; the list stayed stale until app relaunch). Switching to `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)` was worse: `LocalLifecycleOwner` resolves to the **app** lifecycle, not the per-entry one, so `ON_RESUME` does not fire on in-app navigation on **any** platform (it regressed Android too). Neither composition-re-entry nor app-lifecycle is a reliable "screen became active again" signal in KMP + Nav3.
+
+- **Rule**: Drive the refresh from a **push signal the data layer emits**, collected in the retained ViewModel's `viewModelScope` (alive for the whole session). The repository exposes `changes: SharedFlow<Unit>`, emitted after mutations that change what the screen shows (`createGame`/`finishGame` — **not** per-move `updatePgn`); `init { viewModelScope.launch { repo.changes.collect { refresh() } } }`. This is lifecycle/composition-independent, so it behaves identically on Android/iOS/web. Do not reach for a UI effect to express "reload when I come back."
+
+- **Applies to**: implement, impl-review — any retained list/detail screen that must reflect changes made elsewhere in the same session.
+
+## Web browser Back needs `HierarchicalBrowserNavigation`, not `Chronological`, for app-style stacks that replace the top
+
+- **Context**: WasmJS maps the Nav3 back stack to browser history via terrakok `navigation3-browser` (`bindBrowserNavigation`, `wasmJsMain`). S-05 added a Play→Replay "Analyse" transition; S-02 already had NewGame→Play — both are *replace* operations (`removeLastOrNull()` + `add()`).
+
+- **Problem**: `ChronologicalBrowserNavigation` records **every** stack state in chronological order, so a replace leaves the replaced-away entry reachable via browser **Back** — on web you landed back on the player-name form (after creating a game) or on the frozen finished board (after Analyse). Native (Android/iOS) was unaffected because system Back follows the Nav3 stack, not a chronological browser log.
+
+- **Rule**: For an app-style hierarchical stack use **`HierarchicalBrowserNavigation { fragmentForTop }`** (same library) — it mirrors the **current** stack via the `NavigationEvent` dispatcher (it drives `NavDisplay`'s `onBack`), so browser Back pops the live stack and replaced entries are gone. Call it as a sibling **before** `NavDisplay` (the `LocalNavigationEventDispatcherOwner` it needs is in scope there; matches the library sample). Trade-offs accepted at MVP: no URL→state restore on reload (deep links remain out of scope), and the one-shot `BrowserHistoryIsInUse` bind limitation is unchanged (see the binds-once gotcha above).
+
+- **Applies to**: implement, impl-review — any wasm navigation change, especially flows that replace the top entry.
+
+## Every wasm Supabase/Ktor network failure is a `Throwable` (`kotlin.Error`), not an `Exception` — catch `Throwable` at every call site
+
+- **Context**: Generalises the eval-specific CORS lesson above. **Any** Supabase/Ktor call on the WasmJS target — Postgrest CRUD, auth, `functions.invoke` — whose failure must be handled gracefully. Surfaced offline across S-05 flows (2026-06-17).
+
+- **Problem**: On wasm a fetch failure surfaces as `io.ktor…JsError`, a **`kotlin.Error`**, which `catch (e: Exception)` silently misses → it escapes as an uncaught coroutine exception and **crashes the app** (offline, any click that hit the network crashed). This bit eight sites at once — History (load + refresh), Play/Replay/NewGame loads, NewGame create, Auth sign-in/out, and the `GameAutoSaver` flush — not just the eval path.
+
+- **Rule**: At every wasm-reachable network call site, **`catch (Throwable)`** (rethrowing `CancellationException` first), not `catch (Exception)`, and map to the screen's Error/failed state (or swallow, for a best-effort flush). There is no single boundary that converts this — it is a per-call-site discipline. Cover it with a test that throws a non-`Exception` `Throwable` and asserts the graceful state.
+
+- **Applies to**: implement, impl-review — any ViewModel / use-case coroutine that makes a Supabase/Ktor call reachable from the web target.
+
+## A terminal/offline flush needs its own retry — "the next move re-enters" does not hold once the game is closed
+
+- **Context**: `GameAutoSaver.sync` is a best-effort cloud flush with bounded retry; its design relies on "the next accepted move's sync re-enters" after the bounded window gives up (S-04 §6.2). S-05 added the finish flush.
+
+- **Problem**: A **finished** game accepts no further moves, so once the bounded retry gave up nothing re-triggered the flush — on a reconnect slower than the ~7s window the "Saving…" indicator spun forever (until the next load's `reconcile` re-flushed). The bounded-retry assumption silently breaks for any terminal or idle state with no future activity to piggyback on.
+
+- **Rule**: A terminal flush (a *finished* journal entry) must **keep retrying** (backoff capped at the last delay) until it lands or the screen closes (the coroutine is cancelled). Keep the in-progress path **bounded** — a single long-lived in-progress loop could race a newer move's sync and overwrite the cloud with a stale PGN. Durability stays backstopped by `reconcile` re-flushing a journaled-but-unsynced finish on the next load.
+
+- **Applies to**: implement, impl-review — any best-effort sync whose re-trigger depends on future user activity a terminal state will not produce (S-06 physical finish included).

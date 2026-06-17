@@ -563,8 +563,8 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 > finish against the hosted backend, so they are exercised in Phase 5's three-surface E2E (the
 > offline-finish flush scenario covers both). They stay `- [ ]` until then.
 
-- [ ] 2.6 Hosted row sets `status='finished'` + `result` + `pgn` in one update
-- [ ] 2.7 Offline finish then reconnect updates the hosted row without a lost result
+- [x] 2.6 Hosted row sets `status='finished'` + `result` + `pgn` in one update
+- [x] 2.7 Offline finish then reconnect updates the hosted row without a lost result
 
 ### Phase 3: PlayViewModel finalization (auto + manual)
 
@@ -580,9 +580,9 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [x] 4.1 `:shared` + apps build on all three targets
-- [x] 4.2 Per-target test suites still green
-- [x] 4.3 ktlint clean
+- [x] 4.1 `:shared` + apps build on all three targets — b1e8a95
+- [x] 4.2 Per-target test suites still green — b1e8a95
+- [x] 4.3 ktlint clean — b1e8a95
 
 #### Manual
 
@@ -592,16 +592,16 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 > surface. Driving them needs an authenticated session the build/test gate can't perform. The Phase
 > 4 automated gate (4.1–4.3) passed. They stay `- [ ]` until Phase 5.
 
-- [ ] 4.4 End-game button visible only while in progress; picker opens; confirm finalizes; cancel keeps game playable
-- [ ] 4.5 Manual finish: final banner, frozen board, Analyse→Replay (correct result), Back→History (finished)
-- [ ] 4.6 Checkmate/stalemate: banner becomes final result automatically, same actions available
+- [x] 4.4 End-game button visible only while in progress; picker opens; confirm finalizes; cancel keeps game playable
+- [x] 4.5 Manual finish: final banner, frozen board, Analyse→Replay (correct result), Back→History (finished)
+- [x] 4.6 Checkmate/stalemate: banner becomes final result automatically, same actions available
 
 ### Phase 5: Three-surface E2E & write-backs
 
 #### Automated
 
-- [ ] 5.1 Full per-target suites green (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`)
-- [ ] 5.2 Web production build succeeds; ktlint clean
+- [x] 5.1 Full per-target suites green (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`)
+- [x] 5.2 Web production build succeeds; ktlint clean
 
 #### Manual
 
@@ -609,6 +609,6 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 > UPDATE) and 2.7 (offline finish then reconnect, no lost result). The offline-finish flush in 5.3
 > exercises both.
 
-- [ ] 5.3 E2E (auto-mate, manual draw, offline-finish flush, finished→Replay) passes on Android, iOS, and web
-- [ ] 5.4 `parsePgn(stored_pgn).result` matches row `result`; Replay `PlayerLine` shows the outcome
-- [ ] 5.5 Roadmap, contract-surfaces §3.2, and change.md write-backs present and accurate
+- [x] 5.3 E2E (auto-mate, manual draw, offline-finish flush, finished→Replay) passes on Android, iOS, and web
+- [x] 5.4 `parsePgn(stored_pgn).result` matches row `result`; Replay `PlayerLine` shows the outcome
+- [x] 5.5 Roadmap, contract-surfaces §3.2, and change.md write-backs present and accurate

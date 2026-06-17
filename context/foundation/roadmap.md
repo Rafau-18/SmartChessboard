@@ -29,19 +29,19 @@ The author and a small circle of friends play chess on a physical wooden board, 
 
 ## At a glance
 
-| ID   | Change ID                     | Outcome (user can …)                                                      | Prerequisites          | PRD refs                                              | Status   |
-| ---- | ----------------------------- | ------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------- | -------- |
-| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection           | —                      | FR-005, FR-007, Guardrails                             | awaiting review |
-| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware           | —                      | PRD OQ-1 (resolved), US-02                             | in progress |
-| S-01 | google-signin-own-history     | sign in with Google and see own private game list                          | —                      | FR-001, FR-002, FR-015, US-03                          | awaiting review |
-| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)            | S-01                   | FR-016, US-03                                          | awaiting review |
-| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                           | S-02                   | FR-017, US-01, US-03                                   | awaiting review |
-| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save                 | F-01, S-01, S-02       | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01  | awaiting review |
-| S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                         | S-04                   | FR-007, FR-018, US-01                                  | proposed |
-| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator                         | F-01, F-02, S-04       | FR-005, FR-006, FR-008, FR-009, US-02                  | proposed |
-| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics                | S-06                   | FR-010, FR-011, US-02                                  | proposed |
-| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart                      | S-07                   | FR-013, US-02                                          | proposed |
-| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                          | S-06, S-07             | FR-008, FR-009, FR-010, FR-011, US-02                  | blocked  |
+| ID   | Change ID                     | Outcome (user can …)                                             | Prerequisites    | PRD refs                                              | Status          |
+| ---- | ----------------------------- | ---------------------------------------------------------------- | ---------------- | ----------------------------------------------------- | --------------- |
+| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection | —                | FR-005, FR-007, Guardrails                            | awaiting review |
+| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware | —                | PRD OQ-1 (resolved), US-02                            | in progress     |
+| S-01 | google-signin-own-history     | sign in with Google and see own private game list                | —                | FR-001, FR-002, FR-015, US-03                         | awaiting review |
+| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)  | S-01             | FR-016, US-03                                         | awaiting review |
+| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                 | S-02             | FR-017, US-01, US-03                                  | awaiting review |
+| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save       | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | awaiting review |
+| S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)               | S-04             | FR-007, FR-018, US-01                                 | implemented     |
+| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | proposed        |
+| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | proposed        |
+| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | proposed        |
+| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07       | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
 
 ## Streams
 
@@ -50,7 +50,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | Stream | Theme          | Chain                                          | Note                                                                                      |
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
-| B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green).** |
+| B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green). S-05 implemented 2026-06-17 (game end & result, three-surface E2E green).** |
 | C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is blocked until firmware work resumes.         |
 
 ## Baseline
@@ -160,7 +160,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Small closer slice; mate/stalemate detection falls out of F-01, so the work is surfacing terminal states and recording results — and manual end is the only way draw-by-rule games close in MVP.
-- **Status:** proposed
+- **Status:** implemented — three-surface E2E verified on Android, iOS, and web (2026-06-17). Pure result mapping + finished-PGN round-trip (`e266455`); atomic `finishGame(status+result+pgn)` repo method + offline-safe finish-aware journal/`GameAutoSaver` (`bbedd14`); `PlayViewModel` auto-close on mate/stalemate + manual end flow (`18df392`); end-game UI — result picker → irreversibility confirm, finished banner, Analyse / Back-to-history — and navigation (`b1e8a95`). E2E follow-up fixes: History list refresh via a repository change signal (`64937c7`), hierarchical browser history so web Back follows the stack (`653b013`), wasm fetch failures handled as `Throwable` so offline no longer crashes (`8c00bac`), and a finished game's cloud flush retried until reconnect (`7f541ab`). `change.md` status `impl_reviewed`; awaiting `/10x-archive`.
 
 ### S-06: Physical-mode capture against the emulator
 
