@@ -80,9 +80,19 @@ class GameAutoSaver(
                 return
             } catch (cancellation: CancellationException) {
                 throw cancellation
-            } catch (_: Exception) {
-                if (failures == retryDelaysMs.size) return
-                delay(retryDelaysMs[failures])
+            } catch (_: Throwable) {
+                // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error; if it
+                // escaped this best-effort flush it would crash the launching coroutine offline.
+                //
+                // A *finished* game has no further accepted move to re-trigger this flush, so its
+                // entry keeps retrying (backoff capped at the last delay) until it lands or the
+                // screen closes (the coroutine is cancelled) — otherwise "Saving…" spins forever
+                // after a reconnect slower than the bounded window. An in-progress save still gives
+                // up after the bounded attempts: its next accepted move re-enters sync, and a single
+                // long-lived loop could race a newer move's sync and overwrite the cloud with a
+                // stale PGN.
+                if (entry.result == null && failures == retryDelaysMs.size) return
+                delay(retryDelaysMs[minOf(failures, retryDelaysMs.lastIndex)])
                 failures++
             }
         }

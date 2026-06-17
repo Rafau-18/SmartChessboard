@@ -251,27 +251,37 @@ class GameAutoSaverTest {
         }
 
     @Test
-    fun offlineFinishStaysDirtyThenReFlushesOnTheNextSync() =
+    fun offlineFinishKeepsRetryingPastTheBoundedWindowThenFlushesOnReconnect() =
         runTest {
+            // A finished game has no further move to re-trigger the flush, so its sync must NOT give
+            // up at the bounded window (as an in-progress save does) — it keeps retrying until the
+            // connection returns, otherwise "Saving…" would spin forever after a slow reconnect.
             val finished = finishedPgn(GameResult.DRAW, "e4")
-            repository.finishGameFailures = Int.MAX_VALUE
+            repository.finishGameFailures = 5 // fails through the 3-delay window, then reconnects
             saver.finishGame(GAME_ID, GameResult.DRAW, finished)
 
             saver.sync(GAME_ID)
 
-            assertEquals(4, repository.finishGameCalls.size, "initial attempt + one per retry delay")
-            assertTrue(journal.entries.getValue(GAME_ID).dirty, "an unconfirmed finish must survive")
-            assertTrue(journal.clearedIds.isEmpty(), "entry is not cleared until the cloud confirms")
-            assertTrue(saver.syncPending.value)
-
-            // Reconnect: the dirty finished entry re-flushes and clears.
-            repository.finishGameFailures = 0
-            saver.sync(GAME_ID)
-
+            assertEquals(6, repository.finishGameCalls.size, "retried past the bounded window until it landed")
             assertEquals(Triple(GAME_ID, GameResult.DRAW, finished), repository.finishGameCalls.last())
-            assertEquals(listOf(GAME_ID), journal.clearedIds)
+            assertEquals(listOf(GAME_ID), journal.clearedIds, "entry cleared only after the confirmed flush")
             assertNull(journal.entries[GAME_ID])
             assertFalse(saver.syncPending.value)
+        }
+
+    @Test
+    fun offlineInProgressSaveStillGivesUpAtTheBoundedWindow() =
+        runTest {
+            // The in-progress path is unchanged: it gives up after the bounded attempts (its next
+            // accepted move re-enters sync), so a single sync never loops indefinitely.
+            repository.updatePgnFailures = Int.MAX_VALUE
+            saver.acceptMove(GAME_ID, pgn("e4"))
+
+            saver.sync(GAME_ID)
+
+            assertEquals(4, repository.updatePgnCalls.size, "initial attempt + one per retry delay")
+            assertTrue(journal.entries.getValue(GAME_ID).dirty)
+            assertTrue(saver.syncPending.value)
         }
 
     @Test
