@@ -1,9 +1,9 @@
 ---
 change_id: game-end-and-result
 title: Game end and result
-status: implementing
+status: impl_reviewed
 created: 2026-06-13
-updated: 2026-06-16
+updated: 2026-06-17
 archived_at: null
 ---
 
