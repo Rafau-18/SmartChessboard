@@ -27,23 +27,23 @@ import org.rurbaniak.smartchessboard.domain.games.GameResult
  * / Draw); choosing one ([onPick]) advances to [EndGamePrompt.Confirming], which spells out that
  * finishing can't be undone before [onConfirm] fires. Dismissing (back / scrim / Cancel) leaves the
  * game in progress via [onDismiss]. Mirrors `PromotionPicker`'s split: a [Dialog] wrapper plus a
- * previewable inner [EndGameDialogSurface].
+ * previewable inner [EndGamePickerSurface].
  */
 @Composable
-fun EndGameDialog(
+fun EndGamePicker(
     prompt: EndGamePrompt,
     onPick: (GameResult) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        EndGameDialogSurface(prompt = prompt, onPick = onPick, onConfirm = onConfirm, onDismiss = onDismiss)
+        EndGamePickerSurface(prompt = prompt, onPick = onPick, onConfirm = onConfirm, onDismiss = onDismiss)
     }
 }
 
 /** The dialog's visible content, split out from [Dialog] so it can be previewed in isolation. */
 @Composable
-internal fun EndGameDialogSurface(
+internal fun EndGamePickerSurface(
     prompt: EndGamePrompt,
     onPick: (GameResult) -> Unit,
     onConfirm: () -> Unit,

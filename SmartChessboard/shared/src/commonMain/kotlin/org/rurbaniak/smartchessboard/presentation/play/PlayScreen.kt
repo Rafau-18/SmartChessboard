@@ -186,7 +186,7 @@ private fun PlayingContent(
     }
 
     state.endGamePrompt?.let { prompt ->
-        EndGameDialog(
+        EndGamePicker(
             prompt = prompt,
             onPick = onResultPick,
             onConfirm = onConfirmEndGame,
