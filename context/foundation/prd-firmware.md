@@ -79,6 +79,10 @@ Out of scope (covered elsewhere):
 - **FR-FW-005**: On a new connection, firmware emits a `BOARD_SNAPSHOT`
   describing the current state of all 64 squares (so mobile can reconcile
   with its expected position). Priority: must-have.
+  - 2026-06-16 (F-02): the `BOARD_SNAPSHOT` byte layout is clarified in
+    `contract-surfaces.md` §1.3 — byte `i` bit `j` (LSB-first) = square `i*8 + j`
+    (byte 0 = rank 1, `a1` = byte 0 bit 0). Firmware must pack snapshot bytes in
+    this order to match the mobile decoder verified against the emulator.
 
 - **FR-FW-006**: Firmware emits `SQUARE_EVENT` for every debounced
   reed-switch lift or place, with square index per the contract's
