@@ -4,6 +4,7 @@ import org.rurbaniak.smartchessboard.domain.board.BoardButton
 import org.rurbaniak.smartchessboard.domain.board.BoardCommand
 import org.rurbaniak.smartchessboard.domain.board.BoardConnectionState
 import org.rurbaniak.smartchessboard.domain.board.BoardEvent
+import org.rurbaniak.smartchessboard.domain.board.BoardMode
 import org.rurbaniak.smartchessboard.domain.board.SquareEventType
 import org.rurbaniak.smartchessboard.domain.chess.Color
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
@@ -46,6 +47,9 @@ class PhysicalPlayReducerTest {
         endGamePrompt: EndGamePrompt? = null,
         rejection: RejectionReason? = null,
         setupMismatch: Boolean = false,
+        latestOccupancy: Long? = null,
+        recovering: Boolean = false,
+        manualDiagnostics: Boolean = false,
     ) = PhysicalPlayState.Playing(
         positions = positions,
         sanMoves = sanMoves,
@@ -62,6 +66,9 @@ class PhysicalPlayReducerTest {
         endGamePrompt = endGamePrompt,
         pendingPromotion = pendingPromotion,
         rejection = rejection,
+        latestOccupancy = latestOccupancy,
+        recovering = recovering,
+        manualDiagnostics = manualDiagnostics,
     )
 
     private fun playingAfter(reduceResult: ReduceResult): PhysicalPlayState.Playing =
@@ -152,14 +159,18 @@ class PhysicalPlayReducerTest {
     }
 
     @Test
-    fun illegalSequenceConfirmRejectsAndClearsTheSequence() {
-        // e2 to e5 is not a legal pawn move; the resolver returns Illegal.
+    fun illegalSequenceConfirmRejectsPausesAndRequestsASnapshot() {
+        // e2 to e5 is not a legal pawn move; the resolver returns Illegal. With no fresh snapshot
+        // contradicting the expected position the reason stays ILLEGAL — but the game now *pauses*
+        // (recovering) and pulls a snapshot to drive restore-verification (S-07, FR-010).
         val state = playing(eventsSinceConfirm = listOf(lift("e2"), place("e5")))
         val result = reduce(state, PhysicalMsg.ConfirmPressed(BoardButton.WHITE))
         val playing = playingAfter(result)
         assertEquals(RejectionReason.ILLEGAL, playing.rejection)
+        assertTrue(playing.recovering)
+        assertTrue(playing.acceptanceBlocked)
         assertTrue(playing.eventsSinceConfirm.isEmpty())
-        assertTrue(result.effects.isEmpty())
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
     }
 
     // --- Promotion detection on the place ---
@@ -290,5 +301,189 @@ class PhysicalPlayReducerTest {
         val afterPlace = reduce(playingAfter(afterLift), PhysicalMsg.SquarePlaced(sq("e4")))
         // The origin stays highlighted (piece moved away); the destination is not a "lifted" square.
         assertEquals(setOf(sq("e2")), playingAfter(afterPlace).liftedSquares)
+    }
+
+    // --- S-07: reject-recovery gate, INCONSISTENT fork, live diagnostics mode ---
+
+    @Test
+    fun illegalConfirmWithAFreshMismatchingSnapshotForksToInconsistent() {
+        // The delta sequence is illegal AND a fresh snapshot disagrees with the expected position →
+        // the reject is categorised INCONSISTENT (FR-010), not plain ILLEGAL.
+        val state =
+            playing(
+                eventsSinceConfirm = listOf(lift("e2"), place("e5")),
+                latestOccupancy = 0L, // empty board ≠ the start position
+            )
+        val result = reduce(state, PhysicalMsg.ConfirmPressed(BoardButton.WHITE))
+        val playing = playingAfter(result)
+        assertEquals(RejectionReason.INCONSISTENT, playing.rejection)
+        assertTrue(playing.recovering)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
+    }
+
+    @Test
+    fun illegalConfirmWithAMatchingSnapshotStaysIllegal() {
+        // The board absolutely matches the expected position (stale-but-correct), so an illegal delta
+        // sequence is plain ILLEGAL — the absolute fork only fires on a genuine mismatch.
+        val state =
+            playing(
+                eventsSinceConfirm = listOf(lift("e2"), place("e5")),
+                latestOccupancy = startOccupancy(),
+            )
+        val result = reduce(state, PhysicalMsg.ConfirmPressed(BoardButton.WHITE))
+        assertEquals(RejectionReason.ILLEGAL, playingAfter(result).rejection)
+    }
+
+    @Test
+    fun confirmWhileRecoveringIsBlockedButRequestsASnapshot() {
+        // The acceptance gate holds: even a would-be-legal sequence can't commit while recovering; a
+        // confirm instead pulls a snapshot so restore-verify can clear the gate without the grid.
+        val state =
+            playing(
+                recovering = true,
+                rejection = RejectionReason.ILLEGAL,
+                eventsSinceConfirm = listOf(lift("e2"), place("e4")),
+            )
+        val result = reduce(state, PhysicalMsg.ConfirmPressed(BoardButton.WHITE))
+        assertTrue(playingAfter(result).recovering, "still paused — no move committed")
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
+        assertTrue(result.effects.none { it is PhysicalEffect.CommitMove })
+    }
+
+    @Test
+    fun liftAndPlaceWhileRecoveringDoNotBuildAMove() {
+        // Restoration lift/place are not a new move: accumulation is short-circuited while recovering,
+        // so the snapshot occupancy (not these deltas) is what clears the gate.
+        val state = playing(recovering = true)
+        assertEquals(state, reduce(state, PhysicalMsg.SquareLifted(sq("e2"))).state)
+        assertEquals(state, reduce(state, PhysicalMsg.SquarePlaced(sq("e4"))).state)
+    }
+
+    @Test
+    fun snapshotKeepsLatestOccupancyFreshEvenMidSequence() {
+        // The grid + the fork need a fresh occupancy on every snapshot; the setup-mismatch compare is
+        // still suppressed mid-sequence (a snapshot with a move in hand is expected to differ).
+        val state = playing(eventsSinceConfirm = listOf(lift("e2")))
+        val playing = playingAfter(reduce(state, PhysicalMsg.SnapshotReceived(occupancy = 123L)))
+        assertEquals(123L, playing.latestOccupancy)
+        assertTrue(!playing.setupMismatch, "no setup-mismatch recompute while a move is in hand")
+    }
+
+    @Test
+    fun restoringTheExactPositionClearsTheGateAndExitsDiagnosticMode() {
+        // The hard restore gate: recovering clears ONLY on an exact occupancy match, which also drops
+        // the rejection, closes a manually-opened grid, exits DIAGNOSTIC mode, and re-pulls a snapshot.
+        val state =
+            playing(
+                recovering = true,
+                rejection = RejectionReason.ILLEGAL,
+                manualDiagnostics = true,
+            )
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        val playing = playingAfter(result)
+        assertTrue(!playing.recovering)
+        assertNull(playing.rejection)
+        assertTrue(!playing.manualDiagnostics)
+        assertTrue(!playing.diagnosticsVisible)
+        assertEquals(
+            listOf(
+                PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.GAME)),
+                PhysicalEffect.Send(BoardCommand.RequestSnapshot),
+            ),
+            result.effects,
+        )
+    }
+
+    @Test
+    fun aStillMismatchingSnapshotKeepsTheGateClosed() {
+        // While the board is wrong, recovering holds and the rejection stays surfaced; the persistent
+        // mismatch also auto-opens the grid (setup-mismatch edge).
+        val state = playing(recovering = true, rejection = RejectionReason.INCONSISTENT)
+        val playing = playingAfter(reduce(state, PhysicalMsg.SnapshotReceived(occupancy = 0L)))
+        assertTrue(playing.recovering)
+        assertEquals(RejectionReason.INCONSISTENT, playing.rejection)
+        assertTrue(playing.diagnosticsVisible)
+    }
+
+    @Test
+    fun setupMismatchEdgeEntersAndExitsDiagnosticModeOncePerEdge() {
+        // FR-011 auto-entry: the false→true setup-mismatch edge enters DIAGNOSTIC, the true→false edge
+        // returns to GAME — one SetMode per edge, not per snapshot.
+        val entered = reduce(playing(), PhysicalMsg.SnapshotReceived(occupancy = 0L))
+        assertTrue(playingAfter(entered).setupMismatch)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC))), entered.effects)
+        val exited = reduce(playingAfter(entered), PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        assertTrue(!playingAfter(exited).setupMismatch)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.GAME))), exited.effects)
+    }
+
+    @Test
+    fun showDiagnosticsEntersDiagnosticModeAndPullsASnapshot() {
+        val result = reduce(playing(), PhysicalMsg.ShowDiagnostics)
+        val playing = playingAfter(result)
+        assertTrue(playing.manualDiagnostics)
+        assertTrue(playing.diagnosticsVisible)
+        assertEquals(
+            listOf(
+                PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC)),
+                PhysicalEffect.Send(BoardCommand.RequestSnapshot),
+            ),
+            result.effects,
+        )
+    }
+
+    @Test
+    fun showDiagnosticsIsANoOpWhenTheGridIsAlreadyAutoShown() {
+        // A live setup-mismatch already opened the grid (DIAGNOSTIC mode on); the manual CTA must not
+        // re-send SetMode/RequestSnapshot — no per-edge spam.
+        val result = reduce(playing(setupMismatch = true), PhysicalMsg.ShowDiagnostics)
+        assertTrue(playingAfter(result).manualDiagnostics)
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
+    fun hideDiagnosticsReturnsToGameModeWhenFullyHidden() {
+        val result = reduce(playing(manualDiagnostics = true), PhysicalMsg.HideDiagnostics)
+        assertTrue(!playingAfter(result).manualDiagnostics)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.GAME))), result.effects)
+    }
+
+    @Test
+    fun hideDiagnosticsKeepsTheGridWhenASetupMismatchStillNeedsIt() {
+        // Closing the manual grid while the board still mismatches keeps DIAGNOSTIC mode on.
+        val result = reduce(playing(manualDiagnostics = true, setupMismatch = true), PhysicalMsg.HideDiagnostics)
+        assertTrue(playingAfter(result).diagnosticsVisible)
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
+    fun reconnectReArmsDiagnosticModeWhenTheGridIsOpen() {
+        // The board resets to GAME on every reconnect (contract §1.7); if the grid is open we must
+        // re-arm DIAGNOSTIC in addition to the usual snapshot re-request.
+        val state = playing(connectionState = BoardConnectionState.DISCONNECTED, manualDiagnostics = true)
+        val result = reduce(state, PhysicalMsg.BoardConnected)
+        assertEquals(
+            listOf(
+                PhysicalEffect.Send(BoardCommand.RequestSnapshot),
+                PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC)),
+            ),
+            result.effects,
+        )
+    }
+
+    @Test
+    fun aCommittedMoveClearsTheRecoveryAndDiagnosticsFlags() {
+        // Defensive: a successful move resets the gate + grid flags alongside the sequence, so a stale
+        // recovering / manualDiagnostics can never survive an accepted move.
+        val state =
+            playing(
+                eventsSinceConfirm = listOf(lift("e2"), place("e4")),
+                recovering = true,
+                manualDiagnostics = true,
+            )
+        val playing = playingAfter(reduce(state, PhysicalMsg.MoveCommitted(positionAfter("1. e4"), "e4")))
+        assertTrue(!playing.recovering)
+        assertTrue(!playing.manualDiagnostics)
+        assertEquals(2, playing.positions.size)
     }
 }

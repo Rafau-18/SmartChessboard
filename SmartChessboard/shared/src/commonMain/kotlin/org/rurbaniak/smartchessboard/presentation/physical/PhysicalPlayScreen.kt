@@ -226,8 +226,15 @@ private fun BoardMessage(
 private fun rejectionText(reason: RejectionReason): String =
     when (reason) {
         RejectionReason.ILLEGAL -> "That move isn't legal — restore the position and try again."
+
+        // Phase 1 stub to keep this exhaustive when compiling; Phase 2 refines the copy + adds the
+        // "Show diagnostics" CTA (S-07, FR-010/FR-011).
+        RejectionReason.INCONSISTENT -> "The board doesn't match the game — restore the previous position."
+
         RejectionReason.AMBIGUOUS -> "Couldn't read that move clearly — restore the position and try again."
+
         RejectionReason.PROMOTION_REQUIRED -> "Pick a promotion piece before confirming."
+
         RejectionReason.SAVE_FAILED -> "Couldn't save the move — check your connection and try again."
     }
 

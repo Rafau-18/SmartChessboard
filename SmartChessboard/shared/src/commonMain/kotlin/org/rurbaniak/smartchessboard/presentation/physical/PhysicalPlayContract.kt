@@ -37,8 +37,9 @@ sealed interface PhysicalPlayState {
      *
      * Physical-specific surface: [connectionState] (acceptance is [paused] while disconnected),
      * [liftedSquares] (highlight, decision 8), [eventsSinceConfirm] (the lift/place sequence the
-     * interpreter resolves on confirm), [setupMismatch] (the opening-position occupancy check), and
-     * a transient [rejection] (minimal reject — no diagnostics until S-07).
+     * interpreter resolves on confirm), [setupMismatch] (the opening-position occupancy check), a
+     * transient [rejection] reason, and the S-07 reject-recover surface ([latestOccupancy],
+     * [recovering], [manualDiagnostics]) that pauses acceptance until the board is physically restored.
      */
     data class Playing(
         val positions: List<Position>,
@@ -65,6 +66,20 @@ sealed interface PhysicalPlayState {
         val pendingPromotion: PendingPromotion? = null,
         /** The last rejected confirmation, surfaced transiently; cleared on the next accepted move. */
         val rejection: RejectionReason? = null,
+        /**
+         * Occupancy of the most recent snapshot (a1 = bit 0, h8 = sign bit), kept fresh for the live
+         * diagnostics grid and the restore-verification; null until the first snapshot arrives. Test
+         * bits with `(bits and (1L shl n)) != 0L` — never a signed `> 0` (h8 is the sign bit).
+         */
+        val latestOccupancy: Long? = null,
+        /**
+         * The reject-recovery acceptance gate (S-07, FR-010): a confirmation that resolves to an
+         * illegal / ambiguous / inconsistent sequence pauses the game here, and it clears *only* when a
+         * snapshot's occupancy equals `position.toOccupancy()` — the previous legal position restored.
+         */
+        val recovering: Boolean = false,
+        /** True while the player opened the diagnostics grid via the banner CTA (vs auto-entry on [setupMismatch]). */
+        val manualDiagnostics: Boolean = false,
     ) : PhysicalPlayState {
         val position: Position get() = positions.last()
 
@@ -72,6 +87,12 @@ sealed interface PhysicalPlayState {
 
         /** Move acceptance pauses while the board is unreachable (no reconcile until S-07; no save while down). */
         val paused: Boolean get() = connectionState == BoardConnectionState.DISCONNECTED
+
+        /** Acceptance is blocked while the board is down ([paused]) *or* a reject awaits restore ([recovering]). */
+        val acceptanceBlocked: Boolean get() = paused || recovering
+
+        /** The diagnostics grid is on screen when opened manually *or* auto-shown by a [setupMismatch]. */
+        val diagnosticsVisible: Boolean get() = manualDiagnostics || setupMismatch
     }
 }
 
@@ -79,6 +100,14 @@ sealed interface PhysicalPlayState {
 enum class RejectionReason {
     /** The resolved sequence is not a legal move (or matched no move at all). */
     ILLEGAL,
+
+    /**
+     * The physical board's absolute occupancy does not reconcile with the expected position (S-07,
+     * FR-010) — distinct from [ILLEGAL]: the *delta* sequence may have completed, but the board as a
+     * whole disagrees with `positions.last()`. A reducer-level occupancy compare decides it; the
+     * interpreter stays delta-only.
+     */
+    INCONSISTENT,
 
     /** More than one legal move matched (defensive — unreachable under a full lift/place stream). */
     AMBIGUOUS,
@@ -131,6 +160,12 @@ sealed interface PhysicalMsg {
     data object EndGameDismissed : PhysicalMsg
 
     data object FlipBoard : PhysicalMsg
+
+    /** User opened the live reed diagnostics grid via the recovery banner (S-07, FR-011). */
+    data object ShowDiagnostics : PhysicalMsg
+
+    /** User dismissed the diagnostics grid; the board returns to GAME mode if nothing else needs it. */
+    data object HideDiagnostics : PhysicalMsg
 
     data object Retry : PhysicalMsg
 
