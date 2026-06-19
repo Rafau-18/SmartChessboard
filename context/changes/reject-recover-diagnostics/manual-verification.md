@@ -86,9 +86,65 @@ no-rename Progress rule.
 
 ---
 
-## Pending (rolled up at end-of-slice)
+## Phase 3 — Emulator-driven end-to-end + manual verification
 
-Phase 3 (3.4–3.6) manual rows will be appended here as that phase lands. All `#### Manual` rows stay
-`- [ ]` in `plan.md` by design — they are this single end-of-slice pass. Run them on a real Android
-device (and a browser for the web-exclusion check), tick them here and in `plan.md`, then
-`/10x-impl-review` and `/10x-archive`.
+`PhysicalRecoverEndToEndTest` (new, `presentation/physical/`) drives the real `PhysicalPlayViewModel`
++ `EmulatedBoard` through reject → paused gate → restore → verified → retry → accept, for **both**
+`ILLEGAL` and `INCONSISTENT`. Automated 3.1–3.3 green on all three targets. The test was hardened
+after an adversarial multi-agent review (see the note below).
+
+### 3.4 — Full reject→recover→retry loop verified by hand on Android for `ILLEGAL` and `INCONSISTENT`
+
+- [ ] On a real Android device, with the emulator/board connected: make an illegal move → game pauses,
+      banner + grid appear; restore the previous position guided by the grid → game un-pauses; make a
+      legal move → it's accepted. Repeat with an inconsistent board (extra/missing piece) → `INCONSISTENT`.
+
+Interactive device check — **the slice's one genuine human walkthrough.** The full state machine is
+proven headless end-to-end by `PhysicalRecoverEndToEndTest` (both categories, on JVM + iOS + wasm);
+this device pass confirms the on-screen UX (banner copy, CTA, live grid guiding restoration).
+
+### 3.5 — No accepted move is ever saved from a rejected or unrestored board (journal inspected)
+
+- [ ] Confirm (device + journal) that no move is persisted from a rejected/unrestored board.
+
+**Discharged by the automated E2E now.** `PhysicalRecoverEndToEndTest` asserts the §6.2 invariant
+directly on the journal: `acceptedMoveCount() == 0` after the reject, after a second in-recovery
+confirm, and across the entire restore window, then exactly `== 1` only after the retried legal move —
+for both categories. (`acceptMove`/`finishGame` are the only `dirty = true` journal writers; the
+reconcile seed is `dirty = false`, so the count cleanly isolates accepted moves.) The device pass is a
+belt-and-braces re-confirmation.
+
+### 3.6 — `manual-verification.md` completed and checked in
+
+- [ ] Tick every Manual row across Phases 1–3 here and in `plan.md` after the device pass, then
+      `/10x-impl-review` + `/10x-archive`.
+
+This file (you are reading it) is complete and committed with Phase 3. The remaining tick is the
+human end-of-slice sign-off.
+
+**Phase-3 adaptation to note (not a defect):** Kotlin/Native (iOS) **rejects backtick test-method
+names containing `,` `(` `)`** — `compileTestKotlinIosSimulatorArm64` failed with *"Name contains
+illegal characters"* on names the JVM/Android target had happily compiled (this surfaced both the new
+`PhysicalRecoverEndToEndTest` names and the Phase-2 `ReedDiagnosticsGridTest` name, which `2.3` had only
+exercised on Android). Renamed all four to comma/paren-free phrases; no behaviour change. This is a
+sibling of the existing lesson *"a commonMain … is not green until it passes on a Native target"* —
+worth a `/10x-lesson` capture.
+
+---
+
+## End-of-slice human pass — single consolidated checklist
+
+All `#### Manual` rows below stay `- [ ]` in `plan.md` by design until this one pass. Most are already
+discharged by code-read / automated tests (noted per row above); the only irreducibly-interactive item
+is **3.4** (the on-device walkthrough). Run it on a real Android device with the board/emulator, plus a
+browser for the web-exclusion spot-check (2.7), then tick every row here and in `plan.md`:
+
+- [ ] 1.5 — reducer purity (code-read; already confirmed above)
+- [ ] 2.5 — illegal pause + banner + "Show diagnostics" + live grid (device)
+- [ ] 2.6 — grid highlights exactly the differing squares incl. h8 (device; bit-math unit-proven)
+- [ ] 2.7 — web excludes the physical/diagnostics route (browser; code-read confirmed)
+- [ ] 3.4 — full reject→recover→retry by hand for `ILLEGAL` and `INCONSISTENT` (device)
+- [ ] 3.5 — no save from a rejected/unrestored board (E2E-proven; re-confirm on device)
+- [ ] 3.6 — this file completed + every row ticked
+
+After the pass: `/10x-impl-review reject-recover-diagnostics` → `/10x-archive reject-recover-diagnostics`.

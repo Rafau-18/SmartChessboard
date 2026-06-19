@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  */
 class ReedDiagnosticsGridTest {
     @Test
-    fun `isOccupied reads a1 (bit 0) and h8 (bit 63, the sign bit)`() {
+    fun `isOccupied reads a1 bit 0 and the h8 sign bit`() {
         assertTrue(isOccupied(1L shl 0, square = 0)) // a1 occupied
         assertFalse(isOccupied(1L shl 0, square = 1))
         // 1L shl 63 == Long.MIN_VALUE; a signed comparison would call this "empty".

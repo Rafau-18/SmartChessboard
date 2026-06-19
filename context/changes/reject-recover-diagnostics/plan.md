@@ -298,10 +298,10 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [x] 2.1 App compiles for all targets (`:shared:compileKotlinAndroid`, `:webApp:compileKotlinWasmJs`)
-- [x] 2.2 Android debug APK assembles (`:androidApp:assembleDebug`)
-- [x] 2.3 Existing presentation tests still pass (`:shared:testAndroidHostTest`)
-- [x] 2.4 ktlint clean (`ktlint -F`)
+- [x] 2.1 App compiles for all targets (`:shared:compileKotlinAndroid`, `:webApp:compileKotlinWasmJs`) — 7ba6c6a
+- [x] 2.2 Android debug APK assembles (`:androidApp:assembleDebug`) — 7ba6c6a
+- [x] 2.3 Existing presentation tests still pass (`:shared:testAndroidHostTest`) — 7ba6c6a
+- [x] 2.4 ktlint clean (`ktlint -F`) — 7ba6c6a
 
 #### Manual
 
@@ -313,9 +313,9 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [ ] 3.1 End-to-end recover test passes on all three targets (`PhysicalRecoverEndToEndTest`)
-- [ ] 3.2 Full shared test suite green — no regressions (`:shared:testAndroidHostTest`)
-- [ ] 3.3 ktlint clean (`ktlint -F`)
+- [x] 3.1 End-to-end recover test passes on all three targets (`PhysicalRecoverEndToEndTest`)
+- [x] 3.2 Full shared test suite green — no regressions (`:shared:testAndroidHostTest`)
+- [x] 3.3 ktlint clean (`ktlint -F`)
 
 #### Manual
 
