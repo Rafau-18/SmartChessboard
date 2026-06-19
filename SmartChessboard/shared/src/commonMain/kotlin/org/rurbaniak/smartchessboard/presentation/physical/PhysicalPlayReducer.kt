@@ -4,6 +4,7 @@ import org.rurbaniak.smartchessboard.domain.board.BoardButton
 import org.rurbaniak.smartchessboard.domain.board.BoardCommand
 import org.rurbaniak.smartchessboard.domain.board.BoardConnectionState
 import org.rurbaniak.smartchessboard.domain.board.BoardEvent
+import org.rurbaniak.smartchessboard.domain.board.BoardMode
 import org.rurbaniak.smartchessboard.domain.board.Resolution
 import org.rurbaniak.smartchessboard.domain.board.SquareEventType
 import org.rurbaniak.smartchessboard.domain.board.resolvePhysicalMove
@@ -80,10 +81,16 @@ private fun reducePlaying(
     when (msg) {
         PhysicalMsg.BoardConnected -> {
             // Re-request occupancy on (re)connect: the hot, no-replay stream means a burst can be
-            // missed, and a snapshot re-verifies the board against the live position.
+            // missed, and a snapshot re-verifies the board against the live position. The board resets
+            // to GAME mode on every reconnect (contract §1.7), so re-arm DIAGNOSTIC if the grid is open.
             ReduceResult(
                 state.copy(connectionState = BoardConnectionState.CONNECTED),
-                listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)),
+                buildList {
+                    add(PhysicalEffect.Send(BoardCommand.RequestSnapshot))
+                    if (state.diagnosticsVisible) {
+                        add(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC)))
+                    }
+                },
             )
         }
 
@@ -92,15 +99,25 @@ private fun reducePlaying(
         }
 
         is PhysicalMsg.SnapshotReceived -> {
-            // Only meaningful at rest (no move in hand): a snapshot taken mid-sequence is expected to
-            // differ from the live position. Compares occupancy bitmaps — no FEN needed.
-            ReduceResult(
-                if (state.eventsSinceConfirm.isEmpty()) {
-                    state.copy(setupMismatch = msg.occupancy != state.position.toOccupancy())
-                } else {
-                    state
-                },
-            )
+            // Keep the live occupancy fresh for the grid + restore-verify on every snapshot. The
+            // setup-mismatch compare is only meaningful at rest (a snapshot mid-sequence is expected to
+            // differ); during recovery the board is at rest, so an exact match clears the gate (FR-010).
+            val atRest = state.eventsSinceConfirm.isEmpty()
+            val matchesExpected = msg.occupancy == state.position.toOccupancy()
+            val restoreVerified = state.recovering && matchesExpected
+            val next =
+                state.copy(
+                    latestOccupancy = msg.occupancy,
+                    setupMismatch = if (atRest) !matchesExpected else state.setupMismatch,
+                    recovering = if (restoreVerified) false else state.recovering,
+                    rejection = if (restoreVerified) null else state.rejection,
+                    manualDiagnostics = if (restoreVerified) false else state.manualDiagnostics,
+                )
+            // SetMode tracks the grid's visibility edge; a verified restore also re-pulls a snapshot.
+            val effects =
+                effectsForModeChange(state, next) +
+                    if (restoreVerified) listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)) else emptyList()
+            ReduceResult(next, effects)
         }
 
         is PhysicalMsg.SquareLifted -> {
@@ -178,6 +195,29 @@ private fun reducePlaying(
             ReduceResult(state.copy(orientation = state.orientation.opposite))
         }
 
+        PhysicalMsg.ShowDiagnostics -> {
+            // Open the grid (FR-011). On the hidden→shown edge enter DIAGNOSTIC mode and pull a snapshot
+            // so the grid populates at once; if already visible (a live setup-mismatch), this is a no-op.
+            val next = state.copy(manualDiagnostics = true)
+            val modeEffects = effectsForModeChange(state, next)
+            ReduceResult(
+                next,
+                if (modeEffects.isEmpty()) {
+                    modeEffects
+                } else {
+                    modeEffects +
+                        PhysicalEffect.Send(BoardCommand.RequestSnapshot)
+                },
+            )
+        }
+
+        PhysicalMsg.HideDiagnostics -> {
+            // Close the manually-opened grid; return to GAME mode only if nothing else still needs it
+            // (a live setup-mismatch keeps the grid — and DIAGNOSTIC mode — on).
+            val next = state.copy(manualDiagnostics = false)
+            ReduceResult(next, effectsForModeChange(state, next))
+        }
+
         is PhysicalMsg.MoveCommitted -> {
             commit(state, msg)
         }
@@ -212,7 +252,9 @@ private fun accumulate(
     state: PhysicalPlayState.Playing,
     event: BoardEvent.SquareEvent,
 ): ReduceResult {
-    if (state.result != null) return ReduceResult(state)
+    // A frozen board accepts no input; during recovery the lift/place are restoration moves, not a new
+    // move — the snapshot occupancy (not these deltas) drives restore-verification, so don't build one.
+    if (state.result != null || state.recovering) return ReduceResult(state)
     val events = state.eventsSinceConfirm + event
     val pendingPromotion =
         when (val resolution = resolvePhysicalMove(state.position, events)) {
@@ -244,6 +286,9 @@ private fun confirm(
     button: BoardButton,
 ): ReduceResult {
     if (state.result != null || state.paused) return ReduceResult(state)
+    // The reject-recovery gate (acceptanceBlocked): a confirm can't advance the game until the board is
+    // restored, but it *does* re-pull a snapshot so restore-verify can clear the gate without the grid.
+    if (state.recovering) return ReduceResult(state, listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)))
     if (button.toColor() != state.position.sideToMove) return ReduceResult(state)
     if (state.pendingPromotion != null) return ReduceResult(state.copy(rejection = RejectionReason.PROMOTION_REQUIRED))
     return when (val resolution = resolvePhysicalMove(state.position, state.eventsSinceConfirm)) {
@@ -267,6 +312,7 @@ private fun confirm(
             ReduceResult(
                 state.copy(
                     rejection = RejectionReason.AMBIGUOUS,
+                    recovering = true,
                     eventsSinceConfirm = emptyList(),
                     liftedSquares = emptySet(),
                 ),
@@ -274,12 +320,20 @@ private fun confirm(
         }
 
         Resolution.Illegal -> {
+            // Fork on the *absolute* board: if the freshest snapshot disagrees with the expected
+            // position it's INCONSISTENT (FR-010); otherwise the delta sequence was simply ILLEGAL.
+            // Degrades to ILLEGAL when no fresh snapshot is available (GAME-mode snapshots go stale).
+            val fresh = state.latestOccupancy
+            val inconsistent = fresh != null && fresh != state.position.toOccupancy()
             ReduceResult(
                 state.copy(
-                    rejection = RejectionReason.ILLEGAL,
+                    rejection = if (inconsistent) RejectionReason.INCONSISTENT else RejectionReason.ILLEGAL,
+                    recovering = true,
                     eventsSinceConfirm = emptyList(),
                     liftedSquares = emptySet(),
                 ),
+                // Pull a fresh snapshot so the restore-verify (and any setup-mismatch auto-grid) have it.
+                listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)),
             )
         }
 
@@ -312,6 +366,8 @@ private fun commit(
             pendingPromotion = null,
             rejection = null,
             setupMismatch = false,
+            recovering = false,
+            manualDiagnostics = false,
             syncPending = true,
         )
     val autoResult = gameResultFor(nextStatus, msg.nextPosition.sideToMove)
@@ -321,6 +377,30 @@ private fun commit(
         ReduceResult(advanced)
     }
 }
+
+/**
+ * SetMode effect for a diagnostics-visibility transition: enter DIAGNOSTIC on the hidden→shown edge,
+ * return to GAME on shown→hidden, nothing when visibility is unchanged. Centralising the edge on the
+ * derived [PhysicalPlayState.Playing.diagnosticsVisible] lets every arm that flips a contributing flag
+ * (show / hide, setup-mismatch, restore-clear) avoid spamming SetMode per snapshot (contract §1.6).
+ */
+private fun effectsForModeChange(
+    prev: PhysicalPlayState.Playing,
+    next: PhysicalPlayState.Playing,
+): List<PhysicalEffect> =
+    when {
+        !prev.diagnosticsVisible && next.diagnosticsVisible -> {
+            listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC)))
+        }
+
+        prev.diagnosticsVisible && !next.diagnosticsVisible -> {
+            listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.GAME)))
+        }
+
+        else -> {
+            emptyList()
+        }
+    }
 
 /** Squares with a piece currently lifted: a LIFT adds, a PLACE back onto the same square removes. */
 private fun liftedSquaresOf(events: List<BoardEvent.SquareEvent>): Set<Int> {

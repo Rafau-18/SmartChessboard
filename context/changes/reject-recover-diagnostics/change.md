@@ -1,7 +1,7 @@
 ---
 change_id: reject-recover-diagnostics
 title: Reject recover diagnostics
-status: planned
+status: implementing
 created: 2026-06-19
 updated: 2026-06-19
 archived_at: null

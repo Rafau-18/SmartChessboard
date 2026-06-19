@@ -83,6 +83,12 @@ class PhysicalPlayViewModel(
 
     fun flipBoard() = dispatch(PhysicalMsg.FlipBoard)
 
+    /** Open the live reed diagnostics grid (FR-011); the reducer arms DIAGNOSTIC mode and pulls a snapshot. */
+    fun showDiagnostics() = dispatch(PhysicalMsg.ShowDiagnostics)
+
+    /** Dismiss the diagnostics grid; the reducer returns the board to GAME mode if nothing else still needs it. */
+    fun hideDiagnostics() = dispatch(PhysicalMsg.HideDiagnostics)
+
     fun pickPromotion(piece: PieceType) = dispatch(PhysicalMsg.PromotionPicked(piece))
 
     fun dismissPromotion() = dispatch(PhysicalMsg.PromotionDismissed)

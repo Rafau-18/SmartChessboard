@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -33,12 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.rurbaniak.smartchessboard.domain.board.toOccupancy
 import org.rurbaniak.smartchessboard.domain.chess.Color
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
 import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
+import org.rurbaniak.smartchessboard.presentation.board.ReedDiagnosticsGrid
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.play.EndGamePicker
 
@@ -107,6 +110,8 @@ fun PhysicalPlayScreen(
                         state = current,
                         onPromotionPick = viewModel::pickPromotion,
                         onPromotionDismiss = viewModel::dismissPromotion,
+                        onShowDiagnostics = viewModel::showDiagnostics,
+                        onHideDiagnostics = viewModel::hideDiagnostics,
                         onEndGameRequest = viewModel::requestEndGame,
                         onResultPick = viewModel::pickResult,
                         onConfirmEndGame = viewModel::confirmEndGame,
@@ -125,6 +130,8 @@ private fun PlayingContent(
     state: PhysicalPlayState.Playing,
     onPromotionPick: (PieceType) -> Unit,
     onPromotionDismiss: () -> Unit,
+    onShowDiagnostics: () -> Unit,
+    onHideDiagnostics: () -> Unit,
     onEndGameRequest: () -> Unit,
     onResultPick: (GameResult) -> Unit,
     onConfirmEndGame: () -> Unit,
@@ -143,7 +150,7 @@ private fun PlayingContent(
         val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
         StatusBanner(state = state, modifier = sectionModifier)
         Spacer(Modifier.height(8.dp))
-        BoardMessage(state = state, modifier = sectionModifier)
+        BoardMessage(state = state, onShowDiagnostics = onShowDiagnostics, modifier = sectionModifier)
         Spacer(Modifier.height(12.dp))
         ChessBoardView(
             position = state.position,
@@ -153,6 +160,14 @@ private fun PlayingContent(
             interaction = null,
             highlightedSquares = state.liftedSquares,
         )
+        if (state.diagnosticsVisible) {
+            Spacer(Modifier.height(12.dp))
+            ReedDiagnosticsSection(
+                state = state,
+                onHideDiagnostics = onHideDiagnostics,
+                modifier = sectionModifier,
+            )
+        }
         Spacer(Modifier.height(8.dp))
         SyncIndicator(syncPending = state.syncPending, modifier = sectionModifier)
         Spacer(Modifier.height(12.dp))
@@ -191,13 +206,15 @@ private fun PlayingContent(
 
 /**
  * The physical-board status line beneath the turn banner: a disconnected board pauses play; a
- * setup mismatch asks the player to match the on-screen position; a rejected confirmation is
- * surfaced transiently (minimal recovery — guided restore is S-07). Renders nothing when the board
- * is connected, set up, and the last confirmation was accepted.
+ * setup mismatch asks the player to match the on-screen position; a rejected confirmation pauses the
+ * game (the [PhysicalPlayState.Playing.recovering] gate) and offers the live reed grid as the
+ * restoration aid (S-07, FR-010). Renders nothing when the board is connected, set up, and the last
+ * confirmation was accepted.
  */
 @Composable
 private fun BoardMessage(
     state: PhysicalPlayState.Playing,
+    onShowDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.result != null) return
@@ -213,21 +230,84 @@ private fun BoardMessage(
         color = MaterialTheme.colorScheme.errorContainer,
         shape = RoundedCornerShape(8.dp),
     ) {
-        Text(
-            message,
-            modifier = Modifier.padding(12.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            textAlign = TextAlign.Center,
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                textAlign = TextAlign.Center,
+            )
+            // While recovering, the reed grid is the assistance (raw diagnostics, no step-by-step). The
+            // CTA shows only when the grid is hidden; a setup-mismatch already auto-opens it.
+            if (state.recovering && !state.diagnosticsVisible) {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onShowDiagnostics,
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                ) {
+                    Text("Show diagnostics")
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The live reed-diagnostics panel under the board while [PhysicalPlayState.Playing.diagnosticsVisible]
+ * (S-07, FR-011): a raw-diagnostics caption and the observed-vs-expected [ReedDiagnosticsGrid]. A
+ * "Hide" affordance shows only when the grid was opened manually ([PhysicalPlayState.Playing.manualDiagnostics]) —
+ * a setup-mismatch auto-entry clears itself once the board matches, so there is nothing to dismiss.
+ */
+@Composable
+private fun ReedDiagnosticsSection(
+    state: PhysicalPlayState.Playing,
+    onHideDiagnostics: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Reed diagnostics — highlighted squares differ from the position above.",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (state.manualDiagnostics) {
+                TextButton(onClick = onHideDiagnostics) { Text("Hide") }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        ReedDiagnosticsGrid(
+            observed = state.latestOccupancy ?: state.position.toOccupancy(),
+            expected = state.position.toOccupancy(),
+            modifier = Modifier.fillMaxWidth(),
+            orientation = state.orientation,
         )
     }
 }
 
 private fun rejectionText(reason: RejectionReason): String =
     when (reason) {
-        RejectionReason.ILLEGAL -> "That move isn't legal — restore the position and try again."
+        RejectionReason.ILLEGAL -> "That move isn't legal — restore the previous position and try again."
+
+        // The absolute board disagrees with the game (FR-010); the reed grid below points at the squares to fix.
+        RejectionReason.INCONSISTENT -> "The board doesn't match the game — restore the previous position to continue."
+
         RejectionReason.AMBIGUOUS -> "Couldn't read that move clearly — restore the position and try again."
+
         RejectionReason.PROMOTION_REQUIRED -> "Pick a promotion piece before confirming."
+
         RejectionReason.SAVE_FAILED -> "Couldn't save the move — check your connection and try again."
     }
 
