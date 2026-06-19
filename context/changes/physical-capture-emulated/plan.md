@@ -732,9 +732,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 5.1 E2E test green on all three targets
-- [x] 5.2 Full `:shared` suite green on all three targets
-- [x] 5.3 ktlint clean
+- [x] 5.1 E2E test green on all three targets — fdf174a
+- [x] 5.2 Full `:shared` suite green on all three targets — fdf174a
+- [x] 5.3 ktlint clean — fdf174a
 
 #### Manual
 

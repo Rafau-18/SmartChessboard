@@ -1,7 +1,7 @@
 ---
 change_id: physical-capture-emulated
 title: Physical-mode capture against the emulator (S-06)
-status: implementing
+status: implemented
 created: 2026-06-13
 updated: 2026-06-19
 archived_at: null
