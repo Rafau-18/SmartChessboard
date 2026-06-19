@@ -163,6 +163,11 @@ Out of scope (covered elsewhere):
    Recommendation: USB-only for MVP to maximize speed; battery is a
    post-MVP enhancement. Owner: hardware build. Latest acceptable
    resolution: before firmware implementation. Block: no.
+   > Resolved 2026-06-19 (F-03): **USB-only** for MVP, as recommended. No
+   > sleep modes and no battery NFR; `DEVICE_STATUS.battery_pct` is a
+   > deliberate fixed constant `100` (within the documented 0–100 range),
+   > not a real reading. Battery power (sleep, charging UX, low-battery
+   > warning) stays a post-MVP enhancement.
 
 3. **Reed-switch matrix wiring** — multiplexed (shift registers / row-
    column scan) vs direct GPIO. The pre-existing physical prototype
@@ -174,11 +179,23 @@ Out of scope (covered elsewhere):
    power management) vs Arduino framework (faster start, smaller learning
    curve). Owner: firmware implementer. Latest acceptable resolution:
    before first firmware commit. Block: no.
+   > Resolved 2026-06-19 (F-03): **ESP-IDF** (driven via PlatformIO), with
+   > the **NimBLE** host as the BLE stack — smaller heap/flash footprint
+   > than Bluedroid, single connection, one GATT service. This matches the
+   > `tech-stack.md` firmware decision (ESP-IDF + NimBLE). No Arduino
+   > framework.
 
 5. **GATT service / characteristic UUIDs** — to be assigned and recorded
    back into `contract-surfaces.md` §1.2 during firmware implementation.
    Owner: firmware implementer. Latest acceptable resolution: before
    first firmware commit. Block: no.
+   > Resolved 2026-06-19 (F-03): UUIDs assigned and recorded in
+   > `contract-surfaces.md` §1.2 — 128-bit base
+   > `787e000X-15a4-4fc9-a469-05096dbad1a1`, where `X` = 1 (primary
+   > service) / 2 (`board_event`, notify) / 3 (`mobile_command`, write).
+   > Firmware and the mobile BLE adapter (S-09) must use these exact bytes.
+   > Per the contract's §1 change-control rule, the same §1.2 assignment is
+   > mirrored into `prd.md`'s Implementation Decisions.
 
 ## Validation strategy (no-hardware)
 

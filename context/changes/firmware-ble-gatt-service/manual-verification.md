@@ -81,3 +81,17 @@ nothing", §1.7); with the reed-matrix only partially working, run 3.4/3.9
 against a square that actually senses. Backpressure policy: SQUARE/BUTTON events
 are never silently dropped on a live link (they block briefly then log if ever
 dropped); diagnostic snapshots may drop under pressure (latest wins).
+
+## Phase 4 — Docs + Contract Consolidation
+
+Type: **doc-read** (no hardware). The automated gate is already green: the docs
+were edited and `pio run -e esp32dev && pio test -e native` was re-run with no
+regression. This row asks a human to read the updated firmware module guide once.
+
+| # | Check | Expected |
+| --- | --- | --- |
+| 4.4 | Read the updated `firmware/AGENTS.md` end to end | Reads coherently and matches what F-03 actually built — BLE/NimBLE peripheral, the `board_event`/`mobile_command` GATT service, the two GPIO22/23 buttons, the `lib/` pure-logic split, and the `pio test -e native` host-test flow. The "two pin maps" gotcha and the matrix-`pins.h` warning are intact; the "PARKED" framing is gone (firmware software greenlit; only the hardware reed-matrix repair stays parked). |
+
+Status: **PENDING human read-through** (recorded 2026-06-19). The §1.2 UUID
+write-back (Phase 2), the `prd-firmware.md` OQ-2/4/5 resolutions, and the
+`prd.md` §1.2 mirror are verifiable by reading the files — no hardware needed.

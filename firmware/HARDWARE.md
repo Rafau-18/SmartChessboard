@@ -4,7 +4,7 @@ document: hardware-inventory
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-06-19
 ---
 
 # Hardware Inventory & Board Comparison
@@ -132,6 +132,27 @@ Note that a **GPIO expander (e.g. an I2C/SPI port expander) could address the
 pin-count blocker, but it would NOT fix the missing BLE** — there is no radio to
 add Bluetooth to. Because BLE is non-negotiable for this design, the ESP-12E is
 out regardless of any GPIO workaround.
+
+## Confirmation buttons (F-03)
+
+The F-03 game firmware adds two physical confirmation buttons (FR-FW-007),
+**additive to the 8×8 matrix** — none of the matrix wiring above changes.
+
+| Button | GPIO | Wiring | Event |
+|---|---|---|---|
+| White | **GPIO22** | momentary switch to **GND**; internal pull-up (idle HIGH, pressed LOW) | `BUTTON_EVENT` `0x00` |
+| Black | **GPIO23** | momentary switch to **GND**; internal pull-up (idle HIGH, pressed LOW) | `BUTTON_EVENT` `0x01` |
+
+GPIO22/23 are bonded out on both ESP32 boards, are not strapping pins, and are
+free in the **current prototype `src/pins.h`** (whose columns are
+`{19,18,5,17,16,4,21,15}`).
+
+> ⚠ **Target-map overlap.** GPIO22/23 are **not** free in the hazard-free
+> *target* column map drawn in [`PINOUT.md`](./PINOUT.md)
+> (`kColPins = {16,17,18,19,21,22,23,4}`), where GPIO22 = C5 (file f) and
+> GPIO23 = C6 (file g). A future clean build that adopts the target map must
+> relocate **either** the two buttons **or** files f/g — they cannot both use
+> GPIO22/23. See the matching note in `PINOUT.md`.
 
 ## References
 
