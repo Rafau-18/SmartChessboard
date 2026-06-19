@@ -40,7 +40,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save       | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | awaiting review |
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)               | S-04             | FR-007, FR-018, US-01                                 | implemented     |
 | S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
-| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | proposed        |
+| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | in progress     |
 | S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | proposed        |
 | S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
 
@@ -201,7 +201,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** The trust-building slice for hobbyist reed hardware — rejection without a visible recovery path would dead-end games; MVP commits to raw diagnostics only (guided restoration is a PRD non-goal).
-- **Status:** proposed
+- **Status:** in progress — waiting on the manual gate. Automated work for all 3 phases implemented and merged to main (`7adb2e4`): headless MVI core — gate, INCONSISTENT, restore-verify (`fc962d2`); diagnostics UI + screen wiring (`7ba6c6a`); emulator-driven recover E2E for ILLEGAL + INCONSISTENT (`48d6a8d`). Pending the manual device-verification / on-device test pass (see `manual-verification.md`); `change.md` status `implementing`; slice close-out (manual ticks + epilogue + `/10x-impl-review` + `/10x-archive`) still to run.
 
 ### S-08: Resume a physical game after app restart
 
