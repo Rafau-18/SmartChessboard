@@ -116,4 +116,44 @@ repository / journal / board APIs — only the pure engine functions:
 
 ---
 
-## Phase 4+ — appended as phases land
+## Phase 4 — Physical Play UI, Navigation & DI
+
+Unlike phases 1–3, these are **app/device walkthroughs**, not pure code reads — run them on a real
+device/simulator and a browser at the end of the slice.
+
+### 4.4 — Android/iOS: picker → physical screen connects + verifies opening position
+
+- [ ] New game shows a **Digital / Physical** toggle (only on Android/iOS).
+- [ ] Pick **Physical** → Start → lands on `PhysicalPlayScreen` (title = "White vs Black").
+- [ ] The board renders the start position; no "set up the board" warning (the emulator connects on
+      bind and the opening occupancy verifies). No in-app driver — move input is the emulator/test
+      or the S-09 real board.
+
+### 4.5 — Web: no Physical option; a physical game opens in Replay; browser Back behaves
+
+- [ ] On web, New game shows **no** Digital/Physical toggle (defaults digital).
+- [ ] A physical game synced from mobile opens in **Replay** (read-only), never a board screen.
+- [ ] Browser Back from that Replay returns to History (hierarchical browser nav).
+
+### 4.6 — No `BoardConnection` / physical VM resolvable on wasm (DI gating holds)
+
+- [ ] **Code read**: `di/PlatformModule.wasmJs.kt` binds **neither** `BoardConnection` nor
+      `PhysicalPlayViewModel` (only `Settings`); both are bound only in the Android/iOS actuals.
+- [ ] **Web run**: nothing routes to `PhysicalPlayKey` on web (gated by `supportsPhysicalBoard`), so
+      the unbound physical VM is never resolved.
+
+**Adaptations to note during review (not defects):**
+1. **Emulator connects on DI bind.** The Android/iOS `platformModule` constructs `EmulatedBoard` on a
+   long-lived `CoroutineScope(SupervisorJob() + Dispatchers.Default)` and launches `connect()` there.
+   The port has no `connect()` (transport lifecycle is the adapter's, S-09), so the board is driven
+   live at bind time; the ViewModel's `Send(RequestSnapshot)` on the CONNECTED transition recovers a
+   possibly-missed on-connect burst. Real connection lifecycle (scan/pair/retry) is S-09.
+2. **`ChessBoardView` gained `highlightedSquares: Set<Int> = emptySet()`** — a display-only tint
+   independent of `interaction`; empty default leaves Replay/Play pixel-identical.
+3. **`NewGameScreen.onGameCreated` is now `(String, GameMode)`** and the mode toggle is stored as a
+   `Boolean` (`rememberSaveable`, no enum saver needed). `NewGameViewModel.create` takes the mode and
+   exposes `createdGameMode` so routing branches physical → `PhysicalPlayKey`, digital → `PlayKey`.
+
+---
+
+## Phase 5+ — appended as phases land

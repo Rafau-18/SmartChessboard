@@ -39,8 +39,14 @@ actual fun bindBrowserNavigation(backStack: NavBackStack<NavKey>) {
     HierarchicalBrowserNavigation {
         when (val key = backStack.lastOrNull()) {
             is ReplayKey -> buildBrowserHistoryFragment("replay", mapOf("id" to key.gameId))
+
             is PlayKey -> buildBrowserHistoryFragment("play", mapOf("id" to key.gameId))
+
+            // Web never routes to a physical game (it opens in Replay), but the mapping keeps the when total.
+            is PhysicalPlayKey -> buildBrowserHistoryFragment("physical", mapOf("id" to key.gameId))
+
             NewGameKey -> buildBrowserHistoryFragment("new")
+
             else -> buildBrowserHistoryFragment("history")
         }
     }

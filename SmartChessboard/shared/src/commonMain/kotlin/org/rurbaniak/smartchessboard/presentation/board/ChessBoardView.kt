@@ -47,6 +47,7 @@ private val DARK_SQUARE = Color(0xFFB58863)
 private val ARROW_COLOR = Color(0xCC2E7D32)
 private val SELECTED_TINT = Color(0x80FBE34D)
 private val TARGET_MARK = Color(0x662E7D32)
+private val HIGHLIGHT_TINT = Color(0x804FC3F7)
 
 /** A from→to square pair (Square.kt indexing) drawn as an arrow above the pieces. */
 data class BoardArrow(
@@ -94,7 +95,9 @@ private fun squareOrNull(
  * render exactly as before. The board fills whatever box the caller's [modifier] provides, kept
  * square via `aspectRatio(1f)` — no hardcoded sizes, so the reuse contract stays size-agnostic.
  * [bestMoveArrow] is a render-only overlay (analysis); existing call sites are unaffected by its
- * default.
+ * default. [highlightedSquares] are tinted display-only (physical mode highlights lifted pieces) —
+ * independent of [interaction], so a board can highlight without becoming tappable; empty by default,
+ * so Replay/Play render exactly as before.
  */
 @Composable
 fun ChessBoardView(
@@ -103,6 +106,7 @@ fun ChessBoardView(
     orientation: PieceColor = PieceColor.WHITE,
     interaction: BoardInteraction? = null,
     bestMoveArrow: BoardArrow? = null,
+    highlightedSquares: Set<Int> = emptySet(),
 ) {
     Box(modifier = modifier.aspectRatio(1f)) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -127,6 +131,9 @@ fun ChessBoardView(
                         ) {
                             if (interaction?.selectedSquare == square) {
                                 Box(Modifier.matchParentSize().background(SELECTED_TINT))
+                            }
+                            if (square in highlightedSquares) {
+                                Box(Modifier.matchParentSize().background(HIGHLIGHT_TINT))
                             }
                             piece?.let {
                                 Image(

@@ -14,6 +14,7 @@ import org.rurbaniak.smartchessboard.domain.board.BoardConnectionState
 import org.rurbaniak.smartchessboard.domain.board.BoardEvent
 import org.rurbaniak.smartchessboard.domain.board.SquareEventType
 import org.rurbaniak.smartchessboard.domain.chess.MoveOutcome
+import org.rurbaniak.smartchessboard.domain.chess.PieceType
 import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnMeta
 import org.rurbaniak.smartchessboard.domain.chess.pgn.parsePgn
 import org.rurbaniak.smartchessboard.domain.chess.pgn.sanForMove
@@ -23,6 +24,7 @@ import org.rurbaniak.smartchessboard.domain.chess.validate
 import org.rurbaniak.smartchessboard.domain.games.GameAutoSaver
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.domain.games.GameRecord
+import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import org.rurbaniak.smartchessboard.domain.games.toPgnResultToken
 import kotlin.coroutines.cancellation.CancellationException
@@ -75,6 +77,25 @@ class PhysicalPlayViewModel(
         }
         load()
     }
+
+    // User-origin intents the screen sends. Board-origin messages (lift / place / button / snapshot /
+    // connection) are never sent from the UI — they arrive only through the collected board streams.
+
+    fun flipBoard() = dispatch(PhysicalMsg.FlipBoard)
+
+    fun pickPromotion(piece: PieceType) = dispatch(PhysicalMsg.PromotionPicked(piece))
+
+    fun dismissPromotion() = dispatch(PhysicalMsg.PromotionDismissed)
+
+    fun requestEndGame() = dispatch(PhysicalMsg.EndGameRequested)
+
+    fun pickResult(result: GameResult) = dispatch(PhysicalMsg.ResultPicked(result))
+
+    fun confirmEndGame() = dispatch(PhysicalMsg.EndGameConfirmed)
+
+    fun dismissEndGame() = dispatch(PhysicalMsg.EndGameDismissed)
+
+    fun retry() = dispatch(PhysicalMsg.Retry)
 
     /** The single funnel: reduce, publish the next state, then run whatever effects it requested. */
     private fun dispatch(msg: PhysicalMsg) {

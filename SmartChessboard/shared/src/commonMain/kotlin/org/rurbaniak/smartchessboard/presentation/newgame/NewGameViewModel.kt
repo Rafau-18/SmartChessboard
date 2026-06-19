@@ -24,6 +24,8 @@ data class NewGameUiState(
     val creating: Boolean = false,
     val failed: Boolean = false,
     val createdGameId: String? = null,
+    /** The mode of the just-created game, so the screen routes physical → physical screen, digital → Play. */
+    val createdGameMode: GameMode? = null,
 )
 
 /**
@@ -40,6 +42,7 @@ class NewGameViewModel(
     fun create(
         whiteLabel: String,
         blackLabel: String,
+        mode: GameMode,
     ) {
         if (_uiState.value.creating) return
         _uiState.update { it.copy(creating = true, failed = false) }
@@ -50,10 +53,14 @@ class NewGameViewModel(
                         gamesRepository.createGame(
                             whiteLabel = whiteLabel.ifBlank { DEFAULT_WHITE_LABEL },
                             blackLabel = blackLabel.ifBlank { DEFAULT_BLACK_LABEL },
-                            // Phase 2 threads only digital; the Digital/Physical picker arrives in Phase 4.
-                            mode = GameMode.DIGITAL,
+                            mode = mode,
                         )
-                    NewGameUiState(creating = false, failed = false, createdGameId = game.id)
+                    NewGameUiState(
+                        creating = false,
+                        failed = false,
+                        createdGameId = game.id,
+                        createdGameMode = game.mode,
+                    )
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Throwable) {
@@ -65,6 +72,6 @@ class NewGameViewModel(
 
     /** Clears the one-shot navigation signal once the screen has consumed it. */
     fun onNavigated() {
-        _uiState.update { it.copy(createdGameId = null) }
+        _uiState.update { it.copy(createdGameId = null, createdGameMode = null) }
     }
 }

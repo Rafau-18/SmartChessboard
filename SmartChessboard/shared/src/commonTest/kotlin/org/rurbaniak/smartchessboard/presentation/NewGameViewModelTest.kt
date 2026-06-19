@@ -61,7 +61,7 @@ class NewGameViewModelTest {
             repository.createdGame = newRecord("game-9")
             val viewModel = NewGameViewModel(repository)
 
-            viewModel.create("Alice", "Bob")
+            viewModel.create("Alice", "Bob", GameMode.DIGITAL)
             assertTrue(viewModel.uiState.value.creating, "creating gate raised synchronously")
             advanceUntilIdle()
 
@@ -73,12 +73,27 @@ class NewGameViewModelTest {
         }
 
     @Test
+    fun createPhysicalThreadsTheModeToTheRepositoryAndState() =
+        runTest {
+            repository.createdGame = newRecord("game-phys")
+            val viewModel = NewGameViewModel(repository)
+
+            viewModel.create("Alice", "Bob", GameMode.PHYSICAL)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals("game-phys", state.createdGameId)
+            assertEquals(GameMode.PHYSICAL, state.createdGameMode, "the screen routes on the created mode")
+            assertEquals(listOf(GameMode.PHYSICAL), repository.createModes)
+        }
+
+    @Test
     fun blankLabelsFallBackToSchemaDefaults() =
         runTest {
             repository.createdGame = newRecord("game-1")
             val viewModel = NewGameViewModel(repository)
 
-            viewModel.create("", "   ")
+            viewModel.create("", "   ", GameMode.DIGITAL)
             advanceUntilIdle()
 
             assertEquals(listOf("White" to "Black"), repository.createLabels)
@@ -90,7 +105,7 @@ class NewGameViewModelTest {
             repository.shouldFail = true
             val viewModel = NewGameViewModel(repository)
 
-            viewModel.create("Alice", "Bob")
+            viewModel.create("Alice", "Bob", GameMode.DIGITAL)
             advanceUntilIdle()
             var state = viewModel.uiState.value
             assertTrue(state.failed)
@@ -99,7 +114,7 @@ class NewGameViewModelTest {
 
             repository.shouldFail = false
             repository.createdGame = newRecord("game-2")
-            viewModel.create("Alice", "Bob")
+            viewModel.create("Alice", "Bob", GameMode.DIGITAL)
             advanceUntilIdle()
             state = viewModel.uiState.value
             assertFalse(state.failed)
@@ -111,7 +126,7 @@ class NewGameViewModelTest {
         runTest {
             repository.createdGame = newRecord("game-3")
             val viewModel = NewGameViewModel(repository)
-            viewModel.create("Alice", "Bob")
+            viewModel.create("Alice", "Bob", GameMode.DIGITAL)
             advanceUntilIdle()
             assertEquals("game-3", viewModel.uiState.value.createdGameId)
 
@@ -126,8 +141,8 @@ class NewGameViewModelTest {
             repository.createdGame = newRecord("game-4")
             val viewModel = NewGameViewModel(repository)
 
-            viewModel.create("Alice", "Bob")
-            viewModel.create("Carol", "Dave") // ignored: a create is already in flight
+            viewModel.create("Alice", "Bob", GameMode.DIGITAL)
+            viewModel.create("Carol", "Dave", GameMode.DIGITAL) // ignored: a create is already in flight
             advanceUntilIdle()
 
             assertEquals(1, repository.createCalls)

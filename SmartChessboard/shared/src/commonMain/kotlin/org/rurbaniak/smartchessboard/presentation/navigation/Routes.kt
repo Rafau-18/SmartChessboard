@@ -30,6 +30,15 @@ data class PlayKey(
 ) : NavKey
 
 /**
+ * An in-progress physical game played against the (emulated) reed-switch board. Reached only on
+ * platforms where `supportsPhysicalBoard` is true; a physical game on web routes to [ReplayKey].
+ */
+@Serializable
+data class PhysicalPlayKey(
+    val gameId: String,
+) : NavKey
+
+/**
  * Save/restore configuration for the Nav3 back stack. iOS/wasm have no reflection, so every
  * [NavKey] subtype is registered **explicitly** with its compile-time-generated serializer — that
  * polymorphic registration (not runtime reflection) is what makes the back stack survive state
@@ -45,6 +54,7 @@ val navSavedStateConfiguration: SavedStateConfiguration =
                     subclass(NewGameKey::class, NewGameKey.serializer())
                     subclass(ReplayKey::class, ReplayKey.serializer())
                     subclass(PlayKey::class, PlayKey.serializer())
+                    subclass(PhysicalPlayKey::class, PhysicalPlayKey.serializer())
                 }
             }
     }

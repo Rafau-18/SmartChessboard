@@ -704,10 +704,10 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 3.1 Reducer + VM suites pass on all three targets
-- [x] 3.2 §6.2 gate test: forced journal-write failure → `MoveRejected`, state does not advance
-- [x] 3.3 Wrong-side button no-op and confirm-before-promotion-pick save nothing (tested)
-- [x] 3.4 ktlint clean
+- [x] 3.1 Reducer + VM suites pass on all three targets — 0b3db69
+- [x] 3.2 §6.2 gate test: forced journal-write failure → `MoveRejected`, state does not advance — 0b3db69
+- [x] 3.3 Wrong-side button no-op and confirm-before-promotion-pick save nothing (tested) — 0b3db69
+- [x] 3.4 ktlint clean — 0b3db69
 
 #### Manual
 
@@ -718,9 +718,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [ ] 4.1 Three target suites green; `NewGameViewModel` covers `create(..., PHYSICAL)`
-- [ ] 4.2 App compiles on Android, iOS, and wasm
-- [ ] 4.3 ktlint clean
+- [x] 4.1 Three target suites green; `NewGameViewModel` covers `create(..., PHYSICAL)`
+- [x] 4.2 App compiles on Android, iOS, and wasm
+- [x] 4.3 ktlint clean
 
 #### Manual
 

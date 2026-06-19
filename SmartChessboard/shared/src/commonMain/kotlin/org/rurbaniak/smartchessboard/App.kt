@@ -18,16 +18,19 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.auth.SessionState
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.domain.games.GameStatus
+import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.auth.SignInScreen
 import org.rurbaniak.smartchessboard.presentation.history.HistoryScreen
 import org.rurbaniak.smartchessboard.presentation.navigation.HistoryKey
 import org.rurbaniak.smartchessboard.presentation.navigation.NewGameKey
+import org.rurbaniak.smartchessboard.presentation.navigation.PhysicalPlayKey
 import org.rurbaniak.smartchessboard.presentation.navigation.PlayKey
 import org.rurbaniak.smartchessboard.presentation.navigation.ReplayKey
 import org.rurbaniak.smartchessboard.presentation.navigation.bindBrowserNavigation
 import org.rurbaniak.smartchessboard.presentation.navigation.navSavedStateConfiguration
 import org.rurbaniak.smartchessboard.presentation.newgame.NewGameScreen
+import org.rurbaniak.smartchessboard.presentation.physical.PhysicalPlayScreen
 import org.rurbaniak.smartchessboard.presentation.play.PlayScreen
 import org.rurbaniak.smartchessboard.presentation.replay.ReplayScreen
 
@@ -72,13 +75,24 @@ fun App() {
                                     userId = session.userId,
                                     onSignOut = authViewModel::signOut,
                                     onNewGame = { backStack.add(NewGameKey) },
-                                    // In-progress digital games resume on the interactive board;
-                                    // everything else opens in Replay (interview decision).
+                                    // In-progress games resume on their board (physical only where the
+                                    // platform supports it — a physical game on web falls through to
+                                    // Replay); everything else opens in Replay (interview decision).
                                     onGameClick = { game ->
-                                        if (game.status == GameStatus.IN_PROGRESS && game.mode == GameMode.DIGITAL) {
-                                            backStack.add(PlayKey(game.id))
-                                        } else {
-                                            backStack.add(ReplayKey(game.id))
+                                        when {
+                                            game.status == GameStatus.IN_PROGRESS &&
+                                                game.mode == GameMode.PHYSICAL &&
+                                                supportsPhysicalBoard -> {
+                                                backStack.add(PhysicalPlayKey(game.id))
+                                            }
+
+                                            game.status == GameStatus.IN_PROGRESS && game.mode == GameMode.DIGITAL -> {
+                                                backStack.add(PlayKey(game.id))
+                                            }
+
+                                            else -> {
+                                                backStack.add(ReplayKey(game.id))
+                                            }
                                         }
                                     },
                                 )
@@ -86,10 +100,15 @@ fun App() {
                             entry<NewGameKey> {
                                 NewGameScreen(
                                     onBack = { backStack.removeLastOrNull() },
-                                    // Replace the form with Play so Back from Play returns to History.
-                                    onGameCreated = { gameId ->
+                                    // Replace the form with the board screen so Back returns to History.
+                                    // Physical games (capable platforms only) open the physical screen.
+                                    onGameCreated = { gameId, mode ->
                                         backStack.removeLastOrNull()
-                                        backStack.add(PlayKey(gameId))
+                                        if (mode == GameMode.PHYSICAL) {
+                                            backStack.add(PhysicalPlayKey(gameId))
+                                        } else {
+                                            backStack.add(PlayKey(gameId))
+                                        }
                                     },
                                 )
                             }
@@ -111,6 +130,23 @@ fun App() {
                                     },
                                     // Pop to the History root (it is the back stack's root) — a
                                     // finished game shouldn't leave a frozen Play behind it.
+                                    onBackToHistory = {
+                                        while (backStack.size > 1) {
+                                            backStack.removeLastOrNull()
+                                        }
+                                    },
+                                )
+                            }
+                            entry<PhysicalPlayKey> { key ->
+                                PhysicalPlayScreen(
+                                    gameId = key.gameId,
+                                    onBack = { backStack.removeLastOrNull() },
+                                    // Same post-finish navigation as digital Play: Analyse opens Replay,
+                                    // Back-to-history pops to the root so no frozen board is left behind.
+                                    onReviewGame = {
+                                        backStack.removeLastOrNull()
+                                        backStack.add(ReplayKey(key.gameId))
+                                    },
                                     onBackToHistory = {
                                         while (backStack.size > 1) {
                                             backStack.removeLastOrNull()

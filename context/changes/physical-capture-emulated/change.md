@@ -52,3 +52,14 @@ archived_at: null
   `LoadGame` is a `data object` (VM owns `gameId`); `FinishGame` carries `sanMoves` (VM owns `meta`);
   no `Connect` effect (port has no `connect()`; VM subscribes-before-connect, `paused` derived from
   `connectionState`).
+- 2026-06-19: Phase 4 (physical-play UI, navigation & DI) implemented. Automated 4.1–4.3 green:
+  three `:shared` suites + `NewGameViewModel` `create(..., PHYSICAL)`; `:androidApp`/`:webApp` compile
+  + `:shared:linkDebugFrameworkIosSimulatorArm64`; ktlint clean. Manual 4.4–4.6 (app/device + web
+  walkthroughs) deferred to end-of-slice (`manual-verification.md`). `ChessBoardView` gained a
+  display-only `highlightedSquares` tint; new `PhysicalPlayScreen` reuses `ChessBoardView`/
+  `PromotionPicker`/`EndGamePicker`/`MoveList` + a connection/setup/paused/rejection surface;
+  `NewGameScreen` shows a Digital/Physical toggle only when `supportsPhysicalBoard`, threading the
+  mode through `create(white, black, mode)` and `onGameCreated(gameId, mode)`; new `PhysicalPlayKey`
+  route (registered polymorphically) with `App.kt` History/creation routing (physical+capable →
+  physical screen, else Replay); Android/iOS `platformModule` bind `EmulatedBoard` (connect-on-bind)
+  + `PhysicalPlayViewModel`, wasm binds neither (web gating). See `manual-verification.md` adaptations.

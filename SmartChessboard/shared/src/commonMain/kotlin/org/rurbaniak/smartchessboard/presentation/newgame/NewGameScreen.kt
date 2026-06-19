@@ -2,6 +2,7 @@ package org.rurbaniak.smartchessboard.presentation.newgame
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -29,6 +31,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
+import org.rurbaniak.smartchessboard.domain.games.GameMode
+import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
 
 /** Caps the form width on wide screens so the fields don't stretch edge-to-edge. */
 private val FORM_MAX_WIDTH = 480.dp
@@ -37,21 +41,26 @@ private val FORM_MAX_WIDTH = 480.dp
 @Composable
 fun NewGameScreen(
     onBack: () -> Unit,
-    onGameCreated: (String) -> Unit,
+    onGameCreated: (String, GameMode) -> Unit,
 ) {
     val viewModel = koinViewModel<NewGameViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // One-shot: when the INSERT succeeds, hand the new id to navigation exactly once.
+    // One-shot: when the INSERT succeeds, hand the new id + mode to navigation exactly once. Capture the
+    // mode before onNavigated() clears it, so physical games route to the physical screen and digital to Play.
     LaunchedEffect(uiState.createdGameId) {
         uiState.createdGameId?.let { gameId ->
+            val mode = uiState.createdGameMode ?: GameMode.DIGITAL
             viewModel.onNavigated()
-            onGameCreated(gameId)
+            onGameCreated(gameId, mode)
         }
     }
 
     var white by rememberSaveable { mutableStateOf("White") }
     var black by rememberSaveable { mutableStateOf("Black") }
+    // Boolean (not the enum) so rememberSaveable needs no custom saver across targets; the picker is
+    // shown only where the platform can drive a physical board (web stays digital-only).
+    var physical by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -75,6 +84,26 @@ fun NewGameScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             val fieldModifier = Modifier.widthIn(max = FORM_MAX_WIDTH).fillMaxWidth()
+            // Digital / Physical picker — only on platforms that can drive a physical board. Web never
+            // shows it and defaults to digital, so a web-created game is never a physical one.
+            if (supportsPhysicalBoard) {
+                Row(modifier = fieldModifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = !physical,
+                        onClick = { physical = false },
+                        enabled = !uiState.creating,
+                        label = { Text("Digital") },
+                        modifier = Modifier.weight(1f),
+                    )
+                    FilterChip(
+                        selected = physical,
+                        onClick = { physical = true },
+                        enabled = !uiState.creating,
+                        label = { Text("Physical") },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
             OutlinedTextField(
                 value = white,
                 onValueChange = { white = it },
@@ -101,7 +130,7 @@ fun NewGameScreen(
                 )
             }
             Button(
-                onClick = { viewModel.create(white, black) },
+                onClick = { viewModel.create(white, black, if (physical) GameMode.PHYSICAL else GameMode.DIGITAL) },
                 enabled = !uiState.creating,
                 modifier = fieldModifier,
             ) {
