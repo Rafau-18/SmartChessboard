@@ -56,3 +56,14 @@ static constexpr gpio_num_t kColPins[kNumCols] = {
     GPIO_NUM_21,  // COL6  (D21)  clean GPIO - replaced GPIO2/D2 (onboard LED)
     GPIO_NUM_15,  // COL7  (D15)  *strapping (boots HIGH = matches idle pull-up)
 };
+
+// ---------------------------------------------------------------------------
+//  Confirmation buttons (F-03 / FR-FW-007) - ADDITIVE, separate from the matrix.
+//  Two momentary push-buttons wired to GND, read as inputs with the internal
+//  pull-up: idle = HIGH, pressed = LOW. GPIO22/23 are bonded out on the
+//  WROOM-32, are NOT used by the matrix above, and are NOT strapping pins.
+//  White confirms a white move/turn, black the black side - bare events only,
+//  the firmware does no turn validation (the mobile re-derives whose turn it is).
+// ---------------------------------------------------------------------------
+static constexpr gpio_num_t kButtonWhitePin = GPIO_NUM_22;  // white -> BUTTON_EVENT 0x00
+static constexpr gpio_num_t kButtonBlackPin = GPIO_NUM_23;  // black -> BUTTON_EVENT 0x01

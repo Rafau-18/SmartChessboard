@@ -68,12 +68,17 @@ Any change to an interface in this document requires:
 
 One custom GATT service exposing two characteristics:
 
-| Characteristic | Direction | Properties | Purpose |
-| --- | --- | --- | --- |
-| `board_event` | board → mobile | notify | Board pushes events to mobile |
-| `mobile_command` | mobile → board | write | Mobile sends commands to board |
+| Characteristic | Direction | Properties | Purpose | UUID |
+| --- | --- | --- | --- | --- |
+| (service) | — | primary | Chess-board service | `787e0001-15a4-4fc9-a469-05096dbad1a1` |
+| `board_event` | board → mobile | notify | Board pushes events to mobile | `787e0002-15a4-4fc9-a469-05096dbad1a1` |
+| `mobile_command` | mobile → board | write | Mobile sends commands to board | `787e0003-15a4-4fc9-a469-05096dbad1a1` |
 
-UUIDs are assigned during firmware implementation and recorded back into this document.
+UUIDs assigned during firmware implementation (F-03, 2026-06-19): one custom
+128-bit base `787e000X-15a4-4fc9-a469-05096dbad1a1`, where `X` = 1 service /
+2 `board_event` / 3 `mobile_command`. Firmware and mobile (S-09) must use these
+exact bytes. The `board_event` notify characteristic carries a standard CCCD
+(`0x2902`) that the central writes to subscribe.
 
 ### 1.3 Message catalog — board → mobile (via `board_event` notifications)
 

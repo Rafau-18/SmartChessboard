@@ -356,21 +356,21 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [ ] 1.1 Host tests pass: `pio test -e native`
-- [ ] 1.2 Device build still compiles: `pio run -e esp32dev`
-- [ ] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes
+- [x] 1.1 Host tests pass: `pio test -e native` — c3d3665
+- [x] 1.2 Device build still compiles: `pio run -e esp32dev` — c3d3665
+- [x] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes — c3d3665
 
 #### Manual
 
-- [ ] 1.4 Spot-check asserted golden frames in `test_protocol.cpp` match `BoardWireCodecTest.kt`
+- [x] 1.4 Spot-check asserted golden frames in `test_protocol.cpp` match `BoardWireCodecTest.kt` — confirmed by impl-review 2026-06-19 (vectors match Kotlin oracle verbatim; `pio test -e native` 15/15)
 
 ### Phase 2: NimBLE Peripheral — GATT, Advertising, Bonding, Lifecycle
 
 #### Automated
 
-- [ ] 2.1 Device build links with NimBLE: `pio run -e esp32dev`
-- [ ] 2.2 Host tests still pass: `pio test -e native`
-- [ ] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date
+- [x] 2.1 Device build links with NimBLE: `pio run -e esp32dev` — e3c594a
+- [x] 2.2 Host tests still pass: `pio test -e native` — e3c594a
+- [x] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date — e3c594a
 
 #### Manual
 
@@ -383,9 +383,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [ ] 3.1 Device build compiles and links: `pio run -e esp32dev`
-- [ ] 3.2 Host tests still pass: `pio test -e native`
-- [ ] 3.3 `stable`-diff → square-event derivation has a native test (if extracted to `lib/`)
+- [x] 3.1 Device build compiles and links: `pio run -e esp32dev` — e5bfcb9
+- [x] 3.2 Host tests still pass: `pio test -e native` — e5bfcb9
+- [x] 3.3 `stable`-diff → square-event derivation has a native test (if extracted to `lib/`) — e5bfcb9
 
 #### Manual
 
@@ -401,10 +401,10 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [ ] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked
-- [ ] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added
-- [ ] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native`
+- [x] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked — d64e2d8
+- [x] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added — d64e2d8
+- [x] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native` — d64e2d8
 
 #### Manual
 
-- [ ] 4.4 Updated `firmware/AGENTS.md` reads coherently and matches what was built
+- [x] 4.4 Updated `firmware/AGENTS.md` reads coherently and matches what was built — confirmed by impl-review 2026-06-19 (PARKED framing gone; BLE/buttons/lib/native-tests documented)

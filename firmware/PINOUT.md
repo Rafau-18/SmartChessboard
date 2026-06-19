@@ -4,7 +4,7 @@ document: board-pinout
 version: 1
 status: draft
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-06-19
 ---
 
 # Board Pinout — ESP32-DevKitC V4 & ESP32 DevKit V1
@@ -125,6 +125,21 @@ the same on both boards.
 pull-up), GPIO0/2/12/15 (strapping, kept out of the matrix). None are used.
 
 ---
+
+## Confirmation buttons (F-03) — additive, watch the target-map overlap
+
+The F-03 game firmware reads two confirmation buttons (FR-FW-007) on
+**GPIO22 (white → `BUTTON_EVENT 0x00`)** and **GPIO23 (black → `0x01`)**, wired
+as momentary switches to **GND** with the internal pull-up (idle HIGH, pressed
+LOW). They are **additive** — none of the matrix wiring above changes.
+
+> ⚠ **Overlap with the hazard-free target map.** The recommended column map at
+> the top of this file claims GPIO22 = **C5 (file f)** and GPIO23 = **C6
+> (file g)** — the buttons sit on those same two pins. This is harmless
+> **today** because the current `src/pins.h` prototype uses a *different*
+> column set (`{19,18,5,17,16,4,21,15}`), leaving GPIO22/23 free. But a future
+> clean build that adopts the target map drawn here must relocate **either**
+> the two buttons **or** files f/g — they cannot both occupy GPIO22/23.
 
 ## Wiring tip
 
