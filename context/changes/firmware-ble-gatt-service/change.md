@@ -1,7 +1,7 @@
 ---
 change_id: firmware-ble-gatt-service
 title: Firmware ble gatt service
-status: plan_reviewed
+status: implementing
 created: 2026-06-19
 updated: 2026-06-19
 archived_at: null

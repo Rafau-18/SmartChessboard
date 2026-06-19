@@ -356,9 +356,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [ ] 1.1 Host tests pass: `pio test -e native`
-- [ ] 1.2 Device build still compiles: `pio run -e esp32dev`
-- [ ] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes
+- [x] 1.1 Host tests pass: `pio test -e native`
+- [x] 1.2 Device build still compiles: `pio run -e esp32dev`
+- [x] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes
 
 #### Manual
 
