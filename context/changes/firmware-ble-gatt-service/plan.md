@@ -356,9 +356,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 1.1 Host tests pass: `pio test -e native`
-- [x] 1.2 Device build still compiles: `pio run -e esp32dev`
-- [x] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes
+- [x] 1.1 Host tests pass: `pio test -e native` — c3d3665
+- [x] 1.2 Device build still compiles: `pio run -e esp32dev` — c3d3665
+- [x] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes — c3d3665
 
 #### Manual
 
@@ -368,9 +368,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [ ] 2.1 Device build links with NimBLE: `pio run -e esp32dev`
-- [ ] 2.2 Host tests still pass: `pio test -e native`
-- [ ] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date
+- [x] 2.1 Device build links with NimBLE: `pio run -e esp32dev`
+- [x] 2.2 Host tests still pass: `pio test -e native`
+- [x] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date
 
 #### Manual
 

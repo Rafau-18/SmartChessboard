@@ -1,13 +1,20 @@
-// Smart Chessboard - reed-switch 8x8 matrix bringup / diagnostic firmware.
+// Smart Chessboard - reed-switch 8x8 matrix firmware (F-03 game firmware).
 //
-// Scans an 8x8 reed-switch matrix and shows occupancy on the serial console
-// (UART0 @ 115200). The console is REDRAWN IN PLACE (ANSI clear) and only when
-// the debounced board state CHANGES - no 4 Hz scroll spam. A `Change:` line
-// lists which squares just opened/closed, so testing reeds is obvious.
-// Place a magnet on a square -> it should flip to 'X'.
+// Scans an 8x8 reed-switch matrix and debounces it into a 64-bit `stable`
+// occupancy bitmap. This loop is also the BLE PRODUCER: it owns `stable` and is
+// the only context that reads it, so frames derived from it (BOARD_SNAPSHOT) are
+// built here on a request from the BLE layer (a cross-task 64-bit read can tear
+// on the dual-core ESP32 - see plan Critical Details). The radio itself lives in
+// ble_service.cpp (NimBLE peripheral, one GATT service, lifecycle).
+//
+// Phase 2: advertising / bonding / on-subscribe BOARD_SNAPSHOT->DEVICE_STATUS
+// burst. Per-transition SQUARE_EVENTs, buttons, commands, and timers are Phase 3.
+//
+// The serial console (UART0 @ 115200) keeps the in-place diagnostic render for
+// local debugging - it is NOT on the BLE contract path.
 //
 // NOT production: no anti-ghosting diodes assumed (safe with <=2 magnets, see
-// README); BLE GATT is deferred to the game firmware.
+// README).
 
 #include <cstdint>
 #include <cstdio>
@@ -19,6 +26,8 @@
 #include "freertos/task.h"
 
 #include "pins.h"
+#include "board_protocol.h"
+#include "ble_service.h"
 
 static const char* TAG = "matrix";
 
@@ -114,6 +123,7 @@ static void render(uint64_t occ, uint64_t prev) {
 extern "C" void app_main(void) {
     ESP_LOGI(TAG, "Reed matrix monitor - UART0 @ 115200, change-driven + debounced");
     configure_gpio();
+    ble_service::init();           // NVS + NimBLE peripheral + notify consumer
 
     uint64_t stable = 0;            // committed (debounced) board state
     uint64_t shown  = ~0ULL;        // last rendered (sentinel forces first draw)
@@ -135,6 +145,25 @@ extern "C" void app_main(void) {
             }
         }
         rawPrev = raw;
+
+        // Service BLE-layer requests on the task that owns `stable` — no
+        // cross-task 64-bit read (plan Critical Details). Phase 2 only ever
+        // sees Burst (on CCCD subscribe); Snapshot/Status arrive in Phase 3.
+        ble_service::Request req;
+        while (ble_service::poll_request(req)) {
+            switch (req) {
+            case ble_service::Request::Snapshot:
+                ble_service::enqueue_frame(board_protocol::encodeSnapshot(stable));
+                break;
+            case ble_service::Request::Status:
+                ble_service::enqueue_frame(ble_service::build_status_frame());
+                break;
+            case ble_service::Request::Burst:
+                ble_service::enqueue_frame(board_protocol::encodeSnapshot(stable));
+                ble_service::enqueue_frame(ble_service::build_status_frame());
+                break;
+            }
+        }
 
         if (stable != shown) {
             render(stable, (shown == ~0ULL) ? stable : shown);  // no diff on first draw
