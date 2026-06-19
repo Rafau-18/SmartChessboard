@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-10
+updated: 2026-06-19
 context_type: greenfield
 product_type: mobile
 target_scale:
@@ -214,6 +214,7 @@ The following stack-shape decisions were settled on 2026-05-27, after the origin
 - **Eval function CORS allow-headers echo (2026-06-13, S-03)**: the `lichess-eval` preflight response echoes the browser's `Access-Control-Request-Headers` instead of a static list — supabase-kt attaches `x-region` to every function invocation, which the static list rejected, breaking analysis on the web target. No user-facing scope change to FR-017. See `contract-surfaces.md` §3.3.
 - **Eval provenance survives cache hits (2026-06-13, S-03)**: the `lichess-eval` 200 response keeps `source` as the provider that produced the eval (`lichess` / `chess-api`) and adds `cached: bool`, instead of replacing `source` with `"cache"` on cache hits — the analysis panel shows the true engine source for cached positions. No schema change (`position_evals.source` already stores the provider). See `contract-surfaces.md` §3.3.
 - **Snapshot bit-packing clarification (2026-06-16, F-02)**: `contract-surfaces.md` §1.3 now pins the `BOARD_SNAPSHOT` byte layout (byte `i` bit `j`, LSB-first = square `i*8 + j`), which the previous "bit N = square N" wording left to the byte split underspecified. No user-facing impact — snapshot encoding is an internal firmware↔mobile wire detail with no FR behavior depending on it; recorded here only to satisfy the contract's §1 change-control mirror.
+- **`createGame` carries an explicit mode (2026-06-19, S-06)**: game creation now passes `mode` (`'digital'`/`'physical'`) as an explicit client argument instead of hardcoding `'digital'`, so physical-mode games (FR-008) are created through the same path as digital play. No DB migration — `games.mode` already accepts `'physical'` (CHECK constraint since the schema's creation); RLS and the `user_id` default are unchanged. See `contract-surfaces.md` §3.2.
 
 These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that those questions' resolutions already anticipated — see the Open Questions section below for the full reasoning trail.
 

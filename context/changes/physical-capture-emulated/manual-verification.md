@@ -47,4 +47,36 @@ every move shape + rejection is covered, and that the **expected squares are che
 
 ---
 
-## Phase 2+ — appended as phases land
+## Phase 2 — Data & Platform Seams
+
+Pure seams, no UI/device — both checks are a **code read**, not an app walkthrough.
+
+### 2.4 — `supportsPhysicalBoard` actuals (true on Android/iOS, false on wasm)
+
+Open `SmartChessboard/shared/src/{androidMain,iosMain,wasmJsMain}/.../platform/PlatformCapabilities.*.kt`
+and the `commonMain` expect, and confirm:
+
+- [ ] `commonMain/.../platform/PlatformCapabilities.kt` declares `expect val supportsPhysicalBoard: Boolean` (public — gates picker + routing in Phase 4).
+- [ ] `androidMain/.../platform/PlatformCapabilities.android.kt` → `actual val supportsPhysicalBoard = true`.
+- [ ] `iosMain/.../platform/PlatformCapabilities.ios.kt` → `actual val supportsPhysicalBoard = true`.
+- [ ] `wasmJsMain/.../platform/PlatformCapabilities.wasmJs.kt` → `actual val supportsPhysicalBoard = false` (web is digital-only per `lessons.md`).
+
+### 2.5 — `BoardScenarios` + emulator tests still in `commonTest` (no test DSL shipped in `commonMain`)
+
+Confirm the emulator promotion moved **only** the production board, leaving the chess-agnostic
+scenario DSL and its tests test-only:
+
+- [ ] `commonMain/.../data/board/emulator/` holds **only** `EmulatedBoard.kt`.
+- [ ] `commonTest/.../data/board/emulator/` still holds `BoardScenarios.kt`, `EmulatedBoardTest.kt`, `EmulatedBoardEndToEndTest.kt`.
+- [ ] `EmulatedBoard.kt` is unchanged in behavior (only its trailing "lives in commonTest" doc comment was updated to reflect the promotion).
+
+**Adaptation to note during review (not a defect):**
+1. `GamesRepository.createGame` gained a `mode: GameMode` argument (interface, Supabase impl, fake).
+   `NewGameViewModel` threads only `GameMode.DIGITAL` for now — the Digital/Physical picker that lets a
+   user choose `PHYSICAL` is a **Phase 4** change, so Phase 2 keeps the build green without it.
+2. `parseMode` / `toModeColumn` were made `internal` (were `private`) so `CreateGameModeTest` can prove
+   the `"physical"` column round-trip directly without a live Supabase client.
+
+---
+
+## Phase 3+ — appended as phases land

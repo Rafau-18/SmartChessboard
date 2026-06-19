@@ -3,6 +3,7 @@ package org.rurbaniak.smartchessboard.presentation
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.domain.games.GameRecord
 import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
@@ -21,6 +22,7 @@ class FakeGamesRepository : GamesRepository {
     var createdGame: GameRecord? = null
     var createCalls = 0
     val createLabels = mutableListOf<Pair<String, String>>()
+    val createModes = mutableListOf<GameMode>()
     val updatePgnCalls = mutableListOf<Pair<String, String>>()
     var updatePgnFailures = 0
     var onUpdatePgn: ((String, String) -> Unit)? = null
@@ -45,11 +47,15 @@ class FakeGamesRepository : GamesRepository {
     override suspend fun createGame(
         whiteLabel: String,
         blackLabel: String,
+        mode: GameMode,
     ): GameRecord {
         createCalls++
         createLabels += whiteLabel to blackLabel
+        createModes += mode
         if (shouldFail) throw failure
-        val created = createdGame ?: throw IllegalStateException("no createdGame stubbed")
+        // Echo the requested mode so callers see the created record carry the mode they asked for,
+        // even when the stubbed record was built with a different one.
+        val created = (createdGame ?: throw IllegalStateException("no createdGame stubbed")).copy(mode = mode)
         _changes.tryEmit(Unit)
         return created
     }

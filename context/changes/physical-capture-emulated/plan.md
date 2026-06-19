@@ -691,9 +691,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [ ] 2.1 Three target suites pass (incl. emulator tests still green after the move)
-- [ ] 2.2 Test asserts `createGame(..., PHYSICAL)` → `GameRecord.mode == PHYSICAL` and DTO column `"physical"`
-- [ ] 2.3 ktlint clean
+- [x] 2.1 Three target suites pass (incl. emulator tests still green after the move)
+- [x] 2.2 Test asserts `createGame(..., PHYSICAL)` → `GameRecord.mode == PHYSICAL` and DTO column `"physical"`
+- [x] 2.3 ktlint clean
 
 #### Manual
 

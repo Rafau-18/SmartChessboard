@@ -33,8 +33,9 @@ import kotlin.time.Duration.Companion.seconds
 // — produces every emitted event by encoding it to §1.3 bytes through the shared BoardWireCodec and
 // decoding the bytes back (see [emitEvent]). That round trip is what makes the emulated stream
 // byte-identical to the firmware's, which is why verification against the emulator transfers to the
-// real board. Lives in commonTest: it consumes commonMain (port + codec) and is itself a test fixture
-// until S-06 wires a production consumer, at which point it promotes unchanged to commonMain.
+// real board. Lives in commonMain since S-06 wired the first production consumer: it is the only
+// BoardConnection bound on Android/iOS until the S-09 BLE adapter ships. The chess-agnostic scenario
+// DSL (BoardScenarios) that drives it stays test-only in commonTest.
 
 /** Static device facts the emulator reports in DEVICE_STATUS (§1.3); fixed for a session so the stream is deterministic. */
 data class EmulatedDeviceStatus(

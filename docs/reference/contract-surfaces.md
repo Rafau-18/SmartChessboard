@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-06-16
+updated: 2026-06-19
 ---
 
 ## Purpose
@@ -310,7 +310,7 @@ Listed as conceptual operations; SDK call shapes vary by language.
 
 | Operation | SQL-equivalent | Used by (PRD ref) |
 | --- | --- | --- |
-| Create game | `INSERT INTO games (mode, status, pgn, white_label, black_label) VALUES (...)` | FR-003 |
+| Create game | `INSERT INTO games (mode, status, pgn, white_label, black_label) VALUES (...)` | FR-003, FR-008 — `mode` (`'digital'`/`'physical'`) is an explicit client argument as of S-06 (previously hardcoded `'digital'`); RLS and the `auth.uid()` default for `user_id` are unchanged (2026-06-19, S-06) |
 | List my games (chronological) | `SELECT ... FROM games ORDER BY created_at DESC` (RLS scopes) | FR-015 |
 | Get one game | `SELECT ... FROM games WHERE id = $1` | FR-015, FR-016 |
 | Auto-save move | `UPDATE games SET pgn = $1, status = $2, result = $3 WHERE id = $4` | FR-014 |

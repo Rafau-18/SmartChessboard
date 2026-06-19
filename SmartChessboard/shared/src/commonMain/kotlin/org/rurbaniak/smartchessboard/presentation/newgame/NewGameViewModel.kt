@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -49,6 +50,8 @@ class NewGameViewModel(
                         gamesRepository.createGame(
                             whiteLabel = whiteLabel.ifBlank { DEFAULT_WHITE_LABEL },
                             blackLabel = blackLabel.ifBlank { DEFAULT_BLACK_LABEL },
+                            // Phase 2 threads only digital; the Digital/Physical picker arrives in Phase 4.
+                            mode = GameMode.DIGITAL,
                         )
                     NewGameUiState(creating = false, failed = false, createdGameId = game.id)
                 } catch (e: CancellationException) {

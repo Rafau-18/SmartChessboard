@@ -19,13 +19,14 @@ interface GamesRepository {
     suspend fun getGame(id: String): GameRecord
 
     /**
-     * Creates a digital in-progress game with an empty PGN (contract §3.2; `user_id` is defaulted
-     * server-side). Returns the created row — `id` feeds navigation, the server `created_at`
+     * Creates an in-progress game in the given [mode] with an empty PGN (contract §3.2; `user_id` is
+     * defaulted server-side). Returns the created row — `id` feeds navigation, the server `created_at`
      * feeds the PGN `[Date]` tag. Requires connectivity; failures propagate to the caller.
      */
     suspend fun createGame(
         whiteLabel: String,
         blackLabel: String,
+        mode: GameMode,
     ): GameRecord
 
     /** Auto-save (contract §3.2): replaces the stored PGN; status/result are untouched in S-04. */

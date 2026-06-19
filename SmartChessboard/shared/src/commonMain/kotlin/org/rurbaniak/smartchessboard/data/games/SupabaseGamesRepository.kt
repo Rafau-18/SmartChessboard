@@ -83,12 +83,13 @@ class SupabaseGamesRepository(
     override suspend fun createGame(
         whiteLabel: String,
         blackLabel: String,
+        mode: GameMode,
     ): GameRecord =
         client
             .from("games")
             .insert(
                 NewGameDto(
-                    mode = "digital",
+                    mode = mode.toModeColumn(),
                     status = "in_progress",
                     pgn = "",
                     whiteLabel = whiteLabel,
@@ -157,11 +158,18 @@ private fun GameRecordDto.toDomain(): GameRecord =
         pgn = pgn,
     )
 
-private fun parseMode(mode: String): GameMode =
+internal fun parseMode(mode: String): GameMode =
     when (mode) {
         "digital" -> GameMode.DIGITAL
         "physical" -> GameMode.PHYSICAL
         else -> error("Unknown game mode: $mode")
+    }
+
+// Inverse of parseMode — the column token written on create (mirrors the §3.2 mode CHECK domain).
+internal fun GameMode.toModeColumn(): String =
+    when (this) {
+        GameMode.DIGITAL -> "digital"
+        GameMode.PHYSICAL -> "physical"
     }
 
 private fun parseStatus(status: String): GameStatus =

@@ -31,3 +31,12 @@ archived_at: null
   footprint). Resolved via SYNC cross-reference comments binding `footprintOf` ↔ `applyMove`.
   Candidate Phase-5 lesson: engine geometry hand-mirrored for physical resolution must be
   SYNC-commented until a shared `squaresTouched(position, move)` helper exists.
+- 2026-06-19: Phase 2 (data & platform seams) implemented. Automated 2.1–2.3 green on JVM/iOS/wasm +
+  ktlint; manual 2.4/2.5 (code-read only) deferred to end-of-slice (`manual-verification.md`).
+  `createGame` gained a `mode: GameMode` arg (interface + Supabase impl + fake `FakeGamesRepository`);
+  `NewGameViewModel` threads only `DIGITAL` for now — the Digital/Physical picker is Phase 4.
+  `expect/actual supportsPhysicalBoard` added under `platform/` (true Android/iOS, false wasm).
+  `EmulatedBoard` promoted to `commonMain` via `git mv` (history preserved); `BoardScenarios` + emulator
+  tests stay in `commonTest`. `parseMode`/`toModeColumn` made `internal` so `CreateGameModeTest` proves
+  the `"physical"` column round-trip without a live client. Contract write-backs: `contract-surfaces.md`
+  §3.2 create-op note + `prd.md` Implementation Decisions (both `updated` bumped).
