@@ -40,3 +40,15 @@ archived_at: null
   tests stay in `commonTest`. `parseMode`/`toModeColumn` made `internal` so `CreateGameModeTest` proves
   the `"physical"` column round-trip without a live client. Contract write-backs: `contract-surfaces.md`
   §3.2 create-op note + `prd.md` Implementation Decisions (both `updated` bumped).
+- 2026-06-19: Phase 3 (physical-play MVI core, headless) implemented. Automated 3.1–3.4 green on
+  JVM/iOS/wasm + ktlint; manual 3.5/3.6 (code-read only) deferred to end-of-slice
+  (`manual-verification.md`). New `presentation/physical/`: `PhysicalPlayContract` (Msg/State/Effect),
+  pure `PhysicalPlayReducer`, impure `PhysicalPlayViewModel` (stream collectors + effect interpreter),
+  + headless `PhysicalPlayReducerTest`/`PhysicalPlayViewModelTest`. §6.2 gate lives in the `CommitMove`
+  effect (state advances only on `MoveCommitted`; forced journal-write failure → `MoveRejected`, no
+  advance — proven). Reuses S-04 back half (`GameAutoSaver`/journal/`writePgn`/`sanForMove`) verbatim;
+  `EndGamePrompt`/`PendingPromotion` reused from `presentation/play`. Adaptations (see
+  `manual-verification.md`): two-step auto-close (reducer emits `FinishGame` on `MoveCommitted`);
+  `LoadGame` is a `data object` (VM owns `gameId`); `FinishGame` carries `sanMoves` (VM owns `meta`);
+  no `Connect` effect (port has no `connect()`; VM subscribes-before-connect, `paused` derived from
+  `connectionState`).

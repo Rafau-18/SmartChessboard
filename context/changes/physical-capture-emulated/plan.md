@@ -691,9 +691,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 2.1 Three target suites pass (incl. emulator tests still green after the move)
-- [x] 2.2 Test asserts `createGame(..., PHYSICAL)` → `GameRecord.mode == PHYSICAL` and DTO column `"physical"`
-- [x] 2.3 ktlint clean
+- [x] 2.1 Three target suites pass (incl. emulator tests still green after the move) — d76337a
+- [x] 2.2 Test asserts `createGame(..., PHYSICAL)` → `GameRecord.mode == PHYSICAL` and DTO column `"physical"` — d76337a
+- [x] 2.3 ktlint clean — d76337a
 
 #### Manual
 
@@ -704,10 +704,10 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [ ] 3.1 Reducer + VM suites pass on all three targets
-- [ ] 3.2 §6.2 gate test: forced journal-write failure → `MoveRejected`, state does not advance
-- [ ] 3.3 Wrong-side button no-op and confirm-before-promotion-pick save nothing (tested)
-- [ ] 3.4 ktlint clean
+- [x] 3.1 Reducer + VM suites pass on all three targets
+- [x] 3.2 §6.2 gate test: forced journal-write failure → `MoveRejected`, state does not advance
+- [x] 3.3 Wrong-side button no-op and confirm-before-promotion-pick save nothing (tested)
+- [x] 3.4 ktlint clean
 
 #### Manual
 

@@ -79,4 +79,41 @@ scenario DSL and its tests test-only:
 
 ---
 
-## Phase 3+ — appended as phases land
+## Phase 3 — Physical Play State Machine (MVI core, headless)
+
+Headless logic, no UI/device — both checks are a **code read**, not an app walkthrough.
+
+### 3.5 — Reducer reviewed for IO-freedom
+
+Open `presentation/physical/PhysicalPlayReducer.kt` and confirm `reduce` (and its helpers) call **no**
+repository / journal / board APIs — only the pure engine functions:
+
+- [ ] No `gamesRepository`, `autoSaver`, `journal`, or `boardConnection` reference anywhere in the reducer.
+- [ ] The only chess calls are pure: `resolvePhysicalMove`, `status`, `gameResultFor`, `toOccupancy`.
+- [ ] The §6.2 journal write is reached **only** via the `CommitMove` / `FinishGame` effects the
+      `PhysicalPlayViewModel` interprets — the state advances to an accepted move solely on the
+      `MoveCommitted` feedback, never inside `reduce`.
+
+### 3.6 — MVI justification captured in the plan
+
+- [ ] `plan.md` Phase 3 carries the "MVI justification (required by `lessons.md`)" paragraph (MVI for
+      `PhysicalPlayViewModel` only; digital `PlayViewModel` stays MVVM).
+
+**Adaptations to note during review (not defects):**
+1. **Auto-close is two-step (plan's literal design).** A mating confirm journals the move
+   (`CommitMove` → `acceptMove`), then `MoveCommitted` recomputes status in the pure reducer and emits
+   `FinishGame` (S-05 close). This keeps the auto-close decision in the testable reducer; the extra
+   local journal write is superseded by the finish and self-heals via `GameAutoSaver`'s
+   supersede + terminal keep-retry.
+2. **`PhysicalEffect.LoadGame` is a `data object`** (not carrying `gameId`): `gameId` is a ViewModel
+   constant (as in `PlayViewModel`), so the VM supplies it; this also lets `Retry` re-load purely.
+3. **`FinishGame` carries `sanMoves`, not a pre-built `pgn`** (the plan's shape): `writePgn` needs the
+   `PgnMeta` that lives in the impure VM, so the VM serializes; the reducer stays free of `meta`/IO.
+4. **No `Connect` effect.** `BoardConnection` exposes no `connect()` (transport lifecycle is the
+   adapter's, per its port doc); the VM subscribes before the platform/test drives the emulator's
+   `connect()`, and re-requests a snapshot via `Send(RequestSnapshot)` on `BoardConnected`
+   (proper reconnect reconcile is S-07). `paused` is derived from `connectionState`, not a stored field.
+
+---
+
+## Phase 4+ — appended as phases land
