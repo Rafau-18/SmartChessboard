@@ -1,9 +1,9 @@
 ---
 change_id: physical-resume-after-restart
 title: Physical resume after restart
-status: new
+status: preparing
 created: 2026-06-19
-updated: 2026-06-19
+updated: 2026-06-20
 archived_at: null
 ---
 
