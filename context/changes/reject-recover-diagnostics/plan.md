@@ -313,9 +313,9 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [x] 3.1 End-to-end recover test passes on all three targets (`PhysicalRecoverEndToEndTest`)
-- [x] 3.2 Full shared test suite green — no regressions (`:shared:testAndroidHostTest`)
-- [x] 3.3 ktlint clean (`ktlint -F`)
+- [x] 3.1 End-to-end recover test passes on all three targets (`PhysicalRecoverEndToEndTest`) — 48d6a8d
+- [x] 3.2 Full shared test suite green — no regressions (`:shared:testAndroidHostTest`) — 48d6a8d
+- [x] 3.3 ktlint clean (`ktlint -F`) — 48d6a8d
 
 #### Manual
 
