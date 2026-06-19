@@ -401,9 +401,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked
-- [x] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added
-- [x] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native`
+- [x] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked — d64e2d8
+- [x] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added — d64e2d8
+- [x] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native` — d64e2d8
 
 #### Manual
 
