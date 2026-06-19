@@ -718,9 +718,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 4.1 Three target suites green; `NewGameViewModel` covers `create(..., PHYSICAL)`
-- [x] 4.2 App compiles on Android, iOS, and wasm
-- [x] 4.3 ktlint clean
+- [x] 4.1 Three target suites green; `NewGameViewModel` covers `create(..., PHYSICAL)` — aa7b001
+- [x] 4.2 App compiles on Android, iOS, and wasm — aa7b001
+- [x] 4.3 ktlint clean — aa7b001
 
 #### Manual
 
@@ -732,9 +732,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [ ] 5.1 E2E test green on all three targets
-- [ ] 5.2 Full `:shared` suite green on all three targets
-- [ ] 5.3 ktlint clean
+- [x] 5.1 E2E test green on all three targets
+- [x] 5.2 Full `:shared` suite green on all three targets
+- [x] 5.3 ktlint clean
 
 #### Manual
 

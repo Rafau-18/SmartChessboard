@@ -63,3 +63,14 @@ archived_at: null
   route (registered polymorphically) with `App.kt` History/creation routing (physical+capable →
   physical screen, else Replay); Android/iOS `platformModule` bind `EmulatedBoard` (connect-on-bind)
   + `PhysicalPlayViewModel`, wasm binds neither (web gating). See `manual-verification.md` adaptations.
+- 2026-06-19: Phase 5 (emulator-driven E2E & write-backs) implemented. Automated 5.1–5.3 green:
+  `PhysicalCaptureEndToEndTest` drives full scripted games through the real `PhysicalPlayViewModel` +
+  reused journal/auto-saver on JVM/iOS/wasm (quiet, both capture orders, interleaved castle, en
+  passant, promotion push→picker→pick→confirm, confirm-before-pick rejection, wrong-side no-op, mate
+  auto-close, manual draw), asserting one SAN per confirm, `[Mode "physical"]`, and `parsePgn`
+  round-trip; full `:shared` suite green on all three targets; ktlint clean. Write-backs: `roadmap.md`
+  S-06 → implemented (table + Stream C + slice Status w/ phase SHAs); `lessons.md` entry (hand-mirrored
+  engine geometry must be SYNC-commented). One adaptation: the E2E asserts the canonical PGN from the
+  repository (cloud), because `GameAutoSaver` clears a finished game's journal entry after a confirmed
+  finish flush. Manual 5.4–5.6 (E2E/doc reads + one device spot-check) deferred to end-of-slice; all
+  `#### Manual` rows across phases 1–5 are the single pre-archive pass collected in `manual-verification.md`.

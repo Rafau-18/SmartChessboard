@@ -156,4 +156,34 @@ device/simulator and a browser at the end of the slice.
 
 ---
 
-## Phase 5+ — appended as phases land
+## Phase 5 — Emulator-Driven End-to-End & Write-Backs
+
+5.4 / 5.5 are reads (E2E source + foundation docs); 5.6 is a device spot-check.
+
+### 5.4 — Stored E2E PGN reviewed (legal moves, `[Mode "physical"]`, correct result tag)
+
+Open `presentation/physical/PhysicalCaptureEndToEndTest.kt` and confirm the asserted, round-tripped PGNs:
+
+- [ ] Scripted game: `e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6 O-O` (both capture orders + interleaved castle),
+      `[Mode "physical"]`, manual draw `1/2-1/2`, `parsePgn` round-trips to the same positions.
+- [ ] En passant `exd6` resolves from the stream and round-trips.
+- [ ] Promotion `bxa8=Q`: the place raises the picker, a confirm-before-pick saves nothing, the pick commits.
+- [ ] Fool's mate `f3 e5 g4 Qh4#` auto-closes with result `0-1`.
+- [ ] A wrong-side confirm appends no SAN.
+
+### 5.5 — Roadmap / lessons write-backs reviewed for accuracy
+
+- [ ] `roadmap.md`: S-06 → `implemented` (At-a-glance table + Stream C note + slice Status with phase SHAs).
+- [ ] `lessons.md`: the "engine move-geometry mirrored outside `domain/chess` must be SYNC-commented" entry.
+
+### 5.6 — Device spot-check
+
+- [ ] On a device, a created physical game appears in History with the **Physical** label and opens the
+      physical screen on mobile (and Replay on web).
+
+---
+
+## Pending (rolled up at archive)
+
+All `#### Manual` rows above stay `- [ ]` in `plan.md` by design — they are this single end-of-slice
+pass. Run them, tick them here and in `plan.md`, then `/10x-impl-review` and `/10x-archive`.

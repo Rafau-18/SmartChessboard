@@ -38,7 +38,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                 | S-02             | FR-017, US-01, US-03                                  | awaiting review |
 | S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save       | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | awaiting review |
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)               | S-04             | FR-007, FR-018, US-01                                 | implemented     |
-| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | proposed        |
+| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
 | S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | proposed        |
 | S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | proposed        |
 | S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07       | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
@@ -51,7 +51,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
 | B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green). S-05 implemented 2026-06-17 (game end & result, three-surface E2E green).** |
-| C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is blocked until firmware work resumes.         |
+| C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is blocked until firmware work resumes. **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
 
 ## Baseline
 
@@ -172,7 +172,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Carries the project's hardest open bet — that lift/place sequences resolve into exactly one legal move (captures and castling read from the full sequence, not a final snapshot). Emulator-first keeps hardware out of the loop while that bet is tested.
-- **Status:** proposed
+- **Status:** implemented — emulator-driven E2E green on Android/iOS/web (2026-06-19): a magnet-only lift/place stream resolves to exactly one legal move (captures in both orders, interleaved castling, en passant, promotion) into the same canonical PGN as digital play, with promotion blocked until picked and mate/stalemate auto-closing. Sequence interpreter, pure domain (`b969215`); `createGame(mode)` + `expect/actual supportsPhysicalBoard` + `EmulatedBoard` promoted to `commonMain` (`d76337a`); headless MVI core — pure reducer + the §6.2 journal write gated in the `CommitMove` effect (`0b3db69`); physical screen + gated Digital/Physical picker + per-platform DI binding the emulator (`aa7b001`); emulator-driven E2E + foundation write-backs (p5). The bet is proven without hardware; interactive real-board play over BLE remains S-09. `change.md` status `implemented`; manual code-read/device checks collected in `manual-verification.md`; awaiting `/10x-impl-review` then `/10x-archive`.
 
 ### S-07: Sequence rejection and diagnostics-assisted recovery
 
