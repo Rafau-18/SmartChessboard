@@ -20,6 +20,10 @@ actual val platformModule: Module =
         single<Settings> { NSUserDefaultsSettings(platform.Foundation.NSUserDefaults.standardUserDefaults) }
         // S-06: the emulated board is the only BoardConnection until the S-09 BLE adapter ships (see the
         // Android module for the connect-on-bind / snapshot-recovery rationale).
+        // TODO(S-09): this scope is never cancelled and disconnect() is never called — harmless for the
+        // emulator, but a real BLE adapter bound on this shape would leak the connection. Cancel the scope
+        // on teardown (e.g. Koin onClose { (it as? EmulatedBoard)?.disconnect() }) when the BLE adapter
+        // lands. Keep in sync with the Android module's BoardConnection binding.
         single<BoardConnection> {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
             EmulatedBoard(scope = scope).also { board -> scope.launch { board.connect() } }

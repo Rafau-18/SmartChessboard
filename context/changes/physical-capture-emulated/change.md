@@ -1,7 +1,7 @@
 ---
 change_id: physical-capture-emulated
 title: Physical-mode capture against the emulator (S-06)
-status: implemented
+status: impl_reviewed
 created: 2026-06-13
 updated: 2026-06-19
 archived_at: null
@@ -74,3 +74,17 @@ archived_at: null
   repository (cloud), because `GameAutoSaver` clears a finished game's journal entry after a confirmed
   finish flush. Manual 5.4–5.6 (E2E/doc reads + one device spot-check) deferred to end-of-slice; all
   `#### Manual` rows across phases 1–5 are the single pre-archive pass collected in `manual-verification.md`.
+- 2026-06-19: full impl-review (phases 1–5) — **APPROVED** (`reviews/impl-review.md`). Verified live:
+  `:shared:testAndroidHostTest` green + ktlint clean; iOS/wasm rely on the phase-5 recorded green (docs-only
+  commit since). Focus areas confirmed correct: §6.2 gate in the `CommitMove` effect (state advances only on
+  `MoveCommitted`; forced save-failure → `MoveRejected`), two-step auto-close (reducer emits `FinishGame` on
+  `MoveCommitted`), no `Connect` effect (port has no `connect()`; subscribe-before-connect; `paused` derived). All
+  "NOT doing" boundaries held; documented adaptations are API-forced, not scope creep. One finding **F1**
+  (WARNING/LOW, PENDING): the `single<BoardConnection>` scope is never cancelled — harmless for the emulator
+  (plan asked for a long-lived app scope) but a forward-looking leak for the S-09 BLE swap; fix is a one-line
+  SYNC/TODO. Triage deferred (save-and-triage-later).
+- 2026-06-19: F1 triaged → **FIXED** (comment-only). Added a `TODO(S-09)` block above both
+  `single<BoardConnection>` bindings (`PlatformModule.android.kt` / `PlatformModule.ios.kt`) tying
+  scope-cancellation / `disconnect()` to the BLE adapter swap and cross-referencing each module. No behavior
+  change; `:shared:testAndroidHostTest` + ktlint re-verified green. Polish-language review mirror also saved
+  (`reviews/impl-review.pl.md`). All findings now resolved.

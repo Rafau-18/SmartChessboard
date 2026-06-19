@@ -31,6 +31,10 @@ actual val platformModule: Module =
         // S-06: the emulated board is the only BoardConnection until the S-09 BLE adapter ships. It is
         // connected on a long-lived app scope so a physical screen finds it live; the ViewModel
         // re-requests a snapshot on the CONNECTED transition, so a missed on-connect burst is recovered.
+        // TODO(S-09): this scope is never cancelled and disconnect() is never called — harmless for the
+        // emulator (process-lifetime singleton), but a real BLE adapter bound on this exact shape would
+        // leak the connection. When the BLE adapter lands, cancel the scope on teardown (e.g. Koin
+        // onClose { (it as? EmulatedBoard)?.disconnect() }). Keep the iOS module's binding in sync.
         single<BoardConnection> {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
             EmulatedBoard(scope = scope).also { board -> scope.launch { board.connect() } }
