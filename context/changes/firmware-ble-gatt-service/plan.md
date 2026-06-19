@@ -75,6 +75,7 @@ Concurrency model (research D7): the scan/debounce loop and the button reads run
 - **Malformed/unknown writes are ignored, never faulted.** Mirror the codec's totality: an unknown tag, wrong length, reserved bits, out-of-range enum, or stray payload on a tag-only command all become a no-op in the write handler (reserved command space `0x84–0x9F` included).
 - **`ble_gatts_notify_custom` symbol check.** Confirm the symbol against the actually-installed ESP-IDF/NimBLE headers — very old NimBLE used `ble_gattc_notify_custom`. Resolve at build time, not by assumption.
 - **`battery_pct = 100` is a deliberate USB constant**, in the documented 0–100 range — not a real reading. `firmware_version = 1.0.0`. `uptime_seconds` is an **unsigned** 32-bit little-endian field (`esp_timer`/tick-derived seconds).
+- **`BOARD_SNAPSHOT` is always built by the scan/producer task — never read `stable` cross-task.** `stable` is a 64-bit value owned by the scan task; a read from the BLE host or a timer can tear on the 32-bit dual-core ESP32 (two non-atomic word loads → a half-updated occupancy). So on-subscribe, `REQUEST_SNAPSHOT`, and each diagnostic tick post a lightweight *snapshot-request* onto the event queue; the scan task reads its own `stable`, encodes the frame via the `board_protocol` encoder, and enqueues it. `DEVICE_STATUS` is exempt — it reads only constants + `esp_timer` uptime, never `stable`, so any context may build it.
 
 ## Phase 1: Protocol Core + Host Test Harness
 
@@ -120,13 +121,13 @@ Extract the hardware-free logic into `firmware/lib/` and add a PlatformIO `nativ
 
 #### Automated Verification:
 
-- [ ] Host tests pass: `cd firmware && pio test -e native`
-- [ ] Device build still compiles: `cd firmware && pio run -e esp32dev`
-- [ ] `firmware/lib/` sources contain no ESP-IDF / Arduino / GPIO includes (grep for `driver/gpio.h`, `esp_`, `Arduino.h` returns nothing under `lib/`)
+- Host tests pass: `cd firmware && pio test -e native`
+- Device build still compiles: `cd firmware && pio run -e esp32dev`
+- `firmware/lib/` sources contain no ESP-IDF / Arduino / GPIO includes (grep for `driver/gpio.h`, `esp_`, `Arduino.h` returns nothing under `lib/`)
 
 #### Manual Verification:
 
-- [ ] Spot-check that the asserted golden frames in `test_protocol.cpp` match the literals in `BoardWireCodecTest.kt` (same bytes, both directions)
+- Spot-check that the asserted golden frames in `test_protocol.cpp` match the literals in `BoardWireCodecTest.kt` (same bytes, both directions)
 
 **Implementation Note**: After this phase and its automated verification pass, pause for manual confirmation before Phase 2.
 
@@ -162,7 +163,7 @@ Make the device a BLE peripheral: enable NimBLE, mint and record the UUIDs, adve
 
 **Intent**: Initialize NVS + NimBLE host, register one primary service with the two characteristics, advertise, and run the GAP/GATT lifecycle. Expose a tiny internal API the Phase-3 producer/consumer will call (a "notify this frame if subscribed" entry point and the subscribe/connection flags).
 
-**Contract**: One primary service (`BLE_UUID128_INIT(service)`); `board_event` = `BLE_GATT_CHR_F_NOTIFY` (NimBLE auto-adds the 0x2902 CCCD), `mobile_command` = `BLE_GATT_CHR_F_WRITE`. Advertising: name `SmartChessboard-XXXX` (last 4 hex of `esp_read_mac(..., ESP_MAC_BT)`) in the **scan response**, service UUID in the **advertisement**; undirected connectable. Pairing "Just Works" (`sm_io_cap = BLE_HS_IO_NO_INPUT_OUTPUT`, `sm_bonding=1`, `sm_sc=1`). GAP events: `CONNECT` → mark connected, `mode=GAME`, stop diagnostic timer; `SUBSCRIBE` (board_event CCCD enabled) → emit `BOARD_SNAPSHOT` then `DEVICE_STATUS`; `DISCONNECT` → clear flags, stop timers, re-advertise. Notify via `ble_gatts_notify_custom(conn, board_event_handle, om)` (verify symbol per Critical Details).
+**Contract**: One primary service (`BLE_UUID128_INIT(service)`); `board_event` = `BLE_GATT_CHR_F_NOTIFY` (NimBLE auto-adds the 0x2902 CCCD), `mobile_command` = `BLE_GATT_CHR_F_WRITE`. Advertising: name `SmartChessboard-XXXX` (last 4 hex of `esp_read_mac(..., ESP_MAC_BT)`) in the **scan response**, service UUID in the **advertisement**; undirected connectable. Pairing "Just Works" (`sm_io_cap = BLE_HS_IO_NO_INPUT_OUTPUT`, `sm_bonding=1`, `sm_sc=1`). GAP events: `CONNECT` → mark connected, `mode=GAME`, stop diagnostic timer; `SUBSCRIBE` (board_event CCCD enabled) → post a connect-burst request the **producer** services by enqueuing `BOARD_SNAPSHOT` (built from `stable` on the scan task — see Critical Details) then `DEVICE_STATUS`, in that order; `DISCONNECT` → clear flags, stop timers, re-advertise. Notify via `ble_gatts_notify_custom(conn, board_event_handle, om)` (verify symbol per Critical Details).
 
 #### 4. Status/snapshot source helpers
 
@@ -170,22 +171,22 @@ Make the device a BLE peripheral: enable NimBLE, mint and record the UUIDs, adve
 
 **Intent**: Provide the current-occupancy snapshot frame and the `DEVICE_STATUS` frame (battery 100, fw 1.0.0, uptime from `esp_timer`) using the Phase-1 encoders.
 
-**Contract**: Snapshot reads the live debounced `stable` bitmap; status reads constants + uptime seconds. Frames built only via `board_protocol` encoders (single source of truth).
+**Contract**: The snapshot frame is built by the **scan/producer task** from its own `stable` bitmap on a snapshot-request — **never read cross-task from the BLE context** (a 64-bit `stable` read off-task can tear on the dual-core ESP32; see Critical Details). Status reads constants + uptime seconds and may be built in any context. Frames built only via `board_protocol` encoders (single source of truth).
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- [ ] Device build links with NimBLE: `cd firmware && pio run -e esp32dev`
-- [ ] Host tests still pass: `cd firmware && pio test -e native`
-- [ ] `contract-surfaces.md` §1.2 contains all three UUIDs and an updated `updated:` date
+- Device build links with NimBLE: `cd firmware && pio run -e esp32dev`
+- Host tests still pass: `cd firmware && pio test -e native`
+- `contract-surfaces.md` §1.2 contains all three UUIDs and an updated `updated:` date
 
 #### Manual Verification:
 
-- [ ] Flashed board advertises as `SmartChessboard-XXXX` (visible in a BLE scanner, e.g. nRF Connect)
-- [ ] A central connects and bonds ("Just Works", no PIN); reconnect does not re-pair
-- [ ] On enabling notifications for `board_event`, the scanner receives `BOARD_SNAPSHOT` (9 B) then `DEVICE_STATUS` (9 B: battery `0x64`, fw `01 00 00`)
-- [ ] Disconnecting the central leaves the board advertising again (reconnectable without power cycle)
+- Flashed board advertises as `SmartChessboard-XXXX` (visible in a BLE scanner, e.g. nRF Connect)
+- A central connects and bonds ("Just Works", no PIN); reconnect does not re-pair
+- On enabling notifications for `board_event`, the scanner receives `BOARD_SNAPSHOT` (9 B) then `DEVICE_STATUS` (9 B: battery `0x64`, fw `01 00 00`)
+- Disconnecting the central leaves the board advertising again (reconnectable without power cycle)
 
 **Implementation Note**: After this phase and its automated verification pass, pause for manual confirmation before Phase 3.
 
@@ -205,7 +206,7 @@ Wire the live behavior on top of the BLE skeleton: the scan/debounce loop and bu
 
 **Intent**: Refactor `app_main` so the scan/debounce loop (now using `lib/debounce`) runs as a producer that posts an event struct to a FreeRTOS queue whenever `stable` changes; a consumer in the BLE host context drains the queue and notifies (gated on the subscribe flag + connection).
 
-**Contract**: A `BoardEventMsg { uint8_t bytes[9]; uint8_t len; }` queue (or a `{kind,payload}` struct encoded at drain time). Producer posts one `SQUARE_EVENT` per changed square from the `stable` diff (`placed`/`lifted` as in Critical Details), never coalescing. Producer **never** calls BLE APIs. Consumer calls `ble_gatts_notify_custom` only when connected and subscribed; otherwise drops (game-mode events while unsubscribed are not buffered, per contract §1.7 "dead link delivers nothing"). The existing serial `render()` may stay for local debug but is not on the contract path.
+**Contract**: A `BoardEventMsg { uint8_t bytes[9]; uint8_t len; }` queue (or a `{kind,payload}` struct encoded at drain time). Producer posts one `SQUARE_EVENT` per changed square from the `stable` diff (`placed`/`lifted` as in Critical Details), never coalescing. Producer **never** calls BLE APIs. Consumer calls `ble_gatts_notify_custom` only when connected and subscribed; otherwise drops (game-mode events while unsubscribed are not buffered, per contract §1.7 "dead link delivers nothing"). Queue depth + full-policy: size the queue for the worst burst (diagnostic ~10 Hz snapshot-requests + simultaneous square changes) and **never silently drop `SQUARE_EVENT` / `BUTTON_EVENT` on a live, subscribed link** — they carry the non-coalesceable transition stream `SequenceInterpreter` depends on (contract §1.3); only diagnostic `BOARD_SNAPSHOT`s may coalesce/drop under pressure (idempotent — latest wins). The existing serial `render()` may stay for local debug but is not on the contract path.
 
 #### 2. Physical confirmation buttons
 
@@ -221,7 +222,7 @@ Wire the live behavior on top of the BLE skeleton: the scan/debounce loop and bu
 
 **Intent**: Decode `mobile_command` writes via `lib/board_protocol` and act on them; ignore anything malformed/unknown without faulting.
 
-**Contract**: In the `BLE_GATT_ACCESS_OP_WRITE_CHR` callback, flatten the mbuf into a byte buffer, call the command decoder, and dispatch: `SET_MODE(game)` → stop diagnostic timer; `SET_MODE(diagnostic)` → start the ~100 ms snapshot timer; `REQUEST_SNAPSHOT` → post a `BOARD_SNAPSHOT`; `REQUEST_STATUS` → post a `DEVICE_STATUS`. A `Malformed` result (bad length, unknown/reserved tag `0x84–0x9F`, out-of-range mode, stray payload) is a no-op. Return a success ATT status regardless (no error responses that could confuse a central).
+**Contract**: In the `BLE_GATT_ACCESS_OP_WRITE_CHR` callback, flatten the mbuf into a byte buffer, call the command decoder, and dispatch: `SET_MODE(game)` → stop diagnostic timer; `SET_MODE(diagnostic)` → start the ~100 ms snapshot timer; `REQUEST_SNAPSHOT` → post a snapshot-request (the producer enqueues the `BOARD_SNAPSHOT` from `stable`); `REQUEST_STATUS` → post a `DEVICE_STATUS`. A `Malformed` result (bad length, unknown/reserved tag `0x84–0x9F`, out-of-range mode, stray payload) is a no-op. Return a success ATT status regardless (no error responses that could confuse a central).
 
 #### 4. Periodic status + diagnostic timers
 
@@ -229,25 +230,25 @@ Wire the live behavior on top of the BLE skeleton: the scan/debounce loop and bu
 
 **Intent**: Drive the ~30 s `DEVICE_STATUS` and the diagnostic-mode ~10 Hz `BOARD_SNAPSHOT` via FreeRTOS software timers that post onto the event queue.
 
-**Contract**: A ~30 s auto-reload `xTimer` started on subscribe (stopped on disconnect) posts `DEVICE_STATUS`. A ~100 ms `xTimer` started on `SET_MODE→diagnostic` and stopped on `SET_MODE→game` (and on disconnect) posts `BOARD_SNAPSHOT`. Rate is a target; modest variance is acceptable (contract §1.6). Timer callbacks only enqueue — they never call BLE APIs directly.
+**Contract**: A ~30 s auto-reload `xTimer` started on subscribe (stopped on disconnect) posts `DEVICE_STATUS`. A ~100 ms `xTimer` started on `SET_MODE→diagnostic` and stopped on `SET_MODE→game` (and on disconnect) posts a snapshot-request (the producer enqueues the `BOARD_SNAPSHOT`). Rate is a target; modest variance is acceptable (contract §1.6). Timer callbacks only enqueue — they never call BLE APIs directly.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- [ ] Device build compiles and links: `cd firmware && pio run -e esp32dev`
-- [ ] Host tests still pass (debounce + protocol unchanged): `cd firmware && pio test -e native`
-- [ ] If the `stable`-diff → square-event derivation is in `lib/`, it has a native test asserting lift/place events for a representative diff
+- Device build compiles and links: `cd firmware && pio run -e esp32dev`
+- Host tests still pass (debounce + protocol unchanged): `cd firmware && pio test -e native`
+- If the `stable`-diff → square-event derivation is in `lib/`, it has a native test asserting lift/place events for a representative diff
 
 #### Manual Verification (on hardware, best-effort — partially-working board + temporary buttons):
 
-- [ ] Moving a magnet on a working square produces `SQUARE_EVENT` lift then place in the scanner, with the correct index and event bits (`00`=lift, `01`=place)
-- [ ] Pressing the temporary white/black button produces `BUTTON_EVENT` `03 00` / `03 01`
-- [ ] `SET_MODE(diagnostic)` (`81 01`) starts a ~10 Hz `BOARD_SNAPSHOT` stream; `SET_MODE(game)` (`81 00`) stops it
-- [ ] `REQUEST_SNAPSHOT` (`82`) and `REQUEST_STATUS` (`83`) each yield an immediate frame
-- [ ] A `DEVICE_STATUS` arrives roughly every ~30 s while subscribed
-- [ ] Disconnect → change a square offline → reconnect: the reconnect snapshot reflects the offline change
-- [ ] Writing a malformed/reserved command (e.g. `84`, `81 02`) is ignored — no crash, no reset
+- Moving a magnet on a working square produces `SQUARE_EVENT` lift then place in the scanner, with the correct index and event bits (`00`=lift, `01`=place)
+- Pressing the temporary white/black button produces `BUTTON_EVENT` `03 00` / `03 01`
+- `SET_MODE(diagnostic)` (`81 01`) starts a ~10 Hz `BOARD_SNAPSHOT` stream; `SET_MODE(game)` (`81 00`) stops it
+- `REQUEST_SNAPSHOT` (`82`) and `REQUEST_STATUS` (`83`) each yield an immediate frame
+- A `DEVICE_STATUS` arrives roughly every ~30 s while subscribed
+- Disconnect → change a square offline → reconnect: the reconnect snapshot reflects the offline change
+- Writing a malformed/reserved command (e.g. `84`, `81 02`) is ignored — no crash, no reset
 
 **Implementation Note**: After this phase and its automated verification pass, pause for manual confirmation before Phase 4. Per the project's manual-gate convention, on-hardware items that need the board may be recorded to `manual-verification.md` and confirmed at end-of-slice if the board isn't to hand at phase close.
 
@@ -275,7 +276,7 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 **Intent**: Mark the OQs this change settles: OQ-2 power = USB-only (battery_pct constant 100), OQ-4 toolchain = ESP-IDF, OQ-5 UUIDs assigned (recorded in contract §1.2). Note the NimBLE choice and the `battery_pct=100` USB convention.
 
-**Contract**: Append dated resolutions in the Open Questions section (and/or an Implementation Decisions note); keep OQ-1 (exact variant) and OQ-3 (matrix wiring documentation) open as non-blocking.
+**Contract**: Append dated resolutions in the Open Questions section (and/or an Implementation Decisions note); keep OQ-1 (exact variant) and OQ-3 (matrix wiring documentation) open as non-blocking. **Also mirror the §1.2 UUID assignment into `context/foundation/prd.md`** — the contract's change-control rule requires Section 1 (BLE) changes to land in *both* `prd-firmware.md` and `prd.md`; add a one-line dated note to `prd.md`'s Implementation Decisions naming the three minted UUIDs (no product-FR change).
 
 #### 3. Note the buttons in hardware docs
 
@@ -289,13 +290,13 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated Verification:
 
-- [ ] `firmware/AGENTS.md` no longer presents the firmware software as parked (the "Status: PARKED / don't resume" framing is updated)
-- [ ] `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions
-- [ ] No build/test regression: `cd firmware && pio run -e esp32dev && pio test -e native`
+- `firmware/AGENTS.md` no longer presents the firmware software as parked (the "Status: PARKED / don't resume" framing is updated)
+- `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` carries the dated §1.2 UUID mirror note (contract change-control)
+- No build/test regression: `cd firmware && pio run -e esp32dev && pio test -e native`
 
 #### Manual Verification:
 
-- [ ] The updated `firmware/AGENTS.md` reads coherently and matches what was built (BLE, buttons, lib, native tests)
+- The updated `firmware/AGENTS.md` reads coherently and matches what was built (BLE, buttons, lib, native tests)
 
 **Implementation Note**: Final phase — after automated verification and a docs read-through, the change is ready for `/10x-impl-review`.
 
@@ -401,7 +402,7 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 #### Automated
 
 - [ ] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked
-- [ ] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions
+- [ ] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added
 - [ ] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native`
 
 #### Manual
