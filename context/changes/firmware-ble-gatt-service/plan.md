@@ -368,9 +368,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 2.1 Device build links with NimBLE: `pio run -e esp32dev`
-- [x] 2.2 Host tests still pass: `pio test -e native`
-- [x] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date
+- [x] 2.1 Device build links with NimBLE: `pio run -e esp32dev` — e3c594a
+- [x] 2.2 Host tests still pass: `pio test -e native` — e3c594a
+- [x] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date — e3c594a
 
 #### Manual
 
@@ -383,9 +383,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [ ] 3.1 Device build compiles and links: `pio run -e esp32dev`
-- [ ] 3.2 Host tests still pass: `pio test -e native`
-- [ ] 3.3 `stable`-diff → square-event derivation has a native test (if extracted to `lib/`)
+- [x] 3.1 Device build compiles and links: `pio run -e esp32dev`
+- [x] 3.2 Host tests still pass: `pio test -e native`
+- [x] 3.3 `stable`-diff → square-event derivation has a native test (if extracted to `lib/`)
 
 #### Manual
 

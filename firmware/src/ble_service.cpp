@@ -22,6 +22,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -43,6 +44,26 @@ constexpr uint8_t kBatteryPctUsb = 100;
 constexpr uint8_t kFwMajor = 1;
 constexpr uint8_t kFwMinor = 0;
 constexpr uint8_t kFwPatch = 0;
+
+// §1.3 board→mobile tags — only what the backpressure policy keys on (the full
+// codec lives in board_protocol). SQUARE/BUTTON are the non-coalesceable stream.
+constexpr uint8_t kTagSquareEvent = 0x02;
+constexpr uint8_t kTagButtonEvent = 0x03;
+
+// Outbound queue sized for the worst burst (a multi-square change plus a pending
+// diagnostic snapshot); the consumer drains it in sub-ms, so it rarely fills.
+constexpr int kOutQueueDepth = 32;
+constexpr int kReqQueueDepth = 8;
+
+// Backpressure (plan Phase 3 §1): mandatory frames wait up to this long on a full
+// queue (bounded so the scan task can never deadlock); droppable frames never
+// wait. With a fast consumer the wait essentially never elapses.
+constexpr TickType_t kMandatoryEnqueueTicks = pdMS_TO_TICKS(100);
+
+// FreeRTOS timer cadences (§1.6 — rates are targets, modest variance is fine).
+constexpr TickType_t kStatusPeriodTicks = pdMS_TO_TICKS(30000);  // ~30 s DEVICE_STATUS
+constexpr TickType_t kDiagPeriodTicks = pdMS_TO_TICKS(100);      // ~10 Hz BOARD_SNAPSHOT
+constexpr TickType_t kTimerCmdTicks = pdMS_TO_TICKS(20);         // timer-command block bound
 
 // GATT UUIDs — recorded in docs/reference/contract-surfaces.md §1.2.
 // BLE_UUID128_INIT takes the 16 bytes little-endian (LSB first), i.e. the
@@ -70,11 +91,20 @@ char s_device_name[24];  // "SmartChessboard-XXXX" = 20 chars + NUL
 QueueHandle_t s_out_queue;  // board_protocol::Frame → consumer task notifies
 QueueHandle_t s_req_queue;  // ble_service::Request → producer (scan loop)
 
+// "Diagnostic mode" is exactly "the diagnostic snapshot timer is running", so the
+// timer's run state IS the mode — no separate flag to drift out of sync. GAME is
+// the default (timer stopped), which (re)connect re-asserts via enter_game_mode().
+TimerHandle_t s_status_timer;  // ~30 s auto-reload → posts Request::Status
+TimerHandle_t s_diag_timer;    // ~100 ms auto-reload (diagnostic) → Request::Snapshot
+
 // Forward declarations (gap_event ⇄ start_advertising are mutually recursive).
 int gap_event(struct ble_gap_event* event, void* arg);
 int gatt_access(uint16_t conn_handle, uint16_t attr_handle,
                 struct ble_gatt_access_ctxt* ctxt, void* arg);
 void start_advertising();
+void enter_game_mode();
+void enter_diagnostic_mode();
+void post_request(ble_service::Request req);
 
 // One primary service, two characteristics. NimBLE auto-adds the CCCD (0x2902)
 // for the notify characteristic. Named arrays (not inline GNU compound
@@ -120,13 +150,66 @@ int gatt_access(uint16_t /*conn_handle*/, uint16_t attr_handle,
                 struct ble_gatt_access_ctxt* ctxt, void* /*arg*/) {
     if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR &&
         attr_handle == s_mobile_command_handle) {
-        // Phase 2: accept the write and return success. Decoding the command via
-        // board_protocol::decodeCommand and dispatching SET_MODE / REQUEST_* is
-        // Phase 3 work; per the contract a malformed/unknown write is a silent
-        // no-op (never an ATT error), so succeeding here is forward-safe.
+        // Flatten the mbuf and decode totally. Anything malformed/unknown — bad
+        // length, reserved tag 0x84–0x9F, out-of-range mode, stray payload, or a
+        // write larger than any valid command — is a silent no-op (never an ATT
+        // error that could confuse a central). We always return success.
+        uint8_t buf[16];
+        uint16_t len = 0;
+        if (ble_hs_mbuf_to_flat(ctxt->om, buf, static_cast<uint16_t>(sizeof buf),
+                                &len) == 0) {
+            const board_protocol::DecodedCommand cmd =
+                board_protocol::decodeCommand(buf, len);
+            switch (cmd.kind) {
+            case board_protocol::CommandKind::SetMode:
+                if (cmd.mode == board_protocol::BoardMode::Diagnostic) {
+                    enter_diagnostic_mode();
+                } else {
+                    enter_game_mode();
+                }
+                break;
+            case board_protocol::CommandKind::RequestSnapshot:
+                // Snapshot reads `stable` → must be built by the producer.
+                post_request(ble_service::Request::Snapshot);
+                break;
+            case board_protocol::CommandKind::RequestStatus:
+                post_request(ble_service::Request::Status);
+                break;
+            case board_protocol::CommandKind::Malformed:
+                break;  // ignore — totality mirrors the codec
+            }
+        }
         return 0;
     }
     return BLE_ATT_ERR_UNLIKELY;
+}
+
+// ---- Mode transitions + request posting -----------------------------------
+
+// Post a Request the producer (scan loop, owns `stable`) services. Best-effort:
+// the producer drains every scan (~20 ms), so the queue rarely holds more than a
+// couple of entries; a full queue just drops this request (the next timer tick or
+// write re-posts). Safe from the host task and the timer-service task.
+void post_request(ble_service::Request req) {
+    if (s_req_queue) {
+        xQueueSend(s_req_queue, &req, 0);
+    }
+}
+
+void enter_game_mode() {
+    // Stop the diagnostic snapshot stream. Idempotent: stopping an already-stopped
+    // timer is a no-op, so this is safe to call on connect/disconnect/unsubscribe.
+    if (s_diag_timer) {
+        xTimerStop(s_diag_timer, kTimerCmdTicks);
+    }
+}
+
+void enter_diagnostic_mode() {
+    // Start the ~10 Hz snapshot stream. These snapshots ADD to (never replace)
+    // the per-transition SQUARE_EVENTs the producer already streams.
+    if (s_diag_timer) {
+        xTimerStart(s_diag_timer, kTimerCmdTicks);
+    }
 }
 
 // ---- Advertising + GAP lifecycle ------------------------------------------
@@ -178,6 +261,7 @@ int gap_event(struct ble_gap_event* event, void* /*arg*/) {
         if (event->connect.status == 0) {
             s_conn_handle = event->connect.conn_handle;
             s_subscribed = false;  // central must (re)enable the CCCD
+            enter_game_mode();     // (re)connect resets mode to GAME (EmulatedBoard)
             ESP_LOGI(TAG, "central connected; handle=%d", s_conn_handle);
         } else {
             ESP_LOGW(TAG, "connect failed; status=%d — re-advertising",
@@ -191,6 +275,13 @@ int gap_event(struct ble_gap_event* event, void* /*arg*/) {
                  event->disconnect.reason);
         s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
         s_subscribed = false;
+        // Emission stops with the link: halt both timers (sensing continues in
+        // the scan loop). enter_game_mode() stops the diagnostic timer + resets
+        // mode; the periodic-status timer is stopped explicitly.
+        enter_game_mode();
+        if (s_status_timer) {
+            xTimerStop(s_status_timer, kTimerCmdTicks);
+        }
         start_advertising();  // FR-FW-012: reconnectable without power cycle
         return 0;
 
@@ -204,9 +295,16 @@ int gap_event(struct ble_gap_event* event, void* /*arg*/) {
                 // DEVICE_STATUS" maps to CCCD subscribe (a notify with no
                 // subscriber is dropped). Hand the burst to the producer so the
                 // snapshot is built from `stable` on the task that owns it.
-                ble_service::Request burst = ble_service::Request::Burst;
-                if (s_req_queue) {
-                    xQueueSend(s_req_queue, &burst, 0);
+                post_request(ble_service::Request::Burst);
+                // Periodic DEVICE_STATUS runs only while a subscriber is live.
+                if (s_status_timer) {
+                    xTimerStart(s_status_timer, kTimerCmdTicks);
+                }
+            } else {
+                // Notifications turned off without disconnecting: stop emission.
+                enter_game_mode();
+                if (s_status_timer) {
+                    xTimerStop(s_status_timer, kTimerCmdTicks);
                 }
             }
         }
@@ -254,6 +352,21 @@ void consumer_task(void*) {
             ESP_LOGW(TAG, "notify rc=%d", rc);
         }
     }
+}
+
+// ---- Periodic + diagnostic timers -----------------------------------------
+//
+// Both callbacks run in the FreeRTOS timer-service task and do ONE thing: post a
+// Request the producer (which owns `stable`) turns into a frame. They never read
+// `stable`, never build a frame, never call a BLE API — keeping the
+// "frames derived from `stable` are built only on the scan task" rule intact.
+
+void status_timer_cb(TimerHandle_t /*t*/) {
+    post_request(ble_service::Request::Status);
+}
+
+void diag_timer_cb(TimerHandle_t /*t*/) {
+    post_request(ble_service::Request::Snapshot);
 }
 
 // ---- NimBLE host plumbing -------------------------------------------------
@@ -304,9 +417,18 @@ void init() {
     }
     ESP_ERROR_CHECK(ret);
 
-    s_out_queue = xQueueCreate(16, sizeof(board_protocol::Frame));
-    s_req_queue = xQueueCreate(8, sizeof(Request));
+    s_out_queue = xQueueCreate(kOutQueueDepth, sizeof(board_protocol::Frame));
+    s_req_queue = xQueueCreate(kReqQueueDepth, sizeof(Request));
     configASSERT(s_out_queue != NULL && s_req_queue != NULL);
+
+    // Auto-reload timers, created stopped. The periodic one starts on subscribe
+    // (stops on unsubscribe/disconnect); the diagnostic one starts on
+    // SET_MODE(diagnostic) (stops on SET_MODE(game)/connect/disconnect).
+    s_status_timer = xTimerCreate("status", kStatusPeriodTicks, pdTRUE, nullptr,
+                                  status_timer_cb);
+    s_diag_timer = xTimerCreate("diag", kDiagPeriodTicks, pdTRUE, nullptr,
+                                diag_timer_cb);
+    configASSERT(s_status_timer != NULL && s_diag_timer != NULL);
 
     ret = nimble_port_init();
     if (ret != ESP_OK) {
@@ -355,9 +477,24 @@ bool poll_request(Request& out) {
 }
 
 void enqueue_frame(const board_protocol::Frame& frame) {
-    if (s_out_queue != NULL) {
-        xQueueSend(s_out_queue, &frame, 0);
+    if (s_out_queue == NULL || frame.len == 0) {
+        return;
     }
+    // SQUARE_EVENT / BUTTON_EVENT are the non-coalesceable transition stream
+    // (contract §1.3): wait briefly on a full queue rather than drop, and log if
+    // a drop ever happens (pathological backpressure — never silent). Snapshots
+    // (incl. diagnostic) and DEVICE_STATUS are idempotent/periodic → drop without
+    // waiting under pressure (latest wins).
+    const uint8_t tag = frame.bytes[0];
+    const bool mandatory = (tag == kTagSquareEvent || tag == kTagButtonEvent);
+    const TickType_t wait = mandatory ? kMandatoryEnqueueTicks : 0;
+    if (xQueueSend(s_out_queue, &frame, wait) != pdTRUE && mandatory) {
+        ESP_LOGW(TAG, "out queue full; dropped mandatory frame tag=0x%02X", tag);
+    }
+}
+
+bool is_subscribed() {
+    return s_conn_handle != BLE_HS_CONN_HANDLE_NONE && s_subscribed;
 }
 
 board_protocol::Frame build_status_frame() {

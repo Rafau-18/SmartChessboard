@@ -16,10 +16,14 @@
 // A dedicated consumer task inside this unit drains those frames and notifies
 // the subscribed central.
 //
-// Phase 2 scope: advertising, bonding, lifecycle, and the on-subscribe burst.
-// Phase 3 layers per-transition SQUARE_EVENTs, buttons, mobile_command dispatch,
-// and the diagnostic/periodic-status timers onto this same producer/consumer
-// spine.
+// Phase 2 delivered advertising, bonding, lifecycle, and the on-subscribe burst.
+// Phase 3 layers per-transition SQUARE_EVENTs and BUTTON_EVENTs (the producer in
+// app_main enqueues them, gated on is_subscribed()), the mobile_command write
+// handler (SET_MODE / REQUEST_SNAPSHOT / REQUEST_STATUS, malformed = no-op), and
+// the ~30 s periodic-status + ~100 ms diagnostic FreeRTOS timers — all onto this
+// same producer/consumer spine. The timers and the write handler only ever post
+// a Request onto s_req_queue (serviced by the producer, which owns `stable`);
+// they never read `stable` and never call notify directly.
 
 #pragma once
 
@@ -50,8 +54,21 @@ bool poll_request(Request& out);
 
 // Producer entry point: hand an already-encoded board_event frame to the
 // consumer task, which notifies it iff a central is connected and subscribed.
-// Safe to call from the scan task. Drops silently if the outbound queue is full.
+// Safe to call from the scan task. Backpressure policy is keyed on the §1.3 tag:
+// SQUARE_EVENT (0x02) / BUTTON_EVENT (0x03) carry the non-coalesceable transition
+// stream SequenceInterpreter depends on — they block briefly on a full queue and
+// a drop (pathological only) is logged, never silent; BOARD_SNAPSHOT (0x01, incl.
+// diagnostic) and DEVICE_STATUS (0x04) are idempotent/periodic and dropped
+// without waiting under pressure (latest wins).
 void enqueue_frame(const board_protocol::Frame& frame);
+
+// True iff a central is connected AND has notifications enabled on board_event.
+// The producer reads this to gate enqueueing game-mode events ("dead link
+// delivers nothing", contract §1.7) — it is a plain flag read, not a BLE call.
+// The consumer re-checks the same condition at notify time (the subscribe state
+// can change between enqueue and notify), so this is an optimization, not the
+// authority.
+bool is_subscribed();
 
 // Build a DEVICE_STATUS frame: battery 100 (USB constant), firmware 1.0.0,
 // uptime from esp_timer (unsigned seconds). Reads only constants + uptime —

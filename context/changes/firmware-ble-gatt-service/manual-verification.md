@@ -52,3 +52,32 @@ snapshot is built by the scan task from its own `stable` bitmap; with the
 reed-matrix only partially working, expect the snapshot to reflect whatever the
 working squares sense (a near-empty board is fine for this phase — 2.6 checks the
 burst shape + the `DEVICE_STATUS` bytes, not board contents).
+
+## Phase 3 — Game Behavior (events / buttons / commands / diagnostic)
+
+Type: **on-hardware** (needs the ESP32 flashed + a BLE scanner such as nRF
+Connect + two temporary buttons jumpered to GPIO22/GPIO23 → GND). Deferred to
+end-of-slice per the project manual-gate convention — the board (and the
+temporary buttons) may not be to hand at phase close. Automated gate already
+green: device build links (`pio run -e esp32dev`), host tests pass 15/15
+including `test_derive_square_events` (`pio test -e native`).
+
+Flash with `pio run -t upload` from `firmware/`, connect + subscribe to
+`board_event` (`787e0002-…`), then:
+
+| # | Check | Expected |
+| --- | --- | --- |
+| 3.4 | Move a magnet on a working square | One `SQUARE_EVENT` lift (`02`, event bits `00`) then place (`02`, event bits `01`) with the correct square index in the low 6 bits — never coalesced |
+| 3.5 | Press the temporary white / black button (GPIO22 / GPIO23 → GND, active-LOW) | `BUTTON_EVENT` `03 00` (white) / `03 01` (black), one per debounced press edge |
+| 3.6 | Write `SET_MODE(diagnostic)` = `81 01`, then `SET_MODE(game)` = `81 00` to `mobile_command` (`787e0003-…`) | `81 01` starts a ~10 Hz `BOARD_SNAPSHOT` stream (ADDED to, not replacing, square events); `81 00` stops it |
+| 3.7 | Write `REQUEST_SNAPSHOT` = `82`, then `REQUEST_STATUS` = `83` | Each yields one immediate frame — `BOARD_SNAPSHOT` (9 B) / `DEVICE_STATUS` (9 B) |
+| 3.8 | Stay subscribed ~30 s | A `DEVICE_STATUS` (`04 64 01 00 00` + uptime u32 LE) arrives roughly every ~30 s |
+| 3.9 | Disconnect → change a working square offline → reconnect + re-subscribe | The reconnect `BOARD_SNAPSHOT` reflects the offline change (mode also reset to GAME) |
+| 3.10 | Write a malformed/reserved command (e.g. `84`, `90`, `81 02`, `82 00`) | Ignored — no crash, no reset, no ATT error; the link stays up and live events keep flowing |
+
+Status: **PENDING on-hardware** (recorded 2026-06-19). Notes: square/button
+events are enqueued only while a central is subscribed ("dead link delivers
+nothing", §1.7); with the reed-matrix only partially working, run 3.4/3.9
+against a square that actually senses. Backpressure policy: SQUARE/BUTTON events
+are never silently dropped on a live link (they block briefly then log if ever
+dropped); diagnostic snapshots may drop under pressure (latest wins).
