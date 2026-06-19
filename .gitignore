@@ -26,3 +26,7 @@ node_modules/
 
 # Course material — study/reference only, not part of the project deliverable
 #10xDevsLekcje/
+
+# Claude Code worktrees — local feature-branch checkouts inside the repo
+# (created by /10x-implement etc.); the branches live in .git, not here.
+.claude/worktrees/
