@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-06-13
+updated: 2026-06-19
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -33,6 +33,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | ---- | ----------------------------- | ---------------------------------------------------------------- | ---------------- | ----------------------------------------------------- | --------------- |
 | F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection | —                | FR-005, FR-007, Guardrails                            | awaiting review |
 | F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware | —                | PRD OQ-1 (resolved), US-02                            | in progress     |
+| F-03 | firmware-ble-gatt-service     | (foundation) ESP32 firmware speaks the §1 BLE board contract     | —                | FR-FW-002–013                                         | ready           |
 | S-01 | google-signin-own-history     | sign in with Google and see own private game list                | —                | FR-001, FR-002, FR-015, US-03                         | awaiting review |
 | S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)  | S-01             | FR-016, US-03                                         | awaiting review |
 | S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                 | S-02             | FR-017, US-01, US-03                                  | awaiting review |
@@ -41,7 +42,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
 | S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | proposed        |
 | S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | proposed        |
-| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07       | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
+| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
 
 ## Streams
 
@@ -51,7 +52,8 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
 | B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green). S-05 implemented 2026-06-17 (game end & result, three-surface E2E green).** |
-| C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is blocked until firmware work resumes. **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
+| C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` stays blocked on `F-03` (firmware, Stream D) and the hardware-matrix repair. **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
+| D      | Firmware       | `F-03`                                         | Firmware software (BLE GATT service) for the ESP32 board — unit-tested + validated against the F-02 emulator's contract; runs fully parallel to Streams A–C from now and joins Stream C at `S-09` for on-hardware integration. |
 
 ## Baseline
 
@@ -94,6 +96,21 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Unknowns:** —
 - **Risk:** Emulator fidelity bounds how much surprise the real board can still spring; keep its event stream message-identical to the documented board contract so verification done on S-06–S-08 transfers to hardware.
 - **Status:** in progress — change folder opened 2026-06-11 (`context/changes/reed-board-emulator/`); next: `/10x-plan`.
+
+### F-03: ESP32 board firmware (BLE GATT game service)
+
+- **Outcome:** (foundation) The ESP32 board firmware implements the §1 BLE contract end-to-end: advertises as the board peripheral, exposes the one GATT service (`board_event` notify + `mobile_command` write), debounces reed-switch transitions into `SQUARE_EVENT`s, encodes `BOARD_SNAPSHOT` / `BUTTON_EVENT` / `DEVICE_STATUS`, and handles `SET_MODE` / `REQUEST_SNAPSHOT` / `REQUEST_STATUS` — verified by firmware unit tests plus the F-02 emulator's contract, so a real board is ready for S-09 to drive. No user-visible outcome on its own.
+- **Change ID:** firmware-ble-gatt-service
+- **PRD refs:** `prd-firmware.md` FR-FW-002 through FR-FW-013 (BLE peripheral, message encoding, square indexing, debouncing, mobile commands, connection lifecycle); contract `contract-surfaces.md` §1. FR-FW-001 (raw reed sampling) is already implemented and hardware-verified (2026-05-28, see Baseline) — consumed here, not rebuilt.
+- **Unlocks:** S-09 (real-board play over BLE — US-02 on hardware). Converts S-09's former open-ended "when does firmware resume" blocker into a counted dependency, and satisfies the firmware half of the §1 BLE contract that F-02's emulator implements on the mobile side.
+- **Prerequisites:** — (codes against the frozen `contract-surfaces.md` §1 BLE contract; shares no code with the mobile app, so it needs no mobile slice in place).
+- **Parallel with:** F-01, F-02, S-01, S-02, S-03, S-04, S-05, S-06, S-07, S-08 — firmware software is a separate ESP32 / C++ sub-project, independently unit-testable; only S-09 consumes it, so it can be built now alongside all mobile work.
+- **Blockers:** —
+- **Unknowns:**
+  - GATT service / characteristic UUIDs are unassigned (`prd-firmware.md` OQ-5 / contract §1.2) — assigned during firmware implementation and written back into `contract-surfaces.md` §1.2 (the one firmware unknown that touches a shared contract surface). Owner: firmware implementer. Block: no.
+  - Remaining `prd-firmware.md` open questions — ESP32 variant (OQ-1), power source (OQ-2), matrix wiring (OQ-3), toolchain ESP-IDF vs Arduino (OQ-4) — are firmware-internal, settled before the first firmware commit, and gate neither F-03 planning nor any other roadmap item. Owner: firmware implementer / hardware build. Block: no.
+- **Risk:** Firmware is validated only against the contract + the F-02 emulator until S-09 puts it on real hardware, so the residual risk is contract drift between the emulator's assumptions and real firmware behaviour (the 2026-06-16 `BOARD_SNAPSHOT` byte-layout clarification is exactly this class of bug). Keep the firmware byte-for-byte identical to `contract-surfaces.md` §1 and the emulator's event stream so the S-06–S-08 verification transfers to hardware. The physical reed-matrix repair is a separate hardware task — a precondition for S-09's on-hardware test, not for writing F-03.
+- **Status:** ready
 
 ## Slices
 
@@ -203,11 +220,11 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Outcome:** User can play the physical flow against the actual board over BLE: connect, receive live board events, confirm with the side buttons — and save accepted moves into the canonical record on real hardware.
 - **Change ID:** real-board-over-ble
 - **PRD refs:** FR-008, FR-009, FR-010, FR-011, US-02
-- **Prerequisites:** S-06, S-07
+- **Prerequisites:** S-06, S-07, F-03
 - **Parallel with:** S-08
 - **Blockers:** —
 - **Unknowns:**
-  - When does firmware development resume to implement the BLE GATT game service (service/characteristic UUIDs are still unassigned — firmware sub-project intentionally parked)? — Owner: user. Block: yes.
+  - The physical reed matrix must be repaired before the real board can be driven — the prototype's reed switches don't all work. This is a **hardware task tracked outside the software roadmap** (deliberately not modeled as a roadmap slice); the firmware software itself is now the counted dependency `F-03`. — Owner: user (hardware). Block: yes.
 - **Risk:** The only slice touching real hardware; everything upstream is de-risked on the emulator, so residual risk concentrates in BLE fidelity and real reed-switch noise.
 - **Status:** blocked
 
@@ -217,6 +234,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 | ---------- | ----------------------------- | ----------------------------------------------------------------- | --------------------- | --------------------------------------- |
 | F-01       | chess-rules-engine            | Chess rules engine: full legality + mate/stalemate detection       | yes                   | Run `/10x-plan chess-rules-engine`      |
 | F-02       | reed-board-emulator           | Programmatic reed-switch board emulator (test harness)             | yes                   | Run `/10x-plan reed-board-emulator`     |
+| F-03       | firmware-ble-gatt-service     | ESP32 board firmware: BLE GATT service, events, commands           | yes                   | Run `/10x-plan firmware-ble-gatt-service` |
 | S-01       | google-signin-own-history     | Google sign-in and private game history list                       | yes                   | Run `/10x-plan google-signin-own-history` |
 | S-02       | replay-seeded-games           | Replay saved games with board view and controls (seeded snapshots) | no                    | After S-01                              |
 | S-03       | post-game-evals-in-replay     | Position evaluations in replay (eval proxy + cache)                | no                    | After S-02 — north star                 |
@@ -225,7 +243,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 | S-06       | physical-capture-emulated     | Physical-mode capture via emulator (sequence → move)               | no                    | After F-01, F-02, S-04                  |
 | S-07       | reject-recover-diagnostics    | Sequence rejection + live reed diagnostics recovery                | no                    | After S-06                              |
 | S-08       | physical-resume-after-restart | Resume physical game after app restart                             | no                    | After S-07                              |
-| S-09       | real-board-over-ble           | Real-board BLE integration                                         | no                    | Blocked: firmware GATT not implemented  |
+| S-09       | real-board-over-ble           | Real-board BLE integration                                         | no                    | Blocked: needs `F-03` (firmware) + hardware-matrix repair |
 
 ## Open Roadmap Questions
 
