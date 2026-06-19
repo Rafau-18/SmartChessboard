@@ -677,10 +677,10 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 1.1 Interpreter suite passes on JVM host (`:shared:testAndroidHostTest`)
-- [x] 1.2 Interpreter suite passes on iOS sim (`:shared:iosSimulatorArm64Test`)
-- [x] 1.3 Interpreter suite passes on web (`:shared:wasmJsTest`)
-- [x] 1.4 ktlint clean
+- [x] 1.1 Interpreter suite passes on JVM host (`:shared:testAndroidHostTest`) — b969215
+- [x] 1.2 Interpreter suite passes on iOS sim (`:shared:iosSimulatorArm64Test`) — b969215
+- [x] 1.3 Interpreter suite passes on web (`:shared:wasmJsTest`) — b969215
+- [x] 1.4 ktlint clean — b969215
 
 #### Manual
 

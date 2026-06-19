@@ -75,6 +75,8 @@ internal fun applyMove(
     val mover = piece.color
     val captured = board[move.to]
     val isPawn = piece.type == PieceType.PAWN
+    // SYNC: the en-passant captured-square and castle rook-square geometry below is hand-mirrored by
+    // SequenceInterpreter.footprintOf (domain/board) for physical-move resolution. Change both together.
     // A pawn landing diagonally on an empty square can only be the en-passant capture.
     val isEnPassant = isPawn && captured == null && fileOf(move.to) != fileOf(move.from)
 

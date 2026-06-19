@@ -13,6 +13,10 @@ import org.rurbaniak.smartchessboard.domain.chess.SQUARE_COUNT
  *
  * Piece colour and type are intentionally discarded: a reed-switch board senses only magnet
  * presence, never which piece sits on a square, so occupancy is the only thing a snapshot can prove.
+ *
+ * Invariant: square 63 (h8) sets the sign bit (`1L shl 63` == `Long.MIN_VALUE`). Always test a square
+ * with `(bits and (1L shl n)) != 0L`, never `bits > 0` / `> 0L` — a signed comparison silently
+ * misreads exactly h8.
  */
 fun Position.toOccupancy(): Long {
     var bits = 0L

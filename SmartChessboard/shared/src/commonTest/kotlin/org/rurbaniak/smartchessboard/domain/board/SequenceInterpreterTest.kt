@@ -235,6 +235,8 @@ class SequenceInterpreterTest {
     fun twoKnightsToTheSameSquareResolveByTheLiftedOriginNotAmbiguous() {
         // Both knights reach d5; a snapshot of the final board cannot tell which moved, but the lift on
         // the origin does. This is why the resolver's Ambiguous branch is unreachable under a full stream.
+        // Substitutes the plan's enumerated "two legal moves -> Ambiguous" corpus case: that outcome is
+        // not constructible from a real lift/place stream, so this proves unique resolution instead.
         val position = fen("7k/8/8/8/8/2N1N3/8/7K w - -")
         assertTrue(Move(sq("c3"), sq("d5")) in legalMoves(position))
         assertTrue(Move(sq("e3"), sq("d5")) in legalMoves(position))

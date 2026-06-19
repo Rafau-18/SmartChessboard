@@ -117,6 +117,12 @@ private fun observe(
  * are derived from the position with the same rules the engine already uses (`sanForMove`,
  * `parsePgn`, `applyMove`): castling is a king two-file move (rook squares follow from the side);
  * en passant is a pawn moving diagonally onto an empty square (the captured pawn sits beside it).
+ *
+ * SYNC: the castle rook-square and en-passant captured-square geometry in [footprintOf] is
+ * hand-mirrored from [org.rurbaniak.smartchessboard.domain.chess.applyMove]. It is not reused
+ * directly because `applyMove` returns a whole `Position` and the SAN/PGN derivations are `private`
+ * and return strings/Booleans — none yields a square-set footprint. If that geometry ever changes in
+ * `applyMove`, change [footprintOf] in lockstep or physical-move resolution silently breaks.
  */
 private class Footprint(
     val vacated: Set<Int>,
