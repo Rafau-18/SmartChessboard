@@ -82,7 +82,7 @@ const ble_uuid128_t kMobileCommandUuid = BLE_UUID128_INIT(
     0xc9, 0x4f, 0xa4, 0x15, 0x03, 0x00, 0x7e, 0x78);
 
 uint8_t  s_own_addr_type;
-uint16_t s_conn_handle = BLE_HS_CONN_HANDLE_NONE;
+volatile uint16_t s_conn_handle = BLE_HS_CONN_HANDLE_NONE;  // written by host task, read cross-task; notify rc stays the authority
 uint16_t s_board_event_handle;
 uint16_t s_mobile_command_handle;
 volatile bool s_subscribed = false;
@@ -196,20 +196,33 @@ void post_request(ble_service::Request req) {
     }
 }
 
+// xTimerStart/Stop post to the timer-service command queue, which can be full
+// (we pass a 20 ms bound, not portMAX_DELAY). At our rates that is nearly
+// impossible, but a silently dropped start/stop would wedge the diagnostic or
+// status stream — so log it instead of ignoring the return. Folds in the
+// null-handle guard. Safe from the host/timer task (never from a timer callback).
+void timer_start(TimerHandle_t t, const char *name) {
+    if (t && xTimerStart(t, kTimerCmdTicks) != pdPASS) {
+        ESP_LOGW(TAG, "xTimerStart(%s) dropped — timer cmd queue full", name);
+    }
+}
+
+void timer_stop(TimerHandle_t t, const char *name) {
+    if (t && xTimerStop(t, kTimerCmdTicks) != pdPASS) {
+        ESP_LOGW(TAG, "xTimerStop(%s) dropped — timer cmd queue full", name);
+    }
+}
+
 void enter_game_mode() {
     // Stop the diagnostic snapshot stream. Idempotent: stopping an already-stopped
     // timer is a no-op, so this is safe to call on connect/disconnect/unsubscribe.
-    if (s_diag_timer) {
-        xTimerStop(s_diag_timer, kTimerCmdTicks);
-    }
+    timer_stop(s_diag_timer, "diag");
 }
 
 void enter_diagnostic_mode() {
     // Start the ~10 Hz snapshot stream. These snapshots ADD to (never replace)
     // the per-transition SQUARE_EVENTs the producer already streams.
-    if (s_diag_timer) {
-        xTimerStart(s_diag_timer, kTimerCmdTicks);
-    }
+    timer_start(s_diag_timer, "diag");
 }
 
 // ---- Advertising + GAP lifecycle ------------------------------------------
@@ -279,9 +292,7 @@ int gap_event(struct ble_gap_event* event, void* /*arg*/) {
         // the scan loop). enter_game_mode() stops the diagnostic timer + resets
         // mode; the periodic-status timer is stopped explicitly.
         enter_game_mode();
-        if (s_status_timer) {
-            xTimerStop(s_status_timer, kTimerCmdTicks);
-        }
+        timer_stop(s_status_timer, "status");
         start_advertising();  // FR-FW-012: reconnectable without power cycle
         return 0;
 
@@ -297,15 +308,11 @@ int gap_event(struct ble_gap_event* event, void* /*arg*/) {
                 // snapshot is built from `stable` on the task that owns it.
                 post_request(ble_service::Request::Burst);
                 // Periodic DEVICE_STATUS runs only while a subscriber is live.
-                if (s_status_timer) {
-                    xTimerStart(s_status_timer, kTimerCmdTicks);
-                }
+                timer_start(s_status_timer, "status");
             } else {
                 // Notifications turned off without disconnecting: stop emission.
                 enter_game_mode();
-                if (s_status_timer) {
-                    xTimerStop(s_status_timer, kTimerCmdTicks);
-                }
+                timer_stop(s_status_timer, "status");
             }
         }
         return 0;
@@ -464,7 +471,10 @@ void init() {
 
     nimble_port_freertos_init(host_task);
 
-    xTaskCreate(consumer_task, "ble_tx", 4096, NULL, 5, NULL);
+    // Stack in bytes (ESP-IDF convention). consumer_task is the sole caller of
+    // ble_gatts_notify_custom, which descends the GATT/L2CAP/HCI stack — confirm
+    // headroom with uxTaskGetStackHighWaterMark on hardware under a square burst.
+    xTaskCreate(consumer_task, "ble_tx", 6144, NULL, 5, NULL);
 
     ESP_LOGI(TAG, "BLE init done; advertising as %s", s_device_name);
 }

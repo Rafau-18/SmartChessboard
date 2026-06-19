@@ -362,7 +362,7 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Manual
 
-- [ ] 1.4 Spot-check asserted golden frames in `test_protocol.cpp` match `BoardWireCodecTest.kt`
+- [x] 1.4 Spot-check asserted golden frames in `test_protocol.cpp` match `BoardWireCodecTest.kt` — confirmed by impl-review 2026-06-19 (vectors match Kotlin oracle verbatim; `pio test -e native` 15/15)
 
 ### Phase 2: NimBLE Peripheral — GATT, Advertising, Bonding, Lifecycle
 
@@ -407,4 +407,4 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Manual
 
-- [ ] 4.4 Updated `firmware/AGENTS.md` reads coherently and matches what was built
+- [x] 4.4 Updated `firmware/AGENTS.md` reads coherently and matches what was built — confirmed by impl-review 2026-06-19 (PARKED framing gone; BLE/buttons/lib/native-tests documented)

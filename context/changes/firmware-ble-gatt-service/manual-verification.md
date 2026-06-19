@@ -23,7 +23,7 @@ half asserts the exact same literals as the mobile oracle. Quick map (firmware t
 | Malformed events | empty, `05 00`, `01 FF`, oversized snapshot (10 B), `02`, `02 85`, `02 C0`, `03 02`, `04 64` | `reportsMalformedEvents` |
 | Malformed commands | empty, `84`, `90`, `81 02`, `81`, `82 00`, `83 00` | `reportsMalformedCommands` |
 
-Status: **PENDING human spot-check** (recorded 2026-06-19).
+Status: **CONFIRMED by /10x-impl-review 2026-06-19** — the listed vectors were verified byte-for-byte against the Kotlin oracle (`BoardWireCodecTest.kt`), and `pio test -e native` asserts them live (15/15). No hardware needed for this row.
 
 > On-hardware manual checks for Phases 2–3 (advertising, bonding, on-subscribe burst,
 > live square/button events, diagnostic stream, reconnect snapshot, malformed-write
@@ -92,6 +92,6 @@ regression. This row asks a human to read the updated firmware module guide once
 | --- | --- | --- |
 | 4.4 | Read the updated `firmware/AGENTS.md` end to end | Reads coherently and matches what F-03 actually built — BLE/NimBLE peripheral, the `board_event`/`mobile_command` GATT service, the two GPIO22/23 buttons, the `lib/` pure-logic split, and the `pio test -e native` host-test flow. The "two pin maps" gotcha and the matrix-`pins.h` warning are intact; the "PARKED" framing is gone (firmware software greenlit; only the hardware reed-matrix repair stays parked). |
 
-Status: **PENDING human read-through** (recorded 2026-06-19). The §1.2 UUID
+Status: **CONFIRMED by /10x-impl-review 2026-06-19** — `firmware/AGENTS.md` matches what F-03 built (PARKED framing gone; BLE/NimBLE peripheral, the `board_event`/`mobile_command` service, GPIO22/23 buttons, the `lib/` split, and the `pio test -e native` flow all documented; the "two pin maps" gotcha + matrix-`pins.h` warning intact). The §1.2 UUID
 write-back (Phase 2), the `prd-firmware.md` OQ-2/4/5 resolutions, and the
 `prd.md` §1.2 mirror are verifiable by reading the files — no hardware needed.
