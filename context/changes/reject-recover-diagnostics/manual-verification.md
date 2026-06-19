@@ -42,9 +42,53 @@ touches no IO. The §6.2 gate stays effect-only (`CommitMove` / `FinishGame`).
 
 ---
 
+## Phase 2 — Diagnostics UI + screen wiring
+
+UI + wiring landed (`ReedDiagnosticsGrid`, the banner "Show diagnostics" CTA + refined `INCONSISTENT`
+copy, the grid under the board, the `showDiagnostics()` / `hideDiagnostics()` intents). Automated
+2.1–2.4 green. The three `#### Manual` rows are interactive / visual and stay `- [ ]` in `plan.md` for
+the end-of-slice device pass; their non-device parts are discharged below.
+
+### 2.5 — Illegal sequence pauses, banner shows reason + "Show diagnostics", tap renders the grid
+
+- [ ] On Android: an illegal confirm pauses the game (a second confirm is a no-op), the error banner
+      shows the reason and a "Show diagnostics" button, and tapping it renders the live reed grid.
+
+Interactive device check — **deferred to the end-of-slice pass** (Phase 3). Headless backing already
+proven: the reducer sets `recovering` + `rejection` on an illegal confirm and blocks acceptance
+(`PhysicalPlayReducerTest`, Phase 1), and `ShowDiagnostics` flips `manualDiagnostics` + emits
+`SetMode(DIAGNOSTIC)`. Phase 3's `PhysicalRecoverEndToEndTest` drives the full loop against the emulator.
+
+### 2.6 — Grid highlights exactly the squares that differ (incl. the h8 corner)
+
+- [ ] On Android: the grid tints exactly the squares whose occupancy differs from the on-screen
+      position, including an h8-corner mismatch.
+
+Bit-math **proven headless now** by `presentation/board/ReedDiagnosticsGridTest.kt`: `isOccupied` and
+`occupancyDiffers` read a1 (bit 0) and h8 (bit 63, the sign bit) correctly — a signed `> 0` regression
+would misread exactly h8. The on-device *visual* confirmation is deferred to the end-of-slice pass.
+
+### 2.7 — Web build still excludes the physical / diagnostics route
+
+- [ ] In a browser: no physical-game / diagnostics route is reachable on the web (wasm) target.
+
+Code-read **discharged now** (the web-is-digital-only lesson): Phase 2 added the grid only in
+`commonMain` and touched **no** routing, DI, or capability gate — `PlatformCapabilities.wasmJs.kt`
+keeps `supportsPhysicalBoard = false`, `App.kt` still routes a physical game to Replay on web, and
+there is no wasm DI binding for the physical screen. `:webApp:compileKotlinWasmJs` is green, so the
+shared composable compiles for wasm yet stays unreachable. The browser click-through is still run at
+end-of-slice for full confidence.
+
+**Phase-2 adaptation to note (not a defect):** `plan.md` 2.1 names `:shared:compileKotlinAndroid` (the
+same pre-AGP-9 label as 1.1, absent in this build); Android compilation is covered by
+`:androidApp:assembleDebug` + `:shared:testAndroidHostTest`, both green. Title left verbatim per the
+no-rename Progress rule.
+
+---
+
 ## Pending (rolled up at end-of-slice)
 
-Phase 2 (2.5–2.7) and Phase 3 (3.4–3.6) manual rows will be appended here as those phases land. All
-`#### Manual` rows stay `- [ ]` in `plan.md` by design — they are this single end-of-slice pass. Run
-them on a real Android device (and a browser for the web-exclusion check), tick them here and in
-`plan.md`, then `/10x-impl-review` and `/10x-archive`.
+Phase 3 (3.4–3.6) manual rows will be appended here as that phase lands. All `#### Manual` rows stay
+`- [ ]` in `plan.md` by design — they are this single end-of-slice pass. Run them on a real Android
+device (and a browser for the web-exclusion check), tick them here and in `plan.md`, then
+`/10x-impl-review` and `/10x-archive`.

@@ -285,10 +285,10 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [x] 1.1 Reducer/contract compiles (`:shared:compileKotlinAndroid`)
-- [x] 1.2 Reducer unit tests pass (`:shared:testAndroidHostTest`, extends `PhysicalPlayReducerTest.kt`)
-- [x] 1.3 iOS + wasm targets green (`:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`)
-- [x] 1.4 ktlint clean (`ktlint -F`)
+- [x] 1.1 Reducer/contract compiles (`:shared:compileKotlinAndroid`) — fc962d2
+- [x] 1.2 Reducer unit tests pass (`:shared:testAndroidHostTest`, extends `PhysicalPlayReducerTest.kt`) — fc962d2
+- [x] 1.3 iOS + wasm targets green (`:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`) — fc962d2
+- [x] 1.4 ktlint clean (`ktlint -F`) — fc962d2
 
 #### Manual
 
@@ -298,10 +298,10 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [ ] 2.1 App compiles for all targets (`:shared:compileKotlinAndroid`, `:webApp:compileKotlinWasmJs`)
-- [ ] 2.2 Android debug APK assembles (`:androidApp:assembleDebug`)
-- [ ] 2.3 Existing presentation tests still pass (`:shared:testAndroidHostTest`)
-- [ ] 2.4 ktlint clean (`ktlint -F`)
+- [x] 2.1 App compiles for all targets (`:shared:compileKotlinAndroid`, `:webApp:compileKotlinWasmJs`)
+- [x] 2.2 Android debug APK assembles (`:androidApp:assembleDebug`)
+- [x] 2.3 Existing presentation tests still pass (`:shared:testAndroidHostTest`)
+- [x] 2.4 ktlint clean (`ktlint -F`)
 
 #### Manual
 
