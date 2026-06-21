@@ -219,9 +219,9 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 #### Automated
 
-- [x] 2.1 Resume E2E passes on Android host (`:shared:testAndroidHostTest`)
-- [x] 2.2 Resume E2E passes on iOS simulator (`:shared:iosSimulatorArm64Test`)
-- [x] 2.3 Full shared build green across targets + ktlint clean
+- [x] 2.1 Resume E2E passes on Android host (`:shared:testAndroidHostTest`) — 7331af0
+- [x] 2.2 Resume E2E passes on iOS simulator (`:shared:iosSimulatorArm64Test`) — 7331af0
+- [x] 2.3 Full shared build green across targets + ktlint clean — 7331af0
 
 #### Manual
 
