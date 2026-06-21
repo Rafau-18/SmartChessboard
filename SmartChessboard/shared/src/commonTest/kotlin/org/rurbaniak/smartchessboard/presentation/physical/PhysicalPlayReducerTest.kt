@@ -14,6 +14,7 @@ import org.rurbaniak.smartchessboard.domain.chess.Position
 import org.rurbaniak.smartchessboard.domain.chess.fen
 import org.rurbaniak.smartchessboard.domain.chess.pgn.parsePgn
 import org.rurbaniak.smartchessboard.domain.chess.squareOf
+import org.rurbaniak.smartchessboard.domain.chess.status
 import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.presentation.play.EndGamePrompt
 import org.rurbaniak.smartchessboard.presentation.play.PendingPromotion
@@ -50,6 +51,7 @@ class PhysicalPlayReducerTest {
         latestOccupancy: Long? = null,
         recovering: Boolean = false,
         manualDiagnostics: Boolean = false,
+        awaitingResumeConfirm: Boolean = false,
     ) = PhysicalPlayState.Playing(
         positions = positions,
         sanMoves = sanMoves,
@@ -69,6 +71,7 @@ class PhysicalPlayReducerTest {
         latestOccupancy = latestOccupancy,
         recovering = recovering,
         manualDiagnostics = manualDiagnostics,
+        awaitingResumeConfirm = awaitingResumeConfirm,
     )
 
     private fun playingAfter(reduceResult: ReduceResult): PhysicalPlayState.Playing =
@@ -95,7 +98,11 @@ class PhysicalPlayReducerTest {
         assertEquals("Alice", playing.whiteLabel)
         assertEquals(BoardConnectionState.CONNECTED, playing.connectionState)
         assertEquals(Color.WHITE, playing.orientation)
-        assertTrue(result.effects.isEmpty())
+        // FR-013: an in-progress physical resume gates acceptance and (when connected) re-pulls the
+        // on-connect snapshot dropped during Loading so the board-match check can clear the gate.
+        assertTrue(playing.awaitingResumeConfirm, "an in-progress physical resume gates acceptance")
+        assertTrue(playing.acceptanceBlocked)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
     }
 
     @Test
@@ -485,5 +492,136 @@ class PhysicalPlayReducerTest {
         assertTrue(!playing.recovering)
         assertTrue(!playing.manualDiagnostics)
         assertEquals(2, playing.positions.size)
+    }
+
+    // --- S-08: resume gate (FR-013) — set on load, cleared by the shared board-match seam ---
+
+    @Test
+    fun resumeWhileDisconnectedGatesAcceptanceWithoutRequestingASnapshot() {
+        // A cold resume before the board connects: the gate is set, but the snapshot request is the
+        // BoardConnected arm's job once the board comes up — Loaded only requests when already connected.
+        val result =
+            reduce(
+                PhysicalPlayState.Loading,
+                PhysicalMsg.Loaded(
+                    positions = listOf(Position.start()),
+                    sanMoves = emptyList(),
+                    whiteLabel = "Alice",
+                    blackLabel = "Bob",
+                    status = GameStatus.Ongoing,
+                    result = null,
+                    connected = false,
+                ),
+            )
+        val playing = playingAfter(result)
+        assertTrue(playing.awaitingResumeConfirm, "an in-progress resume gates acceptance even before connect")
+        assertTrue(playing.acceptanceBlocked)
+        assertTrue(result.effects.isEmpty(), "the BoardConnected arm pulls the snapshot once connected")
+    }
+
+    @Test
+    fun aMatchingSnapshotOnResumeClearsTheGateWithNoDiagnosticsAndNoSetMode() {
+        // Auto-resume-on-match: the board already matches the rebuilt position, so the gate clears with no
+        // extra input. The board never left GAME mode, so NO SetMode is emitted (the clean-match path).
+        val state = playing(awaitingResumeConfirm = true)
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        val playing = playingAfter(result)
+        assertTrue(!playing.awaitingResumeConfirm, "an exact match clears the resume gate")
+        assertTrue(!playing.acceptanceBlocked)
+        assertTrue(!playing.diagnosticsVisible)
+        assertTrue(result.effects.isEmpty(), "a clean match leaves the board in GAME mode — no SetMode")
+    }
+
+    @Test
+    fun aMismatchingSnapshotOnResumeKeepsTheGateBlockedAndOpensDiagnostics() {
+        // A mismatch holds the gate, auto-opens the reed grid (setupMismatch edge), and enters DIAGNOSTIC.
+        val state = playing(awaitingResumeConfirm = true)
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = 0L))
+        val playing = playingAfter(result)
+        assertTrue(playing.awaitingResumeConfirm, "a mismatching board keeps the resume gate closed")
+        assertTrue(playing.acceptanceBlocked)
+        assertTrue(playing.setupMismatch)
+        assertTrue(playing.diagnosticsVisible)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC))), result.effects)
+    }
+
+    @Test
+    fun restoringTheBoardAfterAResumeMismatchClearsTheGateWithExactlyOneSetModeGame() {
+        // The restore path: the mismatch already opened the grid; the player restores the board and the
+        // matching snapshot clears the gate and exits DIAGNOSTIC via the shown→hidden edge — one SetMode(GAME).
+        val state = playing(awaitingResumeConfirm = true, setupMismatch = true)
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        val playing = playingAfter(result)
+        assertTrue(!playing.awaitingResumeConfirm)
+        assertTrue(!playing.acceptanceBlocked)
+        assertTrue(!playing.diagnosticsVisible)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.GAME))), result.effects)
+    }
+
+    @Test
+    fun aManuallyFinishedGameDoesNotEnterTheResumeGate() {
+        // FR-018 manual end: result != null but the status is NOT terminal — a terminal-only predicate would
+        // miss it and wrongly gate a finished game. The pinned `result == null && !terminal` predicate skips it.
+        val result =
+            reduce(
+                PhysicalPlayState.Loading,
+                PhysicalMsg.Loaded(
+                    positions = listOf(Position.start()),
+                    sanMoves = emptyList(),
+                    whiteLabel = "Alice",
+                    blackLabel = "Bob",
+                    status = GameStatus.Ongoing,
+                    result = GameResult.DRAW,
+                    connected = true,
+                ),
+            )
+        val playing = playingAfter(result)
+        assertTrue(!playing.awaitingResumeConfirm, "a finished record is opened read-only, never gated")
+        assertTrue(result.effects.isEmpty(), "no resume snapshot request for a finished game")
+    }
+
+    @Test
+    fun aTerminallyFinishedGameDoesNotEnterTheResumeGate() {
+        // A checkmate position is terminal; even with result == null (defensive open) the gate is skipped.
+        val mate = positionAfter("1. f3 e5 2. g4 Qh4#")
+        val result =
+            reduce(
+                PhysicalPlayState.Loading,
+                PhysicalMsg.Loaded(
+                    positions = listOf(mate),
+                    sanMoves = listOf("f3", "e5", "g4", "Qh4#"),
+                    whiteLabel = "Alice",
+                    blackLabel = "Bob",
+                    status = status(mate),
+                    result = null,
+                    connected = true,
+                ),
+            )
+        assertTrue(!playingAfter(result).awaitingResumeConfirm)
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
+    fun confirmWhileAwaitingResumeConfirmIsBlockedButRequestsASnapshot() {
+        // The acceptance gate holds on resume exactly as on recovery: a confirm can't advance the game
+        // until the board is verified, but it re-pulls a snapshot so the match can clear the gate.
+        val state =
+            playing(
+                awaitingResumeConfirm = true,
+                eventsSinceConfirm = listOf(lift("e2"), place("e4")),
+            )
+        val result = reduce(state, PhysicalMsg.ConfirmPressed(BoardButton.WHITE))
+        assertTrue(playingAfter(result).awaitingResumeConfirm, "still gated — no move committed")
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
+        assertTrue(result.effects.none { it is PhysicalEffect.CommitMove })
+    }
+
+    @Test
+    fun liftAndPlaceWhileAwaitingResumeConfirmDoNotBuildAMove() {
+        // Restoration lift/place during resume are not a new move (mirrors recovery): accumulation is
+        // short-circuited so the snapshot occupancy — not these deltas — is what clears the gate.
+        val state = playing(awaitingResumeConfirm = true)
+        assertEquals(state, reduce(state, PhysicalMsg.SquareLifted(sq("e2"))).state)
+        assertEquals(state, reduce(state, PhysicalMsg.SquarePlaced(sq("e4"))).state)
     }
 }

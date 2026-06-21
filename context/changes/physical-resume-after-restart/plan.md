@@ -207,9 +207,9 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 #### Automated
 
-- [ ] 1.1 Reducer unit tests pass on Android host (`:shared:testAndroidHostTest`)
-- [ ] 1.2 Shared module compiles for all targets, no physical leak to web (`compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64`)
-- [ ] 1.3 ktlint formatting clean (`ktlint -F`)
+- [x] 1.1 Reducer unit tests pass on Android host (`:shared:testAndroidHostTest`)
+- [x] 1.2 Shared module compiles for all targets, no physical leak to web (`compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64`)
+- [x] 1.3 ktlint formatting clean (`ktlint -F`)
 
 #### Manual
 
