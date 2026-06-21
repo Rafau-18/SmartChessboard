@@ -36,6 +36,28 @@ Deferred manual checks collected for an end-of-slice pass, per the team's
   (`aMatchingSnapshotOnResumeClearsTheGateWithNoDiagnosticsAndNoSetMode`,
   `restoringTheBoardAfterAResumeMismatchClearsTheGateWithExactlyOneSetModeGame`).
 
-## Phase 2 — device/on-device manual checks (added when Phase 2 runs)
+## Phase 2 — device/on-device manual checks
 
-<!-- 2.4 / 2.5 / 2.6 from plan.md will be recorded here at Phase 2 implementation. -->
+Device-dependent — collected here for the end-of-slice on-device pass (no device
+in the implementation session). The rows stay `- [ ]` in `plan.md` `## Progress`
+until confirmed on a device/emulator. Automated criteria 2.1–2.3 are flipped and
+committed; these manual rows are what the slice close-out still needs.
+
+- [ ] 2.4 On device: restart mid physical game, tap the in-progress game in
+  History → expected position renders, board matches → auto-resume, play the next
+  move, confirm no move was lost.
+- [ ] 2.5 Mismatched board on resume → diagnostics open and acceptance blocked →
+  restore the board → play resumes automatically.
+- [ ] 2.6 History clearly presents the in-progress physical game as resumable.
+
+**Automated evidence backing the on-device pass** (the gate is logic the E2E
+already proves; the device pass confirms it on a real screen/board):
+
+- `PhysicalResumeEndToEndTest` covers all three on-device shapes against the
+  emulator with injected occupancy — match → auto-resume (no extra input, no
+  `SetMode`), mismatch → diagnostics → restore → resume, and a promotion lifted
+  in-hand at kill that is never accepted (nothing lost). Green on Android host
+  (`:shared:testAndroidHostTest`) and iOS simulator (`:shared:iosSimulatorArm64Test`).
+- History "Resume" affordance (2.6): in-progress physical rows render a primary-
+  coloured "Resume" label (`HistoryScreen.kt`, `isResumablePhysical()`); the tap
+  still routes the whole row to `PhysicalPlay` unchanged.

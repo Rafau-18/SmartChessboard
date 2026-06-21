@@ -41,7 +41,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)               | S-04             | FR-007, FR-018, US-01                                 | implemented     |
 | S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
 | S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | in progress     |
-| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | proposed        |
+| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | in progress     |
 | S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
 
 ## Streams
@@ -213,7 +213,7 @@ Context note (outside the app codebase): the firmware sub-project is intentional
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Exercises the durable-save guarantee under process death; same-device only by PRD decision (cross-device handoff of an active game is out of MVP).
-- **Status:** proposed
+- **Status:** in progress — waiting on the manual gate. Automated work for both phases implemented on `impl/physical-resume-after-restart` (not yet merged): Phase 1 — the `awaitingResumeConfirm` resume gate + the shared `SnapshotReceived` board-confirm transition in the headless MVI core, with reducer units (`6ab630c`); Phase 2 — the fault-injected `PhysicalResumeEndToEndTest` (match→auto-resume / mismatch→restore→resume / promotion-lifted-at-kill), the History "Resume" affordance on in-progress physical rows, and these foundation write-backs. Automated gates green on Android host + iOS simulator (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`), wasmJs/iOS compile clean (no physical leak to web). Pending the manual on-device pass (see `manual-verification.md`) + the deferred Phase 1 code-read; `change.md` status `implementing`; slice close-out (manual ticks + epilogue + `/10x-impl-review` + `/10x-archive`) still to run. The `SnapshotReceived` board-confirm seam is the FR-012/S-09 reconnect-reconcile reuse point.
 
 ### S-09: Real board over BLE
 
