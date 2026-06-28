@@ -612,6 +612,22 @@ Covered in detail in 1.7. Summary:
 - **Invariant**: accepted-and-persisted moves survive any crash on either
   side of the connection.
 
+**Implemented (S-08, FR-013).** The physical resume gate is the
+`awaitingResumeConfirm` flag on `PhysicalPlayState.Playing`
+(`presentation/physical/PhysicalPlayContract.kt`): set when the `Loaded` arm
+rebuilds an in-progress physical game (predicate `result == null && !terminal`),
+ORed into `acceptanceBlocked` so move acceptance stays blocked on resume until a
+snapshot's occupancy equals `positions.last().toOccupancy()`. It clears through
+the **same** at-rest board-match check in the `SnapshotReceived` arm that clears
+the S-07 reject-recovery gate (`recovering`): a match auto-resumes (no extra
+tap), and a mismatch holds the gate, auto-opens the reed grid, and re-checks each
+fresh occupancy until the board is restored — reusing the FR-010/FR-011 restore
+loop. This `SnapshotReceived` board-confirm transition is the shared seam FR-012
+(§1.7 BLE reconnect-reconcile) reuses on reconnect: S-09 sets its own gate flag
+in the `BoardConnected` arm and clears it through this same check. Same-device
+only (FR-013); no offline cold-start discovery and no cross-device handoff
+(both out of MVP scope).
+
 ### 6.4 Edge Function / Lichess outage
 
 - `lichess-eval` returns `502` or `429` (section 3.3).

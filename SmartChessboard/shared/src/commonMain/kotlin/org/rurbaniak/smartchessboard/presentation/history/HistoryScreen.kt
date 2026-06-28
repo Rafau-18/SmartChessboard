@@ -129,9 +129,22 @@ private fun GameRow(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // Surface an in-progress physical game as resumable (FR-013). The tap behaviour is unchanged —
+        // the whole row already routes to PhysicalPlay; this is only a legibility affordance.
+        if (game.isResumablePhysical()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Resume",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
     HorizontalDivider()
 }
+
+/** An in-progress physical game is the FR-013 resume offer: tapping the row continues it on this device. */
+private fun GameSummary.isResumablePhysical(): Boolean = mode == GameMode.PHYSICAL && status == GameStatus.IN_PROGRESS
 
 private fun GameSummary.modeLabel(): String =
     when (mode) {

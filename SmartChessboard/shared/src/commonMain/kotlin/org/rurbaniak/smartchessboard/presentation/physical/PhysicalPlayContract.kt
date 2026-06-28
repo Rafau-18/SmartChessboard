@@ -80,6 +80,15 @@ sealed interface PhysicalPlayState {
         val recovering: Boolean = false,
         /** True while the player opened the diagnostics grid via the banner CTA (vs auto-entry on [setupMismatch]). */
         val manualDiagnostics: Boolean = false,
+        /**
+         * The resume-confirmation gate (S-08, FR-013): set when an in-progress physical game is
+         * (re)loaded — e.g. after an app restart — so move acceptance stays blocked until a snapshot's
+         * occupancy equals `position.toOccupancy()` confirms the physical board matches the rebuilt
+         * expected position. Cleared by the same at-rest board-match check that clears [recovering] — the
+         * shared `SnapshotReceived` seam FR-012/S-09 reuses on BLE reconnect. Kept distinct from
+         * [recovering] so the UI can tell "confirming the board on resume" from "your move was rejected".
+         */
+        val awaitingResumeConfirm: Boolean = false,
     ) : PhysicalPlayState {
         val position: Position get() = positions.last()
 
@@ -88,8 +97,11 @@ sealed interface PhysicalPlayState {
         /** Move acceptance pauses while the board is unreachable (no reconcile until S-07; no save while down). */
         val paused: Boolean get() = connectionState == BoardConnectionState.DISCONNECTED
 
-        /** Acceptance is blocked while the board is down ([paused]) *or* a reject awaits restore ([recovering]). */
-        val acceptanceBlocked: Boolean get() = paused || recovering
+        /**
+         * Acceptance is blocked while the board is down ([paused]), a reject awaits restore ([recovering]),
+         * *or* a resume awaits board confirmation ([awaitingResumeConfirm]).
+         */
+        val acceptanceBlocked: Boolean get() = paused || recovering || awaitingResumeConfirm
 
         /** The diagnostics grid is on screen when opened manually *or* auto-shown by a [setupMismatch]. */
         val diagnosticsVisible: Boolean get() = manualDiagnostics || setupMismatch

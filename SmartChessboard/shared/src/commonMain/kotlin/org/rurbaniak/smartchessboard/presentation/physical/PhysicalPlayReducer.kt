@@ -10,6 +10,7 @@ import org.rurbaniak.smartchessboard.domain.board.SquareEventType
 import org.rurbaniak.smartchessboard.domain.board.resolvePhysicalMove
 import org.rurbaniak.smartchessboard.domain.board.toOccupancy
 import org.rurbaniak.smartchessboard.domain.chess.Color
+import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.domain.chess.Move
 import org.rurbaniak.smartchessboard.domain.chess.Position
 import org.rurbaniak.smartchessboard.domain.chess.status
@@ -38,7 +39,15 @@ fun reduce(
 private fun reduceLoading(msg: PhysicalMsg): ReduceResult =
     when (msg) {
         is PhysicalMsg.Loaded -> {
-            ReduceResult(
+            // FR-013 resume gate: an in-progress physical game must confirm the physical board matches the
+            // rebuilt expected position before move acceptance re-enables. A finished record (result != null,
+            // e.g. a manual FR-018 end without a terminal status) is opened read-only and never gates — so
+            // the predicate is pinned to `result == null && !terminal`, not terminal-status alone.
+            val inProgress =
+                msg.result == null &&
+                    msg.status !is GameStatus.Checkmate &&
+                    msg.status !is GameStatus.Stalemate
+            val playing =
                 PhysicalPlayState.Playing(
                     positions = msg.positions,
                     sanMoves = msg.sanMoves,
@@ -53,8 +62,20 @@ private fun reduceLoading(msg: PhysicalMsg): ReduceResult =
                     eventsSinceConfirm = emptyList(),
                     setupMismatch = false,
                     result = msg.result,
-                ),
-            )
+                    awaitingResumeConfirm = inProgress,
+                )
+            // The match never runs inline here — `reduceLoading` drops the on-connect snapshot/BoardConnected
+            // that fired during Loading, so Playing always starts at latestOccupancy = null. When already
+            // connected, re-request the snapshot whose dropped BoardConnected would have pulled; when
+            // disconnected, the BoardConnected arm's request covers it once the board connects. Either way
+            // the at-rest board-match runs only in the SnapshotReceived arm.
+            val effects =
+                if (inProgress && msg.connected) {
+                    listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot))
+                } else {
+                    emptyList()
+                }
+            ReduceResult(playing, effects)
         }
 
         PhysicalMsg.LoadFailed -> {
@@ -83,6 +104,8 @@ private fun reducePlaying(
             // Re-request occupancy on (re)connect: the hot, no-replay stream means a burst can be
             // missed, and a snapshot re-verifies the board against the live position. The board resets
             // to GAME mode on every reconnect (contract §1.7), so re-arm DIAGNOSTIC if the grid is open.
+            // S-08 leaves this arm unchanged; S-09/FR-012 routes BLE reconnect-reconcile through the
+            // shared SnapshotReceived board-match seam below — set its gate flag here, clear it there.
             ReduceResult(
                 state.copy(connectionState = BoardConnectionState.CONNECTED),
                 buildList {
@@ -105,11 +128,19 @@ private fun reducePlaying(
             val atRest = state.eventsSinceConfirm.isEmpty()
             val matchesExpected = msg.occupancy == state.position.toOccupancy()
             val restoreVerified = state.recovering && matchesExpected
+            // FR-013 resume gate clears through the SAME at-rest board-match check as reject-recovery —
+            // the shared seam both resume (Loaded→RequestSnapshot) and reconnect (BoardConnected→Request-
+            // Snapshot) funnel through. On a match the gate drops; the setupMismatch→false edge below drives
+            // the lone SetMode(GAME) on the restore path and emits none on a clean match (the board never
+            // left GAME). On a mismatch the gate holds, setupMismatch auto-opens the grid, and each later
+            // snapshot re-runs this check until it matches. No explicit SetMode here — it would double-fire.
+            val resumeVerified = state.awaitingResumeConfirm && matchesExpected
             val next =
                 state.copy(
                     latestOccupancy = msg.occupancy,
                     setupMismatch = if (atRest) !matchesExpected else state.setupMismatch,
                     recovering = if (restoreVerified) false else state.recovering,
+                    awaitingResumeConfirm = if (resumeVerified) false else state.awaitingResumeConfirm,
                     rejection = if (restoreVerified) null else state.rejection,
                     manualDiagnostics = if (restoreVerified) false else state.manualDiagnostics,
                 )
@@ -252,9 +283,11 @@ private fun accumulate(
     state: PhysicalPlayState.Playing,
     event: BoardEvent.SquareEvent,
 ): ReduceResult {
-    // A frozen board accepts no input; during recovery the lift/place are restoration moves, not a new
-    // move — the snapshot occupancy (not these deltas) drives restore-verification, so don't build one.
-    if (state.result != null || state.recovering) return ReduceResult(state)
+    // A frozen board accepts no input; during recovery OR an unconfirmed resume the lift/place are
+    // restoration moves, not a new move — the snapshot occupancy (not these deltas) drives the at-rest
+    // board-match that clears the gate, so don't build a sequence (it would also leave stale events that
+    // corrupt the next real move and, by making the board no longer at-rest, suppress the mismatch recompute).
+    if (state.result != null || state.recovering || state.awaitingResumeConfirm) return ReduceResult(state)
     val events = state.eventsSinceConfirm + event
     val pendingPromotion =
         when (val resolution = resolvePhysicalMove(state.position, events)) {
@@ -286,9 +319,12 @@ private fun confirm(
     button: BoardButton,
 ): ReduceResult {
     if (state.result != null || state.paused) return ReduceResult(state)
-    // The reject-recovery gate (acceptanceBlocked): a confirm can't advance the game until the board is
-    // restored, but it *does* re-pull a snapshot so restore-verify can clear the gate without the grid.
-    if (state.recovering) return ReduceResult(state, listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)))
+    // The acceptance gate (acceptanceBlocked): a confirm can't advance the game while a reject awaits
+    // restore ([recovering]) or a resume awaits board confirmation ([awaitingResumeConfirm]) — but it
+    // *does* re-pull a snapshot so the at-rest board-match can clear the gate without the grid.
+    if (state.recovering || state.awaitingResumeConfirm) {
+        return ReduceResult(state, listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)))
+    }
     if (button.toColor() != state.position.sideToMove) return ReduceResult(state)
     if (state.pendingPromotion != null) return ReduceResult(state.copy(rejection = RejectionReason.PROMOTION_REQUIRED))
     return when (val resolution = resolvePhysicalMove(state.position, state.eventsSinceConfirm)) {
@@ -368,6 +404,7 @@ private fun commit(
             setupMismatch = false,
             recovering = false,
             manualDiagnostics = false,
+            awaitingResumeConfirm = false,
             syncPending = true,
         )
     val autoResult = gameResultFor(nextStatus, msg.nextPosition.sideToMove)
