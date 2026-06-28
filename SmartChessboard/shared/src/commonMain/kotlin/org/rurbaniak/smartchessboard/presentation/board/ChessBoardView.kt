@@ -1,6 +1,7 @@
 package org.rurbaniak.smartchessboard.presentation.board
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -16,8 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +60,14 @@ import smartchessboard.shared.generated.resources.piece_wq
 import smartchessboard.shared.generated.resources.piece_wr
 import kotlin.math.roundToInt
 import org.rurbaniak.smartchessboard.domain.chess.Color as PieceColor
+
+/**
+ * Duration of the piece-slide animation, in milliseconds — the single knob for its speed: larger =
+ * slower, smaller = snappier. The slide uses a plain [tween] with a smooth decelerate easing
+ * ([FastOutSlowInEasing]), NOT a spring, so the piece travels straight to its destination with no
+ * overshoot/bounce. To retune, change only this number (e.g. 250 for snappier, 400 for slower).
+ */
+private const val PIECE_SLIDE_DURATION_MS = 300
 
 /** A from→to square pair (Square.kt indexing) drawn as an arrow above the pieces. */
 data class BoardArrow(
@@ -112,7 +119,6 @@ private fun squareOrNull(
  * independent of [interaction], so a board can highlight without becoming tappable; empty by default,
  * so Replay/Play render exactly as before.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChessBoardView(
     position: Position,
@@ -131,7 +137,7 @@ fun ChessBoardView(
     var prevPosition by remember { mutableStateOf(position) }
     var slide by remember { mutableStateOf<BoardMoveAnimation?>(null) }
     val slideProgress = remember { Animatable(0f) }
-    val slideSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    val slideSpec = tween<Float>(durationMillis = PIECE_SLIDE_DURATION_MS, easing = FastOutSlowInEasing)
     LaunchedEffect(position) {
         val previous = prevPosition
         prevPosition = position
