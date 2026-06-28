@@ -35,6 +35,7 @@ import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
 import org.rurbaniak.smartchessboard.presentation.components.LIST_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.theme.label
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -161,14 +162,6 @@ private fun GameRow(
     }
     HorizontalDivider()
 }
-
-/** Compact top-bar label for the active theme mode — doubles as the live indicator for the cycle control. */
-private fun ThemeMode.label(): String =
-    when (this) {
-        ThemeMode.SYSTEM -> "Auto"
-        ThemeMode.LIGHT -> "Light"
-        ThemeMode.DARK -> "Dark"
-    }
 
 /** An in-progress physical game is the FR-013 resume offer: tapping the row continues it on this device. */
 private fun GameSummary.isResumablePhysical(): Boolean = mode == GameMode.PHYSICAL && status == GameStatus.IN_PROGRESS

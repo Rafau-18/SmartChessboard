@@ -93,3 +93,14 @@ fun AppTheme(
         )
     }
 }
+
+/**
+ * Compact label for a [ThemeMode] — the single source for the theme-cycle controls (History top bar
+ * and the Sign-in screen), where it doubles as the live indicator of the active mode.
+ */
+internal fun ThemeMode.label(): String =
+    when (this) {
+        ThemeMode.SYSTEM -> "Auto"
+        ThemeMode.LIGHT -> "Light"
+        ThemeMode.DARK -> "Dark"
+    }

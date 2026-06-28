@@ -1,6 +1,7 @@
 package org.rurbaniak.smartchessboard.presentation.auth
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,12 +23,16 @@ import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
 import org.koin.compose.koinInject
+import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
+import org.rurbaniak.smartchessboard.presentation.theme.label
 
 @Composable
 fun SignInScreen(
     isSigningIn: Boolean,
     signInFailed: Boolean,
     nativeGoogleConfigured: Boolean,
+    themeMode: ThemeMode,
+    onCycleTheme: () -> Unit,
     onSignInStarted: () -> Unit,
     onSignInFailed: () -> Unit,
     onBrowserFallback: () -> Unit,
@@ -53,62 +59,77 @@ fun SignInScreen(
             fallback = { onBrowserFallback() },
         )
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .safeContentPadding()
-                .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    // A themed Surface paints colorScheme.background so the screen honours dark/light (without it
+    // the bare Column let the platform window's white show through after sign-out). The theme-cycle
+    // control sits in the top-end corner, mirroring the History top bar.
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
     ) {
-        Text("Smart Chessboard", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Sign in to see your game history.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(32.dp))
-        Button(
-            onClick = {
-                onSignInStarted()
-                // Without a configured Web client ID the native sheet can only error, so skip
-                // straight to the browser flow. When configured, startFlow() runs the native
-                // Credential Manager sheet on Android and self-falls-back to the browser on iOS/web.
-                if (nativeGoogleConfigured) {
-                    googleSignIn.startFlow()
-                } else {
-                    onBrowserFallback()
-                }
-            },
-            enabled = !isSigningIn,
-        ) {
-            Text(if (isSigningIn) "Opening Google…" else "Continue with Google")
-        }
-        // Universal escape hatch: the native sheet fails to render on some OEM ROMs
-        // (e.g. OxygenOS/ColorOS), returning a silent cancel. The browser flow always works,
-        // so it stays one tap away. Redundant when native isn't configured (the primary button
-        // already runs the browser flow), so it's only shown alongside the native path.
-        if (nativeGoogleConfigured) {
-            TextButton(
-                onClick = {
-                    onSignInStarted()
-                    onBrowserFallback()
-                },
-                enabled = !isSigningIn,
+        Box(modifier = Modifier.fillMaxSize().safeContentPadding()) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                Text("Trouble signing in? Continue in browser")
+                Text("Smart Chessboard", style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Sign in to see your game history.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(32.dp))
+                Button(
+                    onClick = {
+                        onSignInStarted()
+                        // Without a configured Web client ID the native sheet can only error, so skip
+                        // straight to the browser flow. When configured, startFlow() runs the native
+                        // Credential Manager sheet on Android and self-falls-back to the browser on iOS/web.
+                        if (nativeGoogleConfigured) {
+                            googleSignIn.startFlow()
+                        } else {
+                            onBrowserFallback()
+                        }
+                    },
+                    enabled = !isSigningIn,
+                ) {
+                    Text(if (isSigningIn) "Opening Google…" else "Continue with Google")
+                }
+                // Universal escape hatch: the native sheet fails to render on some OEM ROMs
+                // (e.g. OxygenOS/ColorOS), returning a silent cancel. The browser flow always works,
+                // so it stays one tap away. Redundant when native isn't configured (the primary button
+                // already runs the browser flow), so it's only shown alongside the native path.
+                if (nativeGoogleConfigured) {
+                    TextButton(
+                        onClick = {
+                            onSignInStarted()
+                            onBrowserFallback()
+                        },
+                        enabled = !isSigningIn,
+                    ) {
+                        Text("Trouble signing in? Continue in browser")
+                    }
+                }
+                if (signInFailed) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Sign-in didn't complete. Please try again.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
-        }
-        if (signInFailed) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                "Sign-in didn't complete. Please try again.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center,
-            )
+            TextButton(
+                onClick = onCycleTheme,
+                modifier = Modifier.align(Alignment.TopEnd),
+            ) {
+                Text(themeMode.label())
+            }
         }
     }
 }

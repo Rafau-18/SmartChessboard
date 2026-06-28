@@ -8,6 +8,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -59,6 +61,8 @@ fun App() {
                     isSigningIn = uiState.isSigningIn,
                     signInFailed = uiState.signInFailed,
                     nativeGoogleConfigured = BuildKonfig.GOOGLE_SERVER_CLIENT_ID.isNotEmpty(),
+                    themeMode = themeMode,
+                    onCycleTheme = themeViewModel::cycle,
                     onSignInStarted = authViewModel::onInteractiveSignInStarted,
                     onSignInFailed = authViewModel::onInteractiveSignInFailed,
                     onBrowserFallback = authViewModel::signInWithGoogle,
@@ -190,7 +194,11 @@ fun App() {
  */
 @Composable
 private fun RestoringScreen() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+    // Paint the themed background so a cold start in dark mode doesn't flash white before the
+    // session resolves (same fix as the Sign-in screen — a bare Box doesn't paint colorScheme).
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
     }
 }
