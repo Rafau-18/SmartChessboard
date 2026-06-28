@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,115 +75,123 @@ fun App() {
                 // On web, map the Nav3 back stack to browser history so Back/Forward move through
                 // the app's stack instead of leaving the site. No-op on Android/iOS.
                 bindBrowserNavigation(backStack)
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { backStack.removeLastOrNull() },
-                    entryDecorators =
-                        listOf(
-                            rememberSaveableStateHolderNavEntryDecorator(),
-                            rememberViewModelStoreNavEntryDecorator(),
-                        ),
-                    // Forward navigation slides the new destination in from the right; popping slides
-                    // it back out to the right. This only styles NavDisplay's AnimatedContent — onBack,
-                    // the back stack, and the wasm browser-history binding are unchanged.
-                    transitionSpec = {
-                        slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith
-                            slideOutHorizontally(targetOffsetX = { -it / 4 }) + fadeOut()
-                    },
-                    popTransitionSpec = {
-                        slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn() togetherWith
-                            slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-                    },
-                    entryProvider =
-                        entryProvider {
-                            entry<HistoryKey> {
-                                HistoryScreen(
-                                    userId = session.userId,
-                                    onSignOut = authViewModel::signOut,
-                                    onNewGame = { backStack.add(NewGameKey) },
-                                    themeMode = themeMode,
-                                    onCycleTheme = themeViewModel::cycle,
-                                    // In-progress games resume on their board (physical only where the
-                                    // platform supports it — a physical game on web falls through to
-                                    // Replay); everything else opens in Replay (interview decision).
-                                    onGameClick = { game ->
-                                        when {
-                                            game.status == GameStatus.IN_PROGRESS &&
-                                                game.mode == GameMode.PHYSICAL &&
-                                                supportsPhysicalBoard -> {
-                                                backStack.add(PhysicalPlayKey(game.id))
-                                            }
-
-                                            game.status == GameStatus.IN_PROGRESS && game.mode == GameMode.DIGITAL -> {
-                                                backStack.add(PlayKey(game.id))
-                                            }
-
-                                            else -> {
-                                                backStack.add(ReplayKey(game.id))
-                                            }
-                                        }
-                                    },
-                                )
-                            }
-                            entry<NewGameKey> {
-                                NewGameScreen(
-                                    onBack = { backStack.removeLastOrNull() },
-                                    // Replace the form with the board screen so Back returns to History.
-                                    // Physical games (capable platforms only) open the physical screen.
-                                    onGameCreated = { gameId, mode ->
-                                        backStack.removeLastOrNull()
-                                        if (mode == GameMode.PHYSICAL) {
-                                            backStack.add(PhysicalPlayKey(gameId))
-                                        } else {
-                                            backStack.add(PlayKey(gameId))
-                                        }
-                                    },
-                                )
-                            }
-                            entry<ReplayKey> { key ->
-                                ReplayScreen(
-                                    gameId = key.gameId,
-                                    onBack = { backStack.removeLastOrNull() },
-                                )
-                            }
-                            entry<PlayKey> { key ->
-                                PlayScreen(
-                                    gameId = key.gameId,
-                                    onBack = { backStack.removeLastOrNull() },
-                                    // Replace the frozen Play with Replay so Back doesn't return to
-                                    // a finished board.
-                                    onReviewGame = {
-                                        backStack.removeLastOrNull()
-                                        backStack.add(ReplayKey(key.gameId))
-                                    },
-                                    // Pop to the History root (it is the back stack's root) — a
-                                    // finished game shouldn't leave a frozen Play behind it.
-                                    onBackToHistory = {
-                                        while (backStack.size > 1) {
-                                            backStack.removeLastOrNull()
-                                        }
-                                    },
-                                )
-                            }
-                            entry<PhysicalPlayKey> { key ->
-                                PhysicalPlayScreen(
-                                    gameId = key.gameId,
-                                    onBack = { backStack.removeLastOrNull() },
-                                    // Same post-finish navigation as digital Play: Analyse opens Replay,
-                                    // Back-to-history pops to the root so no frozen board is left behind.
-                                    onReviewGame = {
-                                        backStack.removeLastOrNull()
-                                        backStack.add(ReplayKey(key.gameId))
-                                    },
-                                    onBackToHistory = {
-                                        while (backStack.size > 1) {
-                                            backStack.removeLastOrNull()
-                                        }
-                                    },
-                                )
-                            }
+                // Themed backdrop behind NavDisplay's slide transitions: while one screen slides out
+                // and the next slides in (and during the cross-fade), the gap would otherwise expose
+                // the platform window's white — glaring in dark mode. Painting colorScheme.background
+                // here makes the transition reveal the theme surface instead; each screen's own
+                // Scaffold still paints its background on top.
+                Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { backStack.removeLastOrNull() },
+                        entryDecorators =
+                            listOf(
+                                rememberSaveableStateHolderNavEntryDecorator(),
+                                rememberViewModelStoreNavEntryDecorator(),
+                            ),
+                        // Forward navigation slides the new destination in from the right; popping slides
+                        // it back out to the right. This only styles NavDisplay's AnimatedContent — onBack,
+                        // the back stack, and the wasm browser-history binding are unchanged.
+                        transitionSpec = {
+                            slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith
+                                slideOutHorizontally(targetOffsetX = { -it / 4 }) + fadeOut()
                         },
-                )
+                        popTransitionSpec = {
+                            slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn() togetherWith
+                                slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                        },
+                        entryProvider =
+                            entryProvider {
+                                entry<HistoryKey> {
+                                    HistoryScreen(
+                                        userId = session.userId,
+                                        onSignOut = authViewModel::signOut,
+                                        onNewGame = { backStack.add(NewGameKey) },
+                                        themeMode = themeMode,
+                                        onCycleTheme = themeViewModel::cycle,
+                                        // In-progress games resume on their board (physical only where the
+                                        // platform supports it — a physical game on web falls through to
+                                        // Replay); everything else opens in Replay (interview decision).
+                                        onGameClick = { game ->
+                                            when {
+                                                game.status == GameStatus.IN_PROGRESS &&
+                                                    game.mode == GameMode.PHYSICAL &&
+                                                    supportsPhysicalBoard -> {
+                                                    backStack.add(PhysicalPlayKey(game.id))
+                                                }
+
+                                                game.status == GameStatus.IN_PROGRESS &&
+                                                    game.mode == GameMode.DIGITAL -> {
+                                                    backStack.add(PlayKey(game.id))
+                                                }
+
+                                                else -> {
+                                                    backStack.add(ReplayKey(game.id))
+                                                }
+                                            }
+                                        },
+                                    )
+                                }
+                                entry<NewGameKey> {
+                                    NewGameScreen(
+                                        onBack = { backStack.removeLastOrNull() },
+                                        // Replace the form with the board screen so Back returns to History.
+                                        // Physical games (capable platforms only) open the physical screen.
+                                        onGameCreated = { gameId, mode ->
+                                            backStack.removeLastOrNull()
+                                            if (mode == GameMode.PHYSICAL) {
+                                                backStack.add(PhysicalPlayKey(gameId))
+                                            } else {
+                                                backStack.add(PlayKey(gameId))
+                                            }
+                                        },
+                                    )
+                                }
+                                entry<ReplayKey> { key ->
+                                    ReplayScreen(
+                                        gameId = key.gameId,
+                                        onBack = { backStack.removeLastOrNull() },
+                                    )
+                                }
+                                entry<PlayKey> { key ->
+                                    PlayScreen(
+                                        gameId = key.gameId,
+                                        onBack = { backStack.removeLastOrNull() },
+                                        // Replace the frozen Play with Replay so Back doesn't return to
+                                        // a finished board.
+                                        onReviewGame = {
+                                            backStack.removeLastOrNull()
+                                            backStack.add(ReplayKey(key.gameId))
+                                        },
+                                        // Pop to the History root (it is the back stack's root) — a
+                                        // finished game shouldn't leave a frozen Play behind it.
+                                        onBackToHistory = {
+                                            while (backStack.size > 1) {
+                                                backStack.removeLastOrNull()
+                                            }
+                                        },
+                                    )
+                                }
+                                entry<PhysicalPlayKey> { key ->
+                                    PhysicalPlayScreen(
+                                        gameId = key.gameId,
+                                        onBack = { backStack.removeLastOrNull() },
+                                        // Same post-finish navigation as digital Play: Analyse opens Replay,
+                                        // Back-to-history pops to the root so no frozen board is left behind.
+                                        onReviewGame = {
+                                            backStack.removeLastOrNull()
+                                            backStack.add(ReplayKey(key.gameId))
+                                        },
+                                        onBackToHistory = {
+                                            while (backStack.size > 1) {
+                                                backStack.removeLastOrNull()
+                                            }
+                                        },
+                                    )
+                                }
+                            },
+                    )
+                }
             }
         }
     }
