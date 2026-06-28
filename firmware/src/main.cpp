@@ -15,7 +15,11 @@
 // are enqueued only while a central is subscribed ("dead link delivers nothing").
 //
 // The serial console (UART0 @ 115200) keeps the in-place diagnostic render for
-// local debugging - it is NOT on the BLE contract path.
+// local debugging - it is NOT on the BLE contract path. This build also renders
+// each confirmation button's live ADC reading + debounced press count, so the
+// DGT-clock buttons (~1.5V via diode isolation, read through ADC1 because that
+// level is below the digital-HIGH threshold) can be verified by flashing and
+// watching the terminal.
 //
 // NOT production: no anti-ghosting diodes assumed (safe with <=2 magnets, see
 // README).
@@ -25,6 +29,7 @@
 #include <cstdio>
 
 #include "driver/gpio.h"
+#include "esp_adc/adc_oneshot.h"  // confirmation buttons read via ADC1 (DGT ~1.5V)
 #include "esp_rom_sys.h"     // esp_rom_delay_us
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -41,6 +46,15 @@ static constexpr int     kSettleUs       = 50;   // column settle after driving 
 static constexpr int     kScanIntervalMs = 20;   // scan cadence (~50 Hz, responsive)
 static constexpr uint8_t kStableScans    = 4;    // debounce: N agreeing scans (~80 ms)
 
+// Confirmation buttons read on ADC1 (DGT ~1.5V). Schmitt-trigger hysteresis: a press
+// must exceed kButtonAdcHigh; release needs dropping below kButtonAdcLow. The dead band
+// between them rejects the noisy mid-range, so we neither miscount nor flicker. With a
+// proper external pull-down idle sits near 0; a real press reads ~1800-2000 raw. Tune
+// these two once you can read a clean idle and a clean press in the serial line.
+static constexpr int kButtonAdcHigh = 1500;   // raw > this => pressed
+static constexpr int kButtonAdcLow  = 1000;   // raw < this => released
+static adc_oneshot_unit_handle_t g_adc1 = nullptr;
+
 // (row,col) -> square index. ROW=rank, COL=file. Remap here if the board is
 // rotated/mirrored (e.g. file = 7 - col, rank = 7 - row).
 static inline int square_index(int row, int col) {
@@ -54,56 +68,70 @@ static void square_name(int idx, char* buf /*3 bytes*/) {
 }
 
 static void configure_gpio() {
-    uint64_t row_mask = 0;
-    for (int r = 0; r < kNumRows; ++r) row_mask |= (1ULL << kRowPins[r]);
-    gpio_config_t row_cfg = {};
-    row_cfg.pin_bit_mask = row_mask;
-    row_cfg.mode         = GPIO_MODE_OUTPUT;
-    row_cfg.pull_up_en   = GPIO_PULLUP_DISABLE;
-    row_cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    row_cfg.intr_type    = GPIO_INTR_DISABLE;
-    ESP_ERROR_CHECK(gpio_config(&row_cfg));
-    for (int r = 0; r < kNumRows; ++r) gpio_set_level(kRowPins[r], 1);  // idle HIGH
-
+    // Diodes are installed cathode-toward-column, so we drive COL LOW and read ROW.
     uint64_t col_mask = 0;
     for (int c = 0; c < kNumCols; ++c) col_mask |= (1ULL << kColPins[c]);
     gpio_config_t col_cfg = {};
     col_cfg.pin_bit_mask = col_mask;
-    col_cfg.mode         = GPIO_MODE_INPUT;
-    col_cfg.pull_up_en   = GPIO_PULLUP_ENABLE;
+    col_cfg.mode         = GPIO_MODE_OUTPUT;
+    col_cfg.pull_up_en   = GPIO_PULLUP_DISABLE;
     col_cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
     col_cfg.intr_type    = GPIO_INTR_DISABLE;
     ESP_ERROR_CHECK(gpio_config(&col_cfg));
+    for (int c = 0; c < kNumCols; ++c) gpio_set_level(kColPins[c], 1);  // idle HIGH
+
+    uint64_t row_mask = 0;
+    for (int r = 0; r < kNumRows; ++r) row_mask |= (1ULL << kRowPins[r]);
+    gpio_config_t row_cfg = {};
+    row_cfg.pin_bit_mask = row_mask;
+    row_cfg.mode         = GPIO_MODE_INPUT;
+    row_cfg.pull_up_en   = GPIO_PULLUP_ENABLE;
+    row_cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    row_cfg.intr_type    = GPIO_INTR_DISABLE;
+    ESP_ERROR_CHECK(gpio_config(&row_cfg));
 }
 
 // ---- Confirmation buttons (FR-FW-007) -------------------------------------
-// Two momentary buttons, idle HIGH (internal pull-up), pressed = LOW. Debounced
-// with the same per-reading agreement idea as the matrix: a release->press
-// transition that survives kStableScans agreeing reads emits ONE BUTTON_EVENT.
-// No turn validation - the board is dumb; the mobile re-derives whose turn it is.
+// DGT-clock buttons via diode isolation: idle ~0V, pressed ~1.5V. That 1.5V is
+// BELOW the ESP32 digital-HIGH threshold (~2.475V @3V3), so a plain gpio_get_level
+// reads it as 0. Instead we read the analog level on ADC1 (GPIO34=CH6 white,
+// GPIO35=CH7 black - input-only ADC pins) and threshold it in software.
+// An external pull-down (~100k to GND) on each pin defines the idle 0V - these pins
+// have no internal pull, AND the isolation diode blocks at idle (so the node would
+// otherwise float). Debounced like the matrix: a release->press edge surviving
+// kStableScans agreeing reads counts ONE press (and emits ONE BUTTON_EVENT when a
+// central is subscribed). No turn validation - the mobile re-derives whose turn it is.
 
 struct Button {
-    gpio_num_t             pin;
+    gpio_num_t             pin;      // wired GPIO (from pins.h) - for the serial label
+    adc_channel_t          chan;     // matching ADC1 channel (GPIO34->CH6, GPIO35->CH7)
     board_protocol::Button id;
     uint8_t                agree;    // consecutive agreeing reads
     bool                   rawPrev;  // previous raw "pressed" reading
     bool                   pressed;  // committed (debounced) state
+    bool                   hyst;     // Schmitt-trigger state from the ADC hysteresis
+    uint32_t               presses;  // debounced press count
+    int                    lastRaw;  // most recent ADC reading (for the serial line)
 };
 
 static Button g_buttons[2] = {
-    {kButtonWhitePin, board_protocol::Button::White, 0, false, false},
-    {kButtonBlackPin, board_protocol::Button::Black, 0, false, false},
+    {kButtonWhitePin, ADC_CHANNEL_6, board_protocol::Button::White, 0, false, false, false, 0, 0},
+    {kButtonBlackPin, ADC_CHANNEL_7, board_protocol::Button::Black, 0, false, false, false, 0, 0},
 };
 
 static void configure_buttons() {
-    const uint64_t mask = (1ULL << kButtonWhitePin) | (1ULL << kButtonBlackPin);
-    gpio_config_t cfg = {};
-    cfg.pin_bit_mask = mask;
-    cfg.mode         = GPIO_MODE_INPUT;
-    cfg.pull_up_en   = GPIO_PULLUP_ENABLE;    // idle HIGH; a press pulls to GND
-    cfg.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    cfg.intr_type    = GPIO_INTR_DISABLE;
-    ESP_ERROR_CHECK(gpio_config(&cfg));
+    // GPIO34/35 are input-only ADC1 pins; no GPIO direction/pull config is possible
+    // (idle 0V comes from the external pull-down). Set up ADC1 one-shot on both.
+    adc_oneshot_unit_init_cfg_t init = {};
+    init.unit_id = ADC_UNIT_1;
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init, &g_adc1));
+
+    adc_oneshot_chan_cfg_t ch = {};
+    ch.atten    = ADC_ATTEN_DB_12;       // full-scale ~3.1V, covers the ~1.5V press level
+    ch.bitwidth = ADC_BITWIDTH_DEFAULT;  // 12-bit (0..4095)
+    for (const Button& b : g_buttons) {
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(g_adc1, b.chan, &ch));
+    }
 }
 
 // Feed one raw read; return true exactly once on a confirmed release->press edge.
@@ -128,15 +156,16 @@ static bool button_step(Button& b, bool rawPressed) {
 static board_protocol::Frame g_square_events[64];
 
 // One full scan -> 64-bit occupancy bitmap (bit = square index).
+// Drives COL LOW (cathode side of reversed diodes) and reads ROW (anode side).
 static uint64_t scan_matrix() {
     uint64_t occ = 0;
-    for (int r = 0; r < kNumRows; ++r) {
-        gpio_set_level(kRowPins[r], 0);
+    for (int c = 0; c < kNumCols; ++c) {
+        gpio_set_level(kColPins[c], 0);
         esp_rom_delay_us(kSettleUs);
-        for (int c = 0; c < kNumCols; ++c)
-            if (gpio_get_level(kColPins[c]) == 0)
+        for (int r = 0; r < kNumRows; ++r)
+            if (gpio_get_level(kRowPins[r]) == 0)
                 occ |= (1ULL << square_index(r, c));
-        gpio_set_level(kRowPins[r], 1);
+        gpio_set_level(kColPins[c], 1);
     }
     return occ;
 }
@@ -164,6 +193,14 @@ static void render(uint64_t occ, uint64_t prev) {
                 n += snprintf(line + n, sizeof(line) - n, " %s", nm); }
     }
     printf("%s\n", line);
+
+    printf("Buttons (ADC1):  White GPIO%d raw=%4d ~%4dmV %s presses=%lu    Black GPIO%d raw=%4d ~%4dmV %s presses=%lu\n",
+           static_cast<int>(g_buttons[0].pin), g_buttons[0].lastRaw,
+           g_buttons[0].lastRaw * 3100 / 4095, g_buttons[0].pressed ? "DOWN" : "up  ",
+           static_cast<unsigned long>(g_buttons[0].presses),
+           static_cast<int>(g_buttons[1].pin), g_buttons[1].lastRaw,
+           g_buttons[1].lastRaw * 3100 / 4095, g_buttons[1].pressed ? "DOWN" : "up  ",
+           static_cast<unsigned long>(g_buttons[1].presses));
 
     const uint64_t added = occ & ~prev, removed = prev & ~occ;
     if (added || removed) {
@@ -208,12 +245,24 @@ extern "C" void app_main(void) {
             prevStable = stable;
         }
 
-        // Confirmation buttons → one BUTTON_EVENT per debounced press edge.
+        // Confirmation buttons via ADC1, with Schmitt-trigger hysteresis so the noisy
+        // mid-range neither miscounts nor flickers the screen. Redraw ONLY when a button
+        // changes committed state (up<->down) or a press is counted - never on raw wobble.
+        bool buttonsChanged = false;
         for (Button& b : g_buttons) {
-            const bool pressed = gpio_get_level(b.pin) == 0;   // active-LOW
-            if (button_step(b, pressed) && ble_service::is_subscribed()) {
-                ble_service::enqueue_frame(board_protocol::encodeButtonEvent(b.id));
+            int raw = 0;
+            adc_oneshot_read(g_adc1, b.chan, &raw);
+            b.lastRaw = raw;
+            if      (raw > kButtonAdcHigh) b.hyst = true;
+            else if (raw < kButtonAdcLow)  b.hyst = false;   // else: hold (dead band)
+            const bool wasPressed = b.pressed;
+            if (button_step(b, b.hyst)) {
+                ++b.presses;
+                if (ble_service::is_subscribed()) {
+                    ble_service::enqueue_frame(board_protocol::encodeButtonEvent(b.id));
+                }
             }
+            if (b.pressed != wasPressed) buttonsChanged = true;
         }
 
         // Service BLE-layer requests on the task that owns `stable` — no
@@ -236,7 +285,7 @@ extern "C" void app_main(void) {
             }
         }
 
-        if (stable != shown) {
+        if (stable != shown || buttonsChanged) {
             render(stable, (shown == ~0ULL) ? stable : shown);  // no diff on first draw
             shown = stable;
         }

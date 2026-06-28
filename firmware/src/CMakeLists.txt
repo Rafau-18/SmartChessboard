@@ -18,4 +18,5 @@ idf_component_register(
         nvs_flash     # persisted bonding keys + PHY calibration
         esp_hw_support # esp_read_mac (esp_mac.h)
         esp_timer     # uptime for DEVICE_STATUS
+        esp_adc       # ADC1 one-shot for the confirmation buttons (DGT ~1.5V)
 )

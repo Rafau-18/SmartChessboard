@@ -4,26 +4,26 @@
 // ===========================================================================
 //  Smart Chessboard - reed-switch 8x8 matrix pin map  (EDIT TO MATCH HARDWARE)
 // ===========================================================================
-// Rows are OUTPUTS, driven LOW one at a time. Columns are INPUTS with the
-// internal pull-up enabled: idle = HIGH, a closed reed switch reads LOW.
+// COLUMNS are OUTPUTS, driven LOW one at a time. ROWS are INPUTS with the internal
+// pull-up enabled: idle = HIGH, a closed reed switch (its series diode conducting)
+// pulls the row LOW. Diodes are mounted cathode-toward-column, which is why the scan
+// drives columns and reads rows (see main.cpp scan_matrix()).
 //
 // Square index convention (matches docs/reference/contract-surfaces.md S1.3):
 //   index = file + 8 * rank,  file a..h = 0..7,  rank 1..8 = 0..7
 //   => a1 = 0, h1 = 7, a8 = 56, h8 = 63
-// Default mapping in main.cpp: ROW index = rank, COL index = file.
+// main.cpp: ROW index = rank, COL index = file (calibrate square_index() if rotated).
 // Visual per-board header maps (DevKitC V4 + DevKit V1): see ../PINOUT.md
 //
 // ---------------------------------------------------------------------------
-//  CURRENT MAPPING = existing prototype wiring on the DevKit V1 (reused from an
-//  earlier project; two physically-consecutive header blocks). This is a
-//  bringup/test mapping, NOT the hazard-free design.
+//  CURRENT MAPPING = the real bring-up wiring on the DevKit V1, verified against
+//  the physical reed matrix (anti-ghosting diodes installed). This is the
+//  authoritative map; the ../HARDWARE.md / ../PINOUT.md / ../WIRING.md diagrams
+//  (which still describe the older row-drive prototype) are being reconciled to it.
 //
-//  The file-g column was moved OFF GPIO2 (DOIT V1 onboard LED, which made that
-//  column read stuck-closed) to GPIO21 = D21 (clean pin). Remaining watch item:
-//    * GPIO12 (ROW6) - flash-voltage strapping (must be LOW at boot). Fine as an
-//      output in practice, but if the board ever boot-loops, suspect this pin.
-//  Strapping pins used as pull-up inputs (GPIO5, GPIO15) boot in a safe state
-//  and are tolerable. Full hazard-free target map: ../PINOUT.md / ../WIRING.md.
+//  Watch item: GPIO12 (ROW6) is flash-voltage strapping (must be LOW at boot); it
+//  is a pull-up input here, so if the board ever boot-loops, suspect this pin.
+//  GPIO5 / GPIO15 (now columns, i.e. outputs) are strapping pins that boot safe.
 // ---------------------------------------------------------------------------
 //
 // NOTE: row/col index <-> rank/file orientation is calibratable. After flashing,
@@ -45,25 +45,29 @@ static constexpr gpio_num_t kRowPins[kNumRows] = {
     GPIO_NUM_13,  // ROW7  (D13)
 };
 
-// COL index 0..7 == file a..h  (inputs, internal pull-up). V1 RIGHT header, top->bottom.
+// COL index 0..7 == file a..h  (now OUTPUTS after diode-direction fix in main.cpp).
 static constexpr gpio_num_t kColPins[kNumCols] = {
-    GPIO_NUM_19,  // COL0  (D19)
-    GPIO_NUM_18,  // COL1  (D18)
-    GPIO_NUM_5,   // COL2  (D5)   *mild strapping (boots OK as pulled-up input)
-    GPIO_NUM_17,  // COL3  (TX2)
-    GPIO_NUM_16,  // COL4  (RX2)
-    GPIO_NUM_4,   // COL5  (D4)   *weak boot pull-down (pull-up overrides) - OK
-    GPIO_NUM_21,  // COL6  (D21)  clean GPIO - replaced GPIO2/D2 (onboard LED)
-    GPIO_NUM_15,  // COL7  (D15)  *strapping (boots HIGH = matches idle pull-up)
+    GPIO_NUM_15,  // COL0 = file a
+    GPIO_NUM_4,   // COL1 = file b
+    GPIO_NUM_16,  // COL2 = file c
+    GPIO_NUM_17,  // COL3 = file d
+    GPIO_NUM_5,   // COL4 = file e
+    GPIO_NUM_18,  // COL5 = file f
+    GPIO_NUM_19,  // COL6 = file g
+    GPIO_NUM_21,  // COL7 = file h
 };
 
 // ---------------------------------------------------------------------------
 //  Confirmation buttons (F-03 / FR-FW-007) - ADDITIVE, separate from the matrix.
-//  Two momentary push-buttons wired to GND, read as inputs with the internal
-//  pull-up: idle = HIGH, pressed = LOW. GPIO22/23 are bonded out on the
-//  WROOM-32, are NOT used by the matrix above, and are NOT strapping pins.
+//  Source = the original DGT chess-clock buttons, brought out via diode isolation
+//  (terminal C: idle ~0V, ~1.5V when pressed; clock battery-minus = common ground).
+//  That ~1.5V is BELOW the ESP32 digital-HIGH threshold, so the buttons are read on
+//  ADC1 and thresholded in firmware (see main.cpp), NOT as plain digital inputs.
+//  GPIO34/35 are input-only ADC1 pins (CH6/CH7), unused by the matrix; they have NO
+//  internal pull, so each needs an EXTERNAL ~100k pull-down to GND to define idle 0V
+//  (the isolation diode blocks at idle, so the node would otherwise float).
 //  White confirms a white move/turn, black the black side - bare events only,
 //  the firmware does no turn validation (the mobile re-derives whose turn it is).
 // ---------------------------------------------------------------------------
-static constexpr gpio_num_t kButtonWhitePin = GPIO_NUM_22;  // white -> BUTTON_EVENT 0x00
-static constexpr gpio_num_t kButtonBlackPin = GPIO_NUM_23;  // black -> BUTTON_EVENT 0x01
+static constexpr gpio_num_t kButtonWhitePin = GPIO_NUM_34;  // ADC1_CH6, white -> BUTTON_EVENT 0x00
+static constexpr gpio_num_t kButtonBlackPin = GPIO_NUM_35;  // ADC1_CH7, black -> BUTTON_EVENT 0x01
