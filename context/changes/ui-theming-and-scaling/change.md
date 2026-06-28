@@ -1,9 +1,9 @@
 ---
 change_id: ui-theming-and-scaling
 title: UI refresh — dark/light theming (M3 Expressive), scalable board, animations
-status: implementing
+status: implemented
 created: 2026-06-28
-updated: 2026-06-28
+updated: 2026-06-29
 archived_at: null
 ---
 

@@ -493,9 +493,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 1.6 History control switches System/Light/Dark live on Android, iOS, web
-- [ ] 1.7 Chosen mode survives restart on each target
-- [ ] 1.8 Both modes readable; wood board unchanged
+- [x] 1.6 History control switches System/Light/Dark live on Android, iOS, web
+- [x] 1.7 Chosen mode survives restart on each target
+- [x] 1.8 Both modes readable; wood board unchanged
 
 ### Phase 2: Scalable board (auto-fit + drag-resize handle, persisted)
 
@@ -507,9 +507,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 2.4 Wide window: board fills to viewport height, corner drag resizes, size persists
-- [ ] 2.5 Phone: full-width auto-fit, no handle, no regression
-- [ ] 2.6 Replay two-pane / Play / PhysicalPlay render correctly narrow and wide
+- [x] 2.4 Wide window: board fills to viewport height, corner drag resizes, size persists
+- [x] 2.5 Phone: full-width auto-fit, no handle, no regression
+- [x] 2.6 Replay two-pane / Play / PhysicalPlay render correctly narrow and wide
 
 ### Phase 3: Eval-bar behaviour + numeric label + fill animation
 
@@ -520,9 +520,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 3.3 Bar holds prior eval and animates to new one (no snap to center)
-- [ ] 3.4 Loading affordance shows while fetching
-- [ ] 3.5 Numeric label readable, fixed inside bar, no jump; 0.0 mid-board
+- [x] 3.3 Bar holds prior eval and animates to new one (no snap to center)
+- [x] 3.4 Loading affordance shows while fetching
+- [x] 3.5 Numeric label readable, fixed inside bar, no jump; 0.0 mid-board
 
 ### Phase 4: Motion — highlights, arrow, screen transitions, dialogs
 
@@ -532,9 +532,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 4.2 Selection/targets/lift fade; best-move arrow fades in
-- [ ] 4.3 Screen transitions animate on all targets; back/forward (incl. web Back) unaffected
-- [ ] 4.4 Promotion/end-game dialogs animate; eval panel crossfades
+- [x] 4.2 Selection/targets/lift fade; best-move arrow fades in
+- [x] 4.3 Screen transitions animate on all targets; back/forward (incl. web Back) unaffected
+- [x] 4.4 Promotion/end-game dialogs animate; eval panel crossfades
 
 ### Phase 5: Piece-slide animation (overlay over the weight grid)
 
@@ -545,9 +545,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 5.3 Play: tapped move slides; capture/castle/en-passant/promotion correct under both orientations
-- [ ] 5.4 Replay: step animates; jump/load renders instantly with no glitch
-- [ ] 5.5 PhysicalPlay (emulator) slides correctly; highlights/arrow unaffected
+- [x] 5.3 Play: tapped move slides; capture/castle/en-passant/promotion correct under both orientations
+- [x] 5.4 Replay: step animates; jump/load renders instantly with no glitch
+- [x] 5.5 PhysicalPlay (emulator) slides correctly; highlights/arrow unaffected
 
 ### Phase 6: Wide-screen layout & move-list refinements
 
@@ -558,12 +558,12 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 6.3 Resize handle sits on the board's corner and no longer covers the eval label
-- [ ] 6.4 Wide window: content centred with side margins; board column wider than the bounded move-list panel
-- [ ] 6.5 Mobile (Android/iOS) analysis shows the eval bar to the right of the board
-- [ ] 6.6 The eval-panel tile keeps a constant size between loading and evaluated
-- [ ] 6.7 Move-list toggle switches inline ↔ table, persists, defaults to table on wide / inline on phone
-- [ ] 6.8 History list is capped and centred on wide screens
+- [x] 6.3 Resize handle sits on the board's corner and no longer covers the eval label
+- [x] 6.4 Wide window: content centred with side margins; board column wider than the bounded move-list panel
+- [x] 6.5 Mobile (Android/iOS) analysis shows the eval bar to the right of the board
+- [x] 6.6 The eval-panel tile keeps a constant size between loading and evaluated
+- [x] 6.7 Move-list toggle switches inline ↔ table, persists, defaults to table on wide / inline on phone
+- [x] 6.8 History list is capped and centred on wide screens
 
 ### Phase 7: Layout polish — adaptive margins & tighter two-pane gap
 
@@ -573,6 +573,6 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Manual
 
-- [ ] 7.2 At the default board size the two-pane content keeps its centred margins
-- [ ] 7.3 Enlarging the board expands the layout past the default margins toward the window edges
-- [ ] 7.4 The board ↔ right-column gap is visibly tighter
+- [x] 7.2 At the default board size the two-pane content keeps its centred margins
+- [x] 7.3 Enlarging the board expands the layout past the default margins toward the window edges
+- [x] 7.4 The board ↔ right-column gap is visibly tighter
