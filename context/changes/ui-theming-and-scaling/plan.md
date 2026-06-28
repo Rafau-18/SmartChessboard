@@ -315,6 +315,93 @@ change. Isolated last because it requires an overlay layer and special-case hand
 
 ---
 
+## Phase 6: Wide-screen layout & move-list refinements
+
+### Overview
+
+Post-bring-up polish from live web/mobile feedback: keep the wide-screen layout from stretching
+edge-to-edge, fix the resize handle and the mobile eval bar, stabilise the eval-panel tile, and add
+a lichess-style two-column move list as a persisted, screen-defaulted toggle. Display-only; no
+change to game logic, persistence schema, or any contract surface.
+
+### Changes Required:
+
+#### 1. Resize handle on the board's own corner
+
+**File**: `presentation/board/ResizableBoardBox.kt`
+
+**Intent**: The corner grip pinned to the *content's* bottom-end, which in Replay is the eval bar's
+corner — covering its numeric label. Pin it to the board square's corner instead.
+
+**Contract**: overlay the handle on a board-sized `Box(Modifier.size(side), BottomEnd)`, not the
+whole content Row. The drag maps to the board's width budget (pane minus the reserved adjacent
+element). No change to the persisted-size contract.
+
+#### 2. Reserve eval-bar width on narrow + absolute board cap + lower default
+
+**Files**: `presentation/board/ResizableBoardBox.kt`, `presentation/replay/ReplayScreen.kt`, `domain/preferences/BoardSize.kt`
+
+**Intent**: On a phone the full-width board pushed the eval bar off-screen (the analysis bar was
+missing on Android/iOS). Reserve the bar's width so board + bar fit. Cap the board at an absolute
+`BOARD_MAX_SIDE` so it stays natural on a big monitor; lower `BOARD_SIZE_DEFAULT` (0.7 → 0.6).
+
+**Contract**: `ResizableBoardBox` gains a `reservedWidth: Dp` subtracted from the usable width before
+the fraction/cap; `BoardWithEvalBar` passes `EvalBarWidth + gap` when analysis is on. `boardSide`
+also caps at `BOARD_MAX_SIDE = 640.dp`. `EvalBarWidth` becomes `internal`.
+
+#### 3. Fixed eval-panel tile height
+
+**File**: `presentation/replay/EvalComponents.kt`
+
+**Intent**: The `EvalPanel` resized between the short loading state and the taller evaluated one, so
+the crossfade "jumped". Give it a fixed minimum height.
+
+**Contract**: `EvalPanel`'s `Surface` gets `heightIn(min = EvalPanelMinHeight)` sized to the tallest
+(evaluated) state. No content/logic change.
+
+#### 4. Centered max-width content + bounded Replay side panel + History list cap
+
+**Files**: `presentation/components/Layout.kt` (new), `presentation/replay/ReplayScreen.kt`, `presentation/play/PlayScreen.kt`, `presentation/physical/PhysicalPlayScreen.kt`, `presentation/history/HistoryScreen.kt`
+
+**Intent**: On wide windows the content stretched edge-to-edge and the two Replay columns were 50/50
+(the move list ate half the screen); the History list was full-width and left-aligned.
+
+**Contract**: a `CONTENT_MAX_WIDTH = 1200.dp` centred container wraps each board screen's content
+(top bars stay full-bleed). Replay two-pane: board column `weight(1f)`, side panel
+`widthIn(max = SIDE_PANEL_MAX_WIDTH = 340.dp)`. History list `widthIn(max = LIST_MAX_WIDTH = 720.dp)`
+centred.
+
+#### 5. Lichess-style two-column move list (persisted, screen-defaulted toggle)
+
+**Files**: `domain/preferences/MoveListMode.kt` (new), `domain/preferences/UiPreferences.kt`, `data/preferences/SettingsUiPreferences.kt`, `presentation/board/BoardPreferencesViewModel.kt`, `presentation/components/MoveList.kt`, `presentation/replay/ReplayScreen.kt`, `presentation/play/PlayScreen.kt`, `presentation/physical/PhysicalPlayScreen.kt`
+
+**Intent**: Offer a lichess-style grid (white | black, one full move per row) alongside the compact
+inline flow, toggleable and persisted, defaulting by screen width.
+
+**Contract**: `MoveListMode { INLINE, TABLE }` + pure `effectiveMoveListMode(override, isWide)`
+(override ?? by-width). Persisted under `ui.moveListMode` (null = unset → default by screen).
+`MoveList` gains `tableMode: Boolean`. A persisted toggle lives in the Replay top bar; Play /
+PhysicalPlay render the same effective mode.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- `effectiveMoveListMode` unit-tested (null→by-width; explicit override wins): host + `:shared:iosSimulatorArm64Test`
+- Move-list-mode persistence round-trip + unset/unrecognized → null: `:shared:testAndroidHostTest`
+- All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean
+
+#### Manual Verification:
+
+- Resize handle sits on the board's corner and no longer covers the eval label
+- Wide window: content is centred with side margins, board column wider than a bounded move-list panel
+- Mobile (Android/iOS) analysis shows the eval bar to the right of the board
+- The eval-panel tile no longer changes size between loading and evaluated
+- Move-list toggle switches inline ↔ table, persists, and defaults to table on wide / inline on phone
+- History list is capped and centred on wide screens
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests:
@@ -402,7 +489,7 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 4.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble), ktlint clean
+- [x] 4.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble), ktlint clean — 3d290ba
 
 #### Manual
 
@@ -422,3 +509,19 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 - [ ] 5.3 Play: tapped move slides; capture/castle/en-passant/promotion correct under both orientations
 - [ ] 5.4 Replay: step animates; jump/load renders instantly with no glitch
 - [ ] 5.5 PhysicalPlay (emulator) slides correctly; highlights/arrow unaffected
+
+### Phase 6: Wide-screen layout & move-list refinements
+
+#### Automated
+
+- [x] 6.1 `effectiveMoveListMode` + move-list-mode persistence unit tests pass (host + `:shared:iosSimulatorArm64Test`)
+- [x] 6.2 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean
+
+#### Manual
+
+- [ ] 6.3 Resize handle sits on the board's corner and no longer covers the eval label
+- [ ] 6.4 Wide window: content centred with side margins; board column wider than the bounded move-list panel
+- [ ] 6.5 Mobile (Android/iOS) analysis shows the eval bar to the right of the board
+- [ ] 6.6 The eval-panel tile keeps a constant size between loading and evaluated
+- [ ] 6.7 Move-list toggle switches inline ↔ table, persists, defaults to table on wide / inline on phone
+- [ ] 6.8 History list is capped and centred on wide screens

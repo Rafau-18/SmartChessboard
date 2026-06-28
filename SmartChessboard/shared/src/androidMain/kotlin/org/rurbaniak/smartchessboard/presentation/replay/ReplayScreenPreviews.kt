@@ -21,6 +21,7 @@ private fun ReplayTruncatedPreview() {
             state = ReplayUiState.Loaded(game = game, currentPly = game.sanMoves.size),
             boardSize = BOARD_SIZE_DEFAULT,
             onBoardSizeChange = {},
+            tableMoveList = false,
             onStart = {},
             onStepBack = {},
             onStepForward = {},

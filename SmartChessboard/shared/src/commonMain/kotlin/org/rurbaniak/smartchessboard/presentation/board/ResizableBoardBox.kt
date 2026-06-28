@@ -32,6 +32,9 @@ private val VERTICAL_CHROME = 140.dp
 /** The board never shrinks below this, even on a very short window, so it stays usable. */
 private val MIN_BOARD_SIDE = 200.dp
 
+/** Absolute cap on the board side, so on a very large monitor it stays a natural size instead of huge. */
+private val BOARD_MAX_SIDE = 640.dp
+
 /** The corner drag handle's touch target. */
 private val HANDLE_SIZE = 28.dp
 
@@ -63,53 +66,66 @@ fun ResizableBoardBox(
     size: Float,
     onSizeChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
+    reservedWidth: Dp = 0.dp,
     content: @Composable (Modifier) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val density = LocalDensity.current
         val viewportHeightPx = LocalWindowInfo.current.containerSize.height
         val viewportHeight = if (viewportHeightPx > 0) with(density) { viewportHeightPx.toDp() } else Dp.Unspecified
-        val side = boardSide(isWide = isWide, availableWidth = maxWidth, viewportHeight = viewportHeight, size = size)
-        val availableWidthPx = constraints.maxWidth.toFloat()
+        val side =
+            boardSide(
+                isWide = isWide,
+                availableWidth = maxWidth,
+                reservedWidth = reservedWidth,
+                viewportHeight = viewportHeight,
+                size = size,
+            )
+        // Drag maps to the board's own width budget (pane minus the reserved adjacent element), so the
+        // grip tracks the cursor even when an eval bar sits beside the board.
+        val budgetWidthPx = (constraints.maxWidth.toFloat() - with(density) { reservedWidth.toPx() }).coerceAtLeast(1f)
 
-        // The board square is centred; the handle pins to its bottom-end corner (the content's
-        // corner — for Replay with the eval bar visible that is the bar's corner, which is acceptable).
-        Box(
-            modifier = Modifier.align(Alignment.TopCenter),
-            contentAlignment = Alignment.BottomEnd,
-        ) {
+        Box(modifier = Modifier.align(Alignment.TopCenter)) {
             content(Modifier.size(side))
-            if (isWide && availableWidthPx > 0f) {
-                ResizeHandle(
-                    sizeFraction = size,
-                    availableWidthPx = availableWidthPx,
-                    onSizeChange = onSizeChange,
-                )
+            if (isWide) {
+                // Overlay exactly the board's size so the handle pins to the *board's* bottom-end corner
+                // — with an adjacent eval bar it no longer lands on the bar (and its numeric label).
+                Box(modifier = Modifier.size(side), contentAlignment = Alignment.BottomEnd) {
+                    ResizeHandle(
+                        sizeFraction = size,
+                        availableWidthPx = budgetWidthPx,
+                        onSizeChange = onSizeChange,
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * The square board side: bounded by width (scaled by [size] only on a wide screen) and by the
- * viewport height (less [VERTICAL_CHROME]), floored at [MIN_BOARD_SIDE] (but never above the pane
- * width). [viewportHeight] is [Dp.Unspecified] when the window size isn't known yet (early frame /
- * preview), in which case only the width bound applies.
+ * The square board side: bounded by the usable width (the pane less [reservedWidth] for an adjacent
+ * element such as the eval bar, scaled by [size] only on a wide screen), by an absolute [BOARD_MAX_SIDE]
+ * cap, and by the viewport height (less [VERTICAL_CHROME]); floored at [MIN_BOARD_SIDE] (but never above
+ * the usable width). [viewportHeight] is [Dp.Unspecified] when the window size isn't known yet (early
+ * frame / preview), in which case only the width/cap bounds apply.
  */
 private fun boardSide(
     isWide: Boolean,
     availableWidth: Dp,
+    reservedWidth: Dp,
     viewportHeight: Dp,
     size: Float,
 ): Dp {
-    val widthBound = if (isWide) availableWidth * clampBoardSize(size) else availableWidth
+    val usableWidth = (availableWidth - reservedWidth).coerceAtLeast(0.dp)
+    val widthBound = if (isWide) usableWidth * clampBoardSize(size) else usableWidth
+    val capped = minOf(widthBound, BOARD_MAX_SIDE)
     val bounded =
         if (viewportHeight != Dp.Unspecified) {
-            minOf(widthBound, (viewportHeight - VERTICAL_CHROME).coerceAtLeast(MIN_BOARD_SIDE))
+            minOf(capped, (viewportHeight - VERTICAL_CHROME).coerceAtLeast(MIN_BOARD_SIDE))
         } else {
-            widthBound
+            capped
         }
-    return bounded.coerceAtLeast(minOf(availableWidth, MIN_BOARD_SIDE))
+    return bounded.coerceAtLeast(minOf(usableWidth, MIN_BOARD_SIDE))
 }
 
 /**

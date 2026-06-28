@@ -37,12 +37,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnHeaders
+import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
+import org.rurbaniak.smartchessboard.domain.preferences.effectiveMoveListMode
 import org.rurbaniak.smartchessboard.presentation.board.BoardArrow
 import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
+import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
+import org.rurbaniak.smartchessboard.presentation.components.SIDE_PANEL_MAX_WIDTH
 
 /** Caps the non-board sections (player line, panel, controls, move list) so they don't stretch edge-to-edge. */
 private val SECTION_MAX_WIDTH = 480.dp
@@ -62,6 +67,11 @@ fun ReplayScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
     val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
+    val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
+    // The move list defaults to the lichess-style table on wide screens and the compact inline flow on
+    // phones; an explicit toggle (persisted) overrides that. One effective value drives the top-bar
+    // control and the lists below.
+    val effectiveMoveListMode = effectiveMoveListMode(moveListOverride, rememberIsWideScreen())
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,6 +83,20 @@ fun ReplayScreen(
                 },
                 actions = {
                     (uiState as? ReplayUiState.Loaded)?.let { state ->
+                        // Shows the current layout and toggles to the other one (persisted).
+                        TextButton(
+                            onClick = {
+                                boardPrefs.setMoveListMode(
+                                    if (effectiveMoveListMode == MoveListMode.TABLE) {
+                                        MoveListMode.INLINE
+                                    } else {
+                                        MoveListMode.TABLE
+                                    },
+                                )
+                            },
+                        ) {
+                            Text(if (effectiveMoveListMode == MoveListMode.TABLE) "Table" else "Inline")
+                        }
                         TextButton(onClick = viewModel::toggleAnalysis) {
                             Text(
                                 "Analysis",
@@ -118,6 +142,7 @@ fun ReplayScreen(
                         state = state,
                         boardSize = boardSize,
                         onBoardSizeChange = boardPrefs::setBoardSize,
+                        tableMoveList = effectiveMoveListMode == MoveListMode.TABLE,
                         onStart = viewModel::goToStart,
                         onStepBack = viewModel::stepBack,
                         onStepForward = viewModel::stepForward,
@@ -136,6 +161,7 @@ internal fun LoadedReplay(
     state: ReplayUiState.Loaded,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
+    tableMoveList: Boolean,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -152,6 +178,7 @@ internal fun LoadedReplay(
                 state,
                 boardSize,
                 onBoardSizeChange,
+                tableMoveList,
                 onStart,
                 onStepBack,
                 onStepForward,
@@ -164,6 +191,7 @@ internal fun LoadedReplay(
                 state,
                 boardSize,
                 onBoardSizeChange,
+                tableMoveList,
                 onStart,
                 onStepBack,
                 onStepForward,
@@ -181,6 +209,7 @@ private fun NarrowReplay(
     state: ReplayUiState.Loaded,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
+    tableMoveList: Boolean,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -227,6 +256,7 @@ private fun NarrowReplay(
             currentPly = state.currentPly,
             onJump = onJump,
             modifier = sectionModifier,
+            tableMode = tableMoveList,
         )
     }
 }
@@ -240,6 +270,7 @@ private fun WideReplay(
     state: ReplayUiState.Loaded,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
+    tableMoveList: Boolean,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -247,59 +278,75 @@ private fun WideReplay(
     onJump: (Int) -> Unit,
     onRetryEval: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        Column(
+    // Centre the two-pane content and cap its width so it never stretches edge-to-edge on a monitor.
+    Box(modifier = Modifier.fillMaxSize()) {
+        Row(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                    .widthIn(max = CONTENT_MAX_WIDTH)
+                    .fillMaxSize()
+                    .align(Alignment.TopCenter)
+                    .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
-            PlayerLine(state.game.headers)
-            Spacer(Modifier.height(12.dp))
-            // Wide layout: the board auto-fits the pane (bounded by viewport height) and gets a resize handle.
-            BoardWithEvalBar(state = state, isWide = true, boardSize = boardSize, onBoardSizeChange = onBoardSizeChange)
-            Spacer(Modifier.height(12.dp))
-            if (state.isTruncated) {
-                TruncationBanner(modifier = sectionModifier)
+            // Board column takes the remaining width; the side panel is bounded so the move list never
+            // takes half the screen.
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
+                PlayerLine(state.game.headers)
                 Spacer(Modifier.height(12.dp))
-            }
-            TransportControls(
-                state = state,
-                onStart = onStart,
-                onBack = onStepBack,
-                onForward = onStepForward,
-                onEnd = onEnd,
-                modifier = sectionModifier,
-            )
-        }
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-        ) {
-            if (state.analysisEnabled) {
-                // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
-                Crossfade(
-                    targetState = state.currentEval,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = "evalPanel",
-                ) { eval ->
-                    EvalPanel(eval = eval, onRetry = onRetryEval)
+                // Wide layout: the board auto-fits the pane (bounded by viewport height) and gets a resize handle.
+                BoardWithEvalBar(
+                    state = state,
+                    isWide = true,
+                    boardSize = boardSize,
+                    onBoardSizeChange = onBoardSizeChange,
+                )
+                Spacer(Modifier.height(12.dp))
+                if (state.isTruncated) {
+                    TruncationBanner(modifier = sectionModifier)
+                    Spacer(Modifier.height(12.dp))
                 }
-                Spacer(Modifier.height(16.dp))
+                TransportControls(
+                    state = state,
+                    onStart = onStart,
+                    onBack = onStepBack,
+                    onForward = onStepForward,
+                    onEnd = onEnd,
+                    modifier = sectionModifier,
+                )
             }
-            MoveList(
-                sanMoves = state.game.sanMoves,
-                currentPly = state.currentPly,
-                onJump = onJump,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column(
+                modifier =
+                    Modifier
+                        .widthIn(max = SIDE_PANEL_MAX_WIDTH)
+                        .verticalScroll(rememberScrollState()),
+            ) {
+                if (state.analysisEnabled) {
+                    // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+                    Crossfade(
+                        targetState = state.currentEval,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = "evalPanel",
+                    ) { eval ->
+                        EvalPanel(eval = eval, onRetry = onRetryEval)
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+                MoveList(
+                    sanMoves = state.game.sanMoves,
+                    currentPly = state.currentPly,
+                    onJump = onJump,
+                    modifier = Modifier.fillMaxWidth(),
+                    tableMode = tableMoveList,
+                )
+            }
         }
     }
 }
@@ -318,7 +365,15 @@ private fun BoardWithEvalBar(
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
 ) {
-    ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
+    // When the eval bar is shown, reserve its width (+ the Row gap) so the board leaves room for it —
+    // otherwise on a phone the full-width board pushes the bar off-screen.
+    val reserved = if (state.analysisEnabled) EvalBarWidth + 8.dp else 0.dp
+    ResizableBoardBox(
+        isWide = isWide,
+        size = boardSize,
+        onSizeChange = onBoardSizeChange,
+        reservedWidth = reserved,
+    ) { boardModifier ->
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

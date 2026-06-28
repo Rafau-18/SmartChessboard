@@ -12,7 +12,12 @@ package org.rurbaniak.smartchessboard.domain.preferences
  */
 const val BOARD_SIZE_MIN: Float = 0.4f
 const val BOARD_SIZE_MAX: Float = 1.0f
-const val BOARD_SIZE_DEFAULT: Float = 0.7f
+
+/**
+ * Default fraction of the pane width on a wide screen. Deliberately below 1.0 so the board doesn't
+ * fill the whole pane out of the box (which looked stretched); an absolute cap also applies in the UI.
+ */
+const val BOARD_SIZE_DEFAULT: Float = 0.6f
 
 /**
  * Clamp a raw board-size fraction into [min]..[max]. A non-finite [raw] (NaN / ±Infinity — e.g. a

@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_DEFAULT
+import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
 import org.rurbaniak.smartchessboard.domain.preferences.UiPreferences
 import org.rurbaniak.smartchessboard.domain.preferences.clampBoardSize
@@ -27,6 +28,9 @@ class SettingsUiPreferences(
     private val _boardSize = MutableStateFlow(readBoardSize())
     override val boardSize: StateFlow<Float> = _boardSize.asStateFlow()
 
+    private val _moveListMode = MutableStateFlow(readMoveListMode())
+    override val moveListMode: StateFlow<MoveListMode?> = _moveListMode.asStateFlow()
+
     override fun setThemeMode(mode: ThemeMode) {
         settings.putString(THEME_MODE_KEY, mode.name)
         _themeMode.value = mode
@@ -38,6 +42,11 @@ class SettingsUiPreferences(
         _boardSize.value = clamped
     }
 
+    override fun setMoveListMode(mode: MoveListMode) {
+        settings.putString(MOVE_LIST_MODE_KEY, mode.name)
+        _moveListMode.value = mode
+    }
+
     private fun readThemeMode(): ThemeMode {
         val stored = settings.getStringOrNull(THEME_MODE_KEY)
         return ThemeMode.entries.firstOrNull { it.name == stored } ?: ThemeMode.SYSTEM
@@ -47,8 +56,15 @@ class SettingsUiPreferences(
     // (including a corrupt out-of-range one) is clamped into the valid range.
     private fun readBoardSize(): Float = clampBoardSize(settings.getFloat(BOARD_SIZE_KEY, BOARD_SIZE_DEFAULT))
 
+    // Total read: an unset or unrecognized value means "no explicit choice" (null → default by screen).
+    private fun readMoveListMode(): MoveListMode? {
+        val stored = settings.getStringOrNull(MOVE_LIST_MODE_KEY)
+        return MoveListMode.entries.firstOrNull { it.name == stored }
+    }
+
     private companion object {
         const val THEME_MODE_KEY = "ui.themeMode"
         const val BOARD_SIZE_KEY = "ui.boardSize"
+        const val MOVE_LIST_MODE_KEY = "ui.moveListMode"
     }
 }

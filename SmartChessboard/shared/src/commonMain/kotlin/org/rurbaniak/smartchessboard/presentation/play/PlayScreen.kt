@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,12 +38,15 @@ import org.rurbaniak.smartchessboard.domain.chess.Color
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
 import org.rurbaniak.smartchessboard.domain.games.GameResult
+import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
+import org.rurbaniak.smartchessboard.domain.preferences.effectiveMoveListMode
 import org.rurbaniak.smartchessboard.presentation.board.BoardInteraction
 import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 
 /** Caps the non-board sections (status, controls, move list) so they don't stretch edge-to-edge on wide screens. */
@@ -63,6 +67,8 @@ fun PlayScreen(
     val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
     val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
     val isWide = rememberIsWideScreen()
+    val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
+    val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
     Scaffold(
         topBar = {
             TopAppBar(
@@ -107,8 +113,14 @@ fun PlayScreen(
 
                 is PlayUiState.Playing -> {
                     PlayingContent(
+                        modifier =
+                            Modifier
+                                .widthIn(max = CONTENT_MAX_WIDTH)
+                                .fillMaxHeight()
+                                .align(Alignment.TopCenter),
                         state = state,
                         isWide = isWide,
+                        tableMoveList = tableMoveList,
                         boardSize = boardSize,
                         onBoardSizeChange = boardPrefs::setBoardSize,
                         onSquareTap = viewModel::onSquareTap,
@@ -131,6 +143,7 @@ fun PlayScreen(
 private fun PlayingContent(
     state: PlayUiState.Playing,
     isWide: Boolean,
+    tableMoveList: Boolean,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
     onSquareTap: (Int) -> Unit,
@@ -142,11 +155,11 @@ private fun PlayingContent(
     onEndGameDismiss: () -> Unit,
     onReviewGame: () -> Unit,
     onBackToHistory: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
-            Modifier
-                .fillMaxSize()
+            modifier
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -188,6 +201,7 @@ private fun PlayingContent(
             sanMoves = state.sanMoves,
             currentPly = state.sanMoves.size,
             modifier = sectionModifier,
+            tableMode = tableMoveList,
         )
     }
 

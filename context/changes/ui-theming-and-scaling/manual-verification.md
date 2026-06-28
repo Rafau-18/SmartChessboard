@@ -62,3 +62,26 @@ Pending on-device confirmation:
   correctly (no extra/lost entries).
 - [ ] 4.4 The promotion and end-game dialogs animate in (fade + slight scale-up); the Replay eval
   panel crossfades between its states (Analyzing… ↔ score ↔ temporarily-unavailable …).
+
+## Phase 6 — Wide-screen layout & move-list refinements
+
+Automated (done, committed): `effectiveMoveListMode` + move-list-mode persistence unit tests on host
++ iOS-sim; all targets compile and existing tests stay green (`:shared:testAndroidHostTest`,
+`:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`, `:androidApp:assembleDebug`); ktlint — all green.
+
+Pending on-device confirmation:
+
+- [ ] 6.3 On a wide window the board resize handle sits on the **board's** bottom-right corner and no
+  longer overlaps the eval bar's numeric label.
+- [ ] 6.4 On a wide window (web maximised / desktop / tablet) the content is centred with side margins
+  (not edge-to-edge), and in Replay two-pane the board column is clearly wider than the bounded
+  (≤340 dp) right column; the board no longer defaults to an oversized width.
+- [ ] 6.5 In the **mobile** (Android / iOS) Replay analysis view the eval bar is visible to the right
+  of the board (previously pushed off-screen).
+- [ ] 6.6 Stepping through plies with analysis on, the eval-panel tile keeps a constant size between
+  the "Analyzing…" and evaluated states — no vertical "jump".
+- [ ] 6.7 The Replay top-bar move-list toggle switches inline ↔ lichess table; the choice persists
+  across a restart; with no explicit choice it defaults to table on wide screens and inline on phones;
+  the table renders white | black, one full move per row. Play shows the same chosen mode.
+- [ ] 6.8 On a wide window the History games list is capped (~720 dp) and centred, not stretched
+  full-width and left-aligned.

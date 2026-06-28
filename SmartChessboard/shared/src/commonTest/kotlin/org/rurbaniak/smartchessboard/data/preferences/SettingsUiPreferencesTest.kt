@@ -3,9 +3,11 @@ package org.rurbaniak.smartchessboard.data.preferences
 import com.russhwolf.settings.MapSettings
 import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_DEFAULT
 import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_MAX
+import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class SettingsUiPreferencesTest {
     @Test
@@ -80,5 +82,37 @@ class SettingsUiPreferencesTest {
         val settings = MapSettings().apply { putFloat("ui.boardSize", 5f) }
 
         assertEquals(BOARD_SIZE_MAX, SettingsUiPreferences(settings).boardSize.value)
+    }
+
+    @Test
+    fun moveListModeDefaultsToNullWhenUnset() {
+        val prefs = SettingsUiPreferences(MapSettings())
+
+        assertNull(prefs.moveListMode.value)
+    }
+
+    @Test
+    fun setMoveListModeUpdatesTheFlowLive() {
+        val prefs = SettingsUiPreferences(MapSettings())
+
+        prefs.setMoveListMode(MoveListMode.TABLE)
+
+        assertEquals(MoveListMode.TABLE, prefs.moveListMode.value)
+    }
+
+    @Test
+    fun setMoveListModePersistsAcrossInstancesOverTheSameStore() {
+        val settings = MapSettings()
+        SettingsUiPreferences(settings).setMoveListMode(MoveListMode.TABLE)
+
+        // A fresh instance re-reads the persisted choice — the "survives restart" guarantee.
+        assertEquals(MoveListMode.TABLE, SettingsUiPreferences(settings).moveListMode.value)
+    }
+
+    @Test
+    fun unrecognizedStoredMoveListModeFallsBackToNull() {
+        val settings = MapSettings().apply { putString("ui.moveListMode", "GRID") }
+
+        assertNull(SettingsUiPreferences(settings).moveListMode.value)
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,7 +40,14 @@ import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import kotlin.math.abs
 
 /** Fixed bar thickness — wide enough for a `±d.dd` / `M#` label at [MaterialTheme.typography]'s 11 sp. */
-private val EvalBarWidth = 32.dp
+internal val EvalBarWidth = 32.dp
+
+/**
+ * Fixed minimum height of the [EvalPanel] tile, sized to its tallest state (score + best move +
+ * source). Keeps the tile from resizing — and the crossfade from "jumping" — between the short
+ * loading state and the taller evaluated one.
+ */
+private val EvalPanelMinHeight = 104.dp
 
 /**
  * The bar's held display: the last shown White-POV fill [fraction] (0..1, from the bottom) and the
@@ -223,7 +231,7 @@ internal fun EvalPanel(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.heightIn(min = EvalPanelMinHeight),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(8.dp),
     ) {

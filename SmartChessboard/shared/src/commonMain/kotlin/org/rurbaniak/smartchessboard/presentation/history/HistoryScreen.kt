@@ -4,10 +4,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -32,6 +34,7 @@ import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
+import org.rurbaniak.smartchessboard.presentation.components.LIST_MAX_WIDTH
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +107,15 @@ fun HistoryScreen(
                 }
 
                 is HistoryUiState.Loaded -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    // Cap the list width and centre it — a games list reads better narrow than stretched
+                    // across a wide monitor.
+                    LazyColumn(
+                        modifier =
+                            Modifier
+                                .fillMaxHeight()
+                                .widthIn(max = LIST_MAX_WIDTH)
+                                .align(Alignment.TopCenter),
+                    ) {
                         items(state.games, key = { it.id }) { game ->
                             GameRow(game, onClick = { onGameClick(game) })
                         }

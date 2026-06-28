@@ -31,4 +31,13 @@ interface UiPreferences {
 
     /** Persist [fraction] (clamped to the valid range) and update [boardSize] live. */
     fun setBoardSize(fraction: Float)
+
+    /**
+     * The user's explicit move-list layout choice, or `null` when unset — in which case the layout
+     * defaults by screen width (see [effectiveMoveListMode]). Mirrored reactively.
+     */
+    val moveListMode: StateFlow<MoveListMode?>
+
+    /** Persist an explicit [mode] (overrides the by-screen default) and update [moveListMode] live. */
+    fun setMoveListMode(mode: MoveListMode)
 }
