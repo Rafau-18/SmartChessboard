@@ -1,5 +1,10 @@
 package org.rurbaniak.smartchessboard
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -73,6 +78,17 @@ fun App() {
                             rememberSaveableStateHolderNavEntryDecorator(),
                             rememberViewModelStoreNavEntryDecorator(),
                         ),
+                    // Forward navigation slides the new destination in from the right; popping slides
+                    // it back out to the right. This only styles NavDisplay's AnimatedContent — onBack,
+                    // the back stack, and the wasm browser-history binding are unchanged.
+                    transitionSpec = {
+                        slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith
+                            slideOutHorizontally(targetOffsetX = { -it / 4 }) + fadeOut()
+                    },
+                    popTransitionSpec = {
+                        slideInHorizontally(initialOffsetX = { -it / 4 }) + fadeIn() togetherWith
+                            slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+                    },
                     entryProvider =
                         entryProvider {
                             entry<HistoryKey> {

@@ -1,5 +1,7 @@
 package org.rurbaniak.smartchessboard.presentation.board
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,7 +14,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -124,11 +131,22 @@ fun ChessBoardView(
                                         }
                                     },
                         ) {
-                            if (interaction?.selectedSquare == square) {
-                                Box(Modifier.matchParentSize().background(chess.selectedTint))
+                            // Fade the selection / lift / legal-target overlays in and out instead of
+                            // hard toggling. Display-only — no change to the tap/selection contract; the
+                            // overlay stays composed only while its alpha is non-zero (so fade-out plays).
+                            val selectedAlpha by animateFloatAsState(
+                                targetValue = if (interaction?.selectedSquare == square) 1f else 0f,
+                                label = "selectedTint",
+                            )
+                            if (selectedAlpha > 0f) {
+                                Box(Modifier.matchParentSize().alpha(selectedAlpha).background(chess.selectedTint))
                             }
-                            if (square in highlightedSquares) {
-                                Box(Modifier.matchParentSize().background(chess.liftHighlight))
+                            val liftAlpha by animateFloatAsState(
+                                targetValue = if (square in highlightedSquares) 1f else 0f,
+                                label = "liftHighlight",
+                            )
+                            if (liftAlpha > 0f) {
+                                Box(Modifier.matchParentSize().alpha(liftAlpha).background(chess.liftHighlight))
                             }
                             piece?.let {
                                 Image(
@@ -137,8 +155,19 @@ fun ChessBoardView(
                                     modifier = Modifier.fillMaxSize(),
                                 )
                             }
-                            if (interaction != null && square in interaction.targetSquares) {
-                                Canvas(modifier = Modifier.matchParentSize()) {
+                            val targetAlpha by animateFloatAsState(
+                                targetValue =
+                                    if (interaction != null &&
+                                        square in interaction.targetSquares
+                                    ) {
+                                        1f
+                                    } else {
+                                        0f
+                                    },
+                                label = "targetMark",
+                            )
+                            if (targetAlpha > 0f) {
+                                Canvas(modifier = Modifier.matchParentSize().alpha(targetAlpha)) {
                                     drawTargetMark(occupied = piece != null, color = chess.targetMark)
                                 }
                             }
@@ -147,9 +176,21 @@ fun ChessBoardView(
                 }
             }
         }
+        // Fade the best-move arrow in when an evaluation arrives and out when it clears. The last
+        // arrow is remembered so the fade-out still has geometry to draw after [bestMoveArrow] goes null.
+        val arrowAlpha by animateFloatAsState(
+            targetValue = if (bestMoveArrow != null) 1f else 0f,
+            animationSpec = tween(durationMillis = 250),
+            label = "bestMoveArrow",
+        )
+        var lastArrow by remember { mutableStateOf(bestMoveArrow) }
         if (bestMoveArrow != null) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawBestMoveArrow(bestMoveArrow, orientation, color = chess.bestMoveArrow)
+            lastArrow = bestMoveArrow
+        }
+        val arrow = lastArrow
+        if (arrowAlpha > 0f && arrow != null) {
+            Canvas(modifier = Modifier.fillMaxSize().alpha(arrowAlpha)) {
+                drawBestMoveArrow(arrow, orientation, color = chess.bestMoveArrow)
             }
         }
     }

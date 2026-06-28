@@ -45,3 +45,20 @@ Pending on-device confirmation (Replay, analysis enabled):
 - [ ] 3.5 The numeric score label is readable, sits at a fixed bottom-centre spot inside the bar, and
   does not jump as the fill moves; `0.00` fills exactly to the board's vertical centre. Check the
   rare strong-black-advantage / forced-mate-for-Black case stays legible (light label on dark track).
+
+## Phase 4 — Motion (highlights, arrow, screen transitions, dialogs)
+
+Automated (done, committed): all targets compile and existing tests stay green
+(`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`,
+`:androidApp:assembleDebug`); ktlint — all green.
+
+Pending on-device confirmation:
+
+- [ ] 4.2 In Play, selecting a piece fades the selection tint and legal-target marks in (and out when
+  the selection clears); in PhysicalPlay the lift highlight fades; in Replay the best-move arrow fades
+  in when an evaluation arrives and out when it clears.
+- [ ] 4.3 Navigating between screens animates on Android, iOS, and web (forward slides in from the
+  right, pop slides back out); system Back and, on web, browser Back/Forward still drive the stack
+  correctly (no extra/lost entries).
+- [ ] 4.4 The promotion and end-game dialogs animate in (fade + slight scale-up); the Replay eval
+  panel crossfades between its states (Analyzing… ↔ score ↔ temporarily-unavailable …).

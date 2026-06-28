@@ -1,5 +1,9 @@
 package org.rurbaniak.smartchessboard.presentation.board
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -41,7 +46,15 @@ fun PromotionPicker(
     onDismiss: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        PromotionPickerSurface(color = color, onPick = onPick)
+        // Animate the surface in (fade + slight scale-up). The Dialog window itself can't be tweened,
+        // so the enter transition runs on the content; dismissal removes the dialog wholesale.
+        val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+        AnimatedVisibility(
+            visibleState = visibleState,
+            enter = fadeIn() + scaleIn(initialScale = 0.92f),
+        ) {
+            PromotionPickerSurface(color = color, onPick = onPick)
+        }
     }
 }
 

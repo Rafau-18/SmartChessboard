@@ -389,8 +389,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 3.1 Hold-last fraction/score unit test passes (host + `:shared:iosSimulatorArm64Test`)
-- [x] 3.2 `whiteBarFraction(0,null)==0.5` regression intact; web compiles
+- [x] 3.1 Hold-last fraction/score unit test passes (host + `:shared:iosSimulatorArm64Test`) — 1e84936
+- [x] 3.2 `whiteBarFraction(0,null)==0.5` regression intact; web compiles — 1e84936
 
 #### Manual
 
@@ -402,7 +402,7 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [ ] 4.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble), ktlint clean
+- [x] 4.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble), ktlint clean
 
 #### Manual
 

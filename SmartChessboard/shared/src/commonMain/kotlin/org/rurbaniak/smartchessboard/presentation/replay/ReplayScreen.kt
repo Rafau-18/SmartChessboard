@@ -1,5 +1,6 @@
 package org.rurbaniak.smartchessboard.presentation.replay
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -202,7 +203,10 @@ private fun NarrowReplay(
         BoardWithEvalBar(state = state, isWide = false, boardSize = boardSize, onBoardSizeChange = onBoardSizeChange)
         if (state.analysisEnabled) {
             Spacer(Modifier.height(8.dp))
-            EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = sectionModifier)
+            // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+            Crossfade(targetState = state.currentEval, modifier = sectionModifier, label = "evalPanel") { eval ->
+                EvalPanel(eval = eval, onRetry = onRetryEval)
+            }
         }
         Spacer(Modifier.height(12.dp))
         if (state.isTruncated) {
@@ -280,7 +284,14 @@ private fun WideReplay(
                     .verticalScroll(rememberScrollState()),
         ) {
             if (state.analysisEnabled) {
-                EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = Modifier.fillMaxWidth())
+                // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+                Crossfade(
+                    targetState = state.currentEval,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = "evalPanel",
+                ) { eval ->
+                    EvalPanel(eval = eval, onRetry = onRetryEval)
+                }
                 Spacer(Modifier.height(16.dp))
             }
             MoveList(
