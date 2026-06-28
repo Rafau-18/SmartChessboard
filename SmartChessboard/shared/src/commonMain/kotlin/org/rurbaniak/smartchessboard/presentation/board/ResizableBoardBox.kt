@@ -32,8 +32,9 @@ private val VERTICAL_CHROME = 140.dp
 /** The board never shrinks below this, even on a very short window, so it stays usable. */
 private val MIN_BOARD_SIDE = 200.dp
 
-/** Absolute cap on the board side, so on a very large monitor it stays a natural size instead of huge. */
-private val BOARD_MAX_SIDE = 640.dp
+/** Generous absolute backstop on the board side (sanity only) — the viewport height is the real limit
+ * on a normal screen; this just prevents an absurd size on a very large monitor. */
+private val BOARD_MAX_SIDE = 1000.dp
 
 /** The corner drag handle's touch target. */
 private val HANDLE_SIZE = 28.dp

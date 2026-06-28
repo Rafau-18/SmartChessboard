@@ -402,6 +402,45 @@ PhysicalPlay render the same effective mode.
 
 ---
 
+## Phase 7: Layout polish — adaptive margins & tighter two-pane gap
+
+### Overview
+
+Live-feedback follow-up to Phase 6: the centred max-width margin is now the *default* only — enlarging
+the board past its default expands the container toward the full window so the board can spill past the
+margins; and the Replay two-pane board↔panel gap is tightened.
+
+### Changes Required:
+
+#### 1. Adaptive content width (Replay two-pane)
+
+**File**: `presentation/replay/ReplayScreen.kt`
+
+**Intent/Contract**: `WideReplay` reads the full available width; the centred container's max width
+interpolates from `CONTENT_MAX_WIDTH` (at the default board size) toward the full window as `boardSize`
+grows to `BOARD_SIZE_MAX`. The board/eval ↔ panel gap drops 24 → 12 dp.
+
+#### 2. Raise the absolute board cap
+
+**File**: `presentation/board/ResizableBoardBox.kt`
+
+**Intent/Contract**: `BOARD_MAX_SIDE` 640 → 1000 dp (a sanity backstop only; the viewport height is the
+real limit), so dragging the board can grow past the old cap.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean
+
+#### Manual Verification:
+
+- At the default board size the two-pane content keeps its centred margins
+- Dragging the board larger expands the layout toward the window edges (past the default margins)
+- The gap between the board and the right column is visibly tighter
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests:
@@ -514,8 +553,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 6.1 `effectiveMoveListMode` + move-list-mode persistence unit tests pass (host + `:shared:iosSimulatorArm64Test`)
-- [x] 6.2 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean
+- [x] 6.1 `effectiveMoveListMode` + move-list-mode persistence unit tests pass (host + `:shared:iosSimulatorArm64Test`) — 15f06af
+- [x] 6.2 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean — 15f06af
 
 #### Manual
 
@@ -525,3 +564,15 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 - [ ] 6.6 The eval-panel tile keeps a constant size between loading and evaluated
 - [ ] 6.7 Move-list toggle switches inline ↔ table, persists, defaults to table on wide / inline on phone
 - [ ] 6.8 History list is capped and centred on wide screens
+
+### Phase 7: Layout polish — adaptive margins & tighter two-pane gap
+
+#### Automated
+
+- [x] 7.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean
+
+#### Manual
+
+- [ ] 7.2 At the default board size the two-pane content keeps its centred margins
+- [ ] 7.3 Enlarging the board expands the layout past the default margins toward the window edges
+- [ ] 7.4 The board ↔ right-column gap is visibly tighter

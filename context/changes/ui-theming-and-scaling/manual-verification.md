@@ -85,3 +85,14 @@ Pending on-device confirmation:
   the table renders white | black, one full move per row. Play shows the same chosen mode.
 - [ ] 6.8 On a wide window the History games list is capped (~720 dp) and centred, not stretched
   full-width and left-aligned.
+
+## Phase 7 — Layout polish (adaptive margins & tighter two-pane gap)
+
+Automated (done, committed): all targets compile and existing tests stay green; ktlint — all green.
+
+Pending on-device confirmation (Replay two-pane on a wide window):
+
+- [ ] 7.2 At the default board size the two-pane content keeps its centred margins (as before).
+- [ ] 7.3 Dragging the board larger expands the layout toward the window edges — the board can grow
+  past the default margins instead of being trapped inside them.
+- [ ] 7.4 The gap between the board (eval bar) and the right column is visibly tighter than before.

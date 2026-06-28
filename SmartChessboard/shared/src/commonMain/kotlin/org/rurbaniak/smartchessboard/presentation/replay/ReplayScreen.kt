@@ -37,6 +37,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnHeaders
+import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_DEFAULT
+import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_MAX
 import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
 import org.rurbaniak.smartchessboard.domain.preferences.effectiveMoveListMode
 import org.rurbaniak.smartchessboard.presentation.board.BoardArrow
@@ -278,16 +280,26 @@ private fun WideReplay(
     onJump: (Int) -> Unit,
     onRetryEval: () -> Unit,
 ) {
-    // Centre the two-pane content and cap its width so it never stretches edge-to-edge on a monitor.
-    Box(modifier = Modifier.fillMaxSize()) {
+    // Centre the two-pane content. The width cap is the default margin, but it expands toward the full
+    // window as the board is enlarged past its default — so dragging the board bigger can spill past
+    // the default margins instead of being trapped inside them.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val fullWidth = maxWidth
+        val enlargement = ((boardSize - BOARD_SIZE_DEFAULT) / (BOARD_SIZE_MAX - BOARD_SIZE_DEFAULT)).coerceIn(0f, 1f)
+        val containerMax =
+            if (fullWidth <= CONTENT_MAX_WIDTH) {
+                fullWidth
+            } else {
+                CONTENT_MAX_WIDTH + (fullWidth - CONTENT_MAX_WIDTH) * enlargement
+            }
         Row(
             modifier =
                 Modifier
-                    .widthIn(max = CONTENT_MAX_WIDTH)
+                    .widthIn(max = containerMax)
                     .fillMaxSize()
                     .align(Alignment.TopCenter)
                     .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Board column takes the remaining width; the side panel is bounded so the move list never
             // takes half the screen.
