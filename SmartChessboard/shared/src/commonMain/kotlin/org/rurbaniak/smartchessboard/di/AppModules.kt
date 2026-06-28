@@ -18,6 +18,7 @@ import org.rurbaniak.smartchessboard.domain.games.GameJournal
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import org.rurbaniak.smartchessboard.domain.preferences.UiPreferences
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
+import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.history.HistoryViewModel
 import org.rurbaniak.smartchessboard.presentation.newgame.NewGameViewModel
 import org.rurbaniak.smartchessboard.presentation.play.PlayViewModel
@@ -44,6 +45,7 @@ val presentationModule =
         viewModelOf(::HistoryViewModel)
         viewModelOf(::NewGameViewModel)
         viewModelOf(::ThemeViewModel)
+        viewModelOf(::BoardPreferencesViewModel)
         // gameId arrives from the Replay nav entry via parametersOf(gameId).
         viewModel { (gameId: String) ->
             ReplayViewModel(gameId = gameId, gamesRepository = get(), evalRepository = get())

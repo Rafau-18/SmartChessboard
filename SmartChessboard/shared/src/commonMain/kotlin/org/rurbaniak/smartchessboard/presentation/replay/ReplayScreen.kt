@@ -37,12 +37,14 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnHeaders
 import org.rurbaniak.smartchessboard.presentation.board.BoardArrow
+import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
+import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 
-/** Caps the board on wide screens (web/desktop) so it doesn't stretch edge-to-edge. */
-private val BOARD_MAX_WIDTH = 480.dp
+/** Caps the non-board sections (player line, panel, controls, move list) so they don't stretch edge-to-edge. */
+private val SECTION_MAX_WIDTH = 480.dp
 
 /** Material "expanded" breakpoint — at and above this width ReplayScreen lays out as two panes. */
 private val TWO_PANE_MIN_WIDTH = 840.dp
@@ -57,6 +59,8 @@ fun ReplayScreen(
     val viewModel =
         koinViewModel<ReplayViewModel>(key = "replay-$gameId") { parametersOf(gameId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
+    val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -111,6 +115,8 @@ fun ReplayScreen(
                 is ReplayUiState.Loaded -> {
                     LoadedReplay(
                         state = state,
+                        boardSize = boardSize,
+                        onBoardSizeChange = boardPrefs::setBoardSize,
                         onStart = viewModel::goToStart,
                         onStepBack = viewModel::stepBack,
                         onStepForward = viewModel::stepForward,
@@ -127,6 +133,8 @@ fun ReplayScreen(
 @Composable
 internal fun LoadedReplay(
     state: ReplayUiState.Loaded,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -135,10 +143,33 @@ internal fun LoadedReplay(
     onRetryEval: () -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        if (maxWidth >= TWO_PANE_MIN_WIDTH) {
-            WideReplay(state, onStart, onStepBack, onStepForward, onEnd, onJump, onRetryEval)
+        // The two-pane breakpoint doubles as the board's "wide" flag — at/above it the board auto-fits
+        // and gets a resize handle; below it the board is full-width auto-fit with no handle.
+        val isWide = maxWidth >= TWO_PANE_MIN_WIDTH
+        if (isWide) {
+            WideReplay(
+                state,
+                boardSize,
+                onBoardSizeChange,
+                onStart,
+                onStepBack,
+                onStepForward,
+                onEnd,
+                onJump,
+                onRetryEval,
+            )
         } else {
-            NarrowReplay(state, onStart, onStepBack, onStepForward, onEnd, onJump, onRetryEval)
+            NarrowReplay(
+                state,
+                boardSize,
+                onBoardSizeChange,
+                onStart,
+                onStepBack,
+                onStepForward,
+                onEnd,
+                onJump,
+                onRetryEval,
+            )
         }
     }
 }
@@ -147,6 +178,8 @@ internal fun LoadedReplay(
 @Composable
 private fun NarrowReplay(
     state: ReplayUiState.Loaded,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -162,10 +195,11 @@ private fun NarrowReplay(
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
+        val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
         PlayerLine(state.game.headers)
         Spacer(Modifier.height(12.dp))
-        BoardWithEvalBar(state = state, modifier = sectionModifier)
+        // Phones are never "wide": full-width auto-fit board, no resize handle.
+        BoardWithEvalBar(state = state, isWide = false, boardSize = boardSize, onBoardSizeChange = onBoardSizeChange)
         if (state.analysisEnabled) {
             Spacer(Modifier.height(8.dp))
             EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = sectionModifier)
@@ -200,6 +234,8 @@ private fun NarrowReplay(
 @Composable
 private fun WideReplay(
     state: ReplayUiState.Loaded,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -218,10 +254,11 @@ private fun WideReplay(
                     .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
+            val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
             PlayerLine(state.game.headers)
             Spacer(Modifier.height(12.dp))
-            BoardWithEvalBar(state = state, modifier = sectionModifier)
+            // Wide layout: the board auto-fits the pane (bounded by viewport height) and gets a resize handle.
+            BoardWithEvalBar(state = state, isWide = true, boardSize = boardSize, onBoardSizeChange = onBoardSizeChange)
             Spacer(Modifier.height(12.dp))
             if (state.isTruncated) {
                 TruncationBanner(modifier = sectionModifier)
@@ -257,26 +294,32 @@ private fun WideReplay(
 }
 
 /**
- * The board with the vertical eval bar on its right (the bar matches the board's height via
- * intrinsics). The bar appears only while analysis is enabled, so the board keeps the full
- * section width otherwise.
+ * The board, sized by [ResizableBoardBox] (auto-fit + resize handle on wide screens), with the
+ * vertical eval bar on its right. The board's modifier is a concrete square, so the inner
+ * `IntrinsicSize.Min` Row gives the eval bar the board's exact height — without querying the
+ * surrounding `BoxWithConstraints` for intrinsics (which a SubcomposeLayout can't answer). The bar
+ * appears only while analysis is enabled.
  */
 @Composable
 private fun BoardWithEvalBar(
     state: ReplayUiState.Loaded,
-    modifier: Modifier = Modifier,
+    isWide: Boolean,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
 ) {
-    Row(
-        modifier = modifier.height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ChessBoardView(
-            position = state.position,
-            modifier = Modifier.weight(1f),
-            bestMoveArrow = bestMoveArrowFor(state),
-        )
-        if (state.analysisEnabled) {
-            EvalBar(eval = state.currentEval, modifier = Modifier.fillMaxHeight())
+    ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ChessBoardView(
+                position = state.position,
+                modifier = boardModifier,
+                bestMoveArrow = bestMoveArrowFor(state),
+            )
+            if (state.analysisEnabled) {
+                EvalBar(eval = state.currentEval, modifier = Modifier.fillMaxHeight())
+            }
         }
     }
 }

@@ -39,14 +39,17 @@ import org.rurbaniak.smartchessboard.domain.chess.Color
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
 import org.rurbaniak.smartchessboard.domain.games.GameResult
+import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ReedDiagnosticsGrid
+import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
+import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.play.EndGamePicker
 
-/** Caps the board on wide screens (matches the digital Play/Replay). */
-private val BOARD_MAX_WIDTH = 480.dp
+/** Caps the non-board sections (status, diagnostics, controls, move list) so they don't stretch edge-to-edge on wide screens. */
+private val SECTION_MAX_WIDTH = 480.dp
 
 /**
  * The physical-mode game screen (S-06). Renders the same components as the digital flow but driven by
@@ -65,6 +68,9 @@ fun PhysicalPlayScreen(
 ) {
     val viewModel = koinViewModel<PhysicalPlayViewModel>(key = "physical-$gameId") { parametersOf(gameId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
+    val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
+    val isWide = rememberIsWideScreen()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -108,6 +114,9 @@ fun PhysicalPlayScreen(
                 is PhysicalPlayState.Playing -> {
                     PlayingContent(
                         state = current,
+                        isWide = isWide,
+                        boardSize = boardSize,
+                        onBoardSizeChange = boardPrefs::setBoardSize,
                         onPromotionPick = viewModel::pickPromotion,
                         onPromotionDismiss = viewModel::dismissPromotion,
                         onShowDiagnostics = viewModel::showDiagnostics,
@@ -128,6 +137,9 @@ fun PhysicalPlayScreen(
 @Composable
 private fun PlayingContent(
     state: PhysicalPlayState.Playing,
+    isWide: Boolean,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
     onPromotionPick: (PieceType) -> Unit,
     onPromotionDismiss: () -> Unit,
     onShowDiagnostics: () -> Unit,
@@ -147,19 +159,21 @@ private fun PlayingContent(
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
+        val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
         StatusBanner(state = state, modifier = sectionModifier)
         Spacer(Modifier.height(8.dp))
         BoardMessage(state = state, onShowDiagnostics = onShowDiagnostics, modifier = sectionModifier)
         Spacer(Modifier.height(12.dp))
-        ChessBoardView(
-            position = state.position,
-            modifier = sectionModifier,
-            orientation = state.orientation,
-            // Display-only — moves come from the physical board, never taps. Lifted pieces are highlighted.
-            interaction = null,
-            highlightedSquares = state.liftedSquares,
-        )
+        ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
+            ChessBoardView(
+                position = state.position,
+                modifier = boardModifier,
+                orientation = state.orientation,
+                // Display-only — moves come from the physical board, never taps. Lifted pieces are highlighted.
+                interaction = null,
+                highlightedSquares = state.liftedSquares,
+            )
+        }
         if (state.diagnosticsVisible) {
             Spacer(Modifier.height(12.dp))
             ReedDiagnosticsSection(

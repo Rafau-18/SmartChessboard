@@ -359,11 +359,11 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 1.1 Theme-mode persistence unit test passes (`:shared:testAndroidHostTest`)
-- [x] 1.2 Pure units pass on Native (`:shared:iosSimulatorArm64Test`)
-- [x] 1.3 Web compiles/tests (`:shared:wasmJsTest`)
-- [x] 1.4 Android app builds (`:androidApp:assembleDebug`)
-- [x] 1.5 ktlint clean
+- [x] 1.1 Theme-mode persistence unit test passes (`:shared:testAndroidHostTest`) — 8f31e97
+- [x] 1.2 Pure units pass on Native (`:shared:iosSimulatorArm64Test`) — 8f31e97
+- [x] 1.3 Web compiles/tests (`:shared:wasmJsTest`) — 8f31e97
+- [x] 1.4 Android app builds (`:androidApp:assembleDebug`) — 8f31e97
+- [x] 1.5 ktlint clean — 8f31e97
 
 #### Manual
 
@@ -375,9 +375,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [ ] 2.1 `clampBoardSize` boundary unit test passes (`:shared:testAndroidHostTest`)
-- [ ] 2.2 Board-size persistence round-trip passes (host + `:shared:iosSimulatorArm64Test`)
-- [ ] 2.3 All targets compile (`:androidApp:assembleDebug`, `:webApp`), ktlint clean
+- [x] 2.1 `clampBoardSize` boundary unit test passes (`:shared:testAndroidHostTest`)
+- [x] 2.2 Board-size persistence round-trip passes (host + `:shared:iosSimulatorArm64Test`)
+- [x] 2.3 All targets compile (`:androidApp:assembleDebug`, `:webApp`), ktlint clean
 
 #### Manual
 
