@@ -97,11 +97,11 @@ Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architectur
 | Toolchain | **PlatformIO + ESP-IDF framework** | chosen over Arduino because matrix scan + custom GATT + BLE latency budget exceed Arduino's comfortable abstraction; PlatformIO gives VS Code integration, lockfile (`platformio.ini`), and profile builds (debug/release/diag) |
 | BLE stack | NimBLE (IDF 5.x default) | smaller footprint than Bluedroid, BLE 5.0, actively maintained |
 | Editor | VS Code with PlatformIO extension | shares the agent-friendly env with mobile dev |
-| Bootstrap source | `pio project init --board <tbd> --project-option "framework=espidf"` | board flag resolved when ESP32 variant is decided |
-| ESP32 variant | **TBD** — carry-over from `prd-firmware.md` Open Question FW-1 | depends on existing physical prototype |
-| Power source | **TBD** — carry-over from FW-2; PRD recommends USB-only for MVP | battery support is post-MVP |
-| Reed-switch matrix wiring | **TBD** — carry-over from FW-3 | document existing prototype topology |
-| GATT UUIDs | **TBD** — carry-over from FW-5 | assigned during firmware implementation, reflected back into `contract-surfaces.md` §1.2 |
+| Bootstrap source | `pio project init --board esp32dev --project-option "framework=espidf"` | board id `esp32dev` (classic ESP32-WROOM-32) |
+| ESP32 variant | **classic ESP32-WROOM-32** (board id `esp32dev`) — resolved (F-03) | DevKitC V4 primary / DevKit V1 backup — see `firmware/HARDWARE.md` |
+| Power source | **USB-only** — resolved 2026-06-19 (F-03 / `prd-firmware.md` OQ-2) | `DEVICE_STATUS.battery_pct` constant 100; battery support post-MVP |
+| Reed-switch matrix wiring | **8×8 direct GPIO**, native scan — resolved/documented | real bring-up inverts the scan: columns driven LOW (outputs), rows read as pull-up inputs, one diode/square cathode-to-column. Authoritative map: `firmware/src/pins.h` |
+| GATT UUIDs | **assigned** (F-03) — base `787e000X-15a4-4fc9-a469-05096dbad1a1` (X=1/2/3) | mirrored into `contract-surfaces.md` §1.2 |
 | Testing — unit | **Catch2** (host-side C++ unit tests) | tests of pure logic (debouncing, square indexing, BLE message encoding) run on dev host without hardware via separate CMake target; full firmware-on-hardware integration tests are manual per `prd-firmware.md` |
 | Testing — emulator | programmatic reed-switch emulator (PRD OQ1 resolution) | mobile-side test harness that produces the same `board_event` stream as a real board — drives the full physical-mode flow end-to-end without hardware |
 | Distribution | manual flash via `pio run -t upload` | OTA over BLE is post-MVP per `prd-firmware.md` |
@@ -138,10 +138,10 @@ Firmware (`firmware/`) and backend (`supabase/`) do not follow Clean Architectur
 
 Carry-overs from `prd-firmware.md` and decisions consciously postponed to later phases. Track resolution in `context/foundation/lessons.md` or revise this file when resolved.
 
-1. **ESP32 variant** (FW-1) — depends on physical prototype hardware
-2. **Power source** for firmware (FW-2) — recommend USB-only for MVP; battery is post-MVP enhancement
-3. **Reed-switch matrix wiring topology** (FW-3) — document existing prototype wiring
-4. **GATT service / characteristic UUIDs** (FW-5) — assigned during firmware implementation, mirror into `contract-surfaces.md` §1.2
+1. ~~**ESP32 variant** (FW-1)~~ — **RESOLVED**: classic ESP32-WROOM-32, board id `esp32dev` (DevKitC V4 primary / DevKit V1 backup). See `firmware/HARDWARE.md`.
+2. ~~**Power source** (FW-2)~~ — **RESOLVED 2026-06-19 (F-03)**: USB-only for MVP; battery post-MVP. `prd-firmware.md` OQ-2.
+3. ~~**Reed-switch matrix wiring topology** (FW-3)~~ — **RESOLVED**: 8×8 direct GPIO; real bring-up inverts the scan (columns driven, rows read), diodes cathode-to-column. Authoritative: `firmware/src/pins.h`.
+4. ~~**GATT service / characteristic UUIDs** (FW-5)~~ — **RESOLVED (F-03)**: assigned + mirrored into `contract-surfaces.md` §1.2.
 5. **Mobile distribution path** for MVP friends — TestFlight + Play Internal vs APK sideload + iOS-on-dev-machine only
 6. **Compose Multiplatform on Web viability** — if a must-have feature is blocked on web (BLE was already excluded), freeze web development and re-evaluate post-MVP
 7. ~~**UI architecture pattern** — MVVM vs MVI~~ — **RESOLVED 2026-06-10 (S-01, `google-signin-own-history`)**: MVVM by default, MVI only for genuinely event-heavy screens with written justification. See "Architecture overview" and `lessons.md`.

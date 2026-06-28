@@ -18,7 +18,7 @@ Smart Chessboard is a monorepo with three sub-projects. **Two of the three deplo
 |---|---|---|
 | Backend (`supabase/`) | Supabase Cloud (managed Postgres + Auth + one Edge Function), EU Frankfurt | Already decided in `tech-stack.md` + `prd.md` — a managed backend, not a platform under evaluation here |
 | Mobile (Android + iOS) | App stores / TestFlight / Play Internal Testing | Out of scope — mobile distribution is a separate, post-MVP decision |
-| Firmware (`firmware/`) | Manual flash (`pio run -t upload`) | Parked — not deployed to any platform |
+| Firmware (`firmware/`) | Manual flash (`pio run -t upload`) | Not a cloud deploy target — flashed to the ESP32 board (F-03 implemented; bring-up active) |
 | **Web (WasmJS)** | **← the only open platform decision** | **This document** |
 
 This research answers exactly one question: **where to host the static WasmJS web bundle** (`SmartChessboard/webApp/build/dist/wasmJs/productionExecutable/`). The web target is a **purely client-side SPA** — WebAssembly runs in the browser, Room persists via OPFS in a Web Worker, and Supabase is called directly from the client. There is **no server-side compute requirement**, so the platform need is: cheapest viable static hosting + CDN, with custom-response-header support (COOP/COEP + `application/wasm`), driveable by an agent from a CLI.

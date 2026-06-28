@@ -52,8 +52,8 @@ Out of scope (covered elsewhere):
   (GPIO34/35) with a software threshold, not as a digital input. This is a
   firmware/wiring detail with **no contract impact** — `BUTTON_EVENT` is
   unchanged. See `firmware/HARDWARE.md`.
-- Power: USB or battery — exact source for MVP is an open question (see
-  Open Questions).
+- Power: **USB-only for MVP** (OQ-2 resolved, F-03) — no sleep modes, no battery
+  NFR. Battery support is post-MVP.
 - No LEDs, display, or speaker required in MVP.
 
 ## Functional Requirements
@@ -178,6 +178,11 @@ Out of scope (covered elsewhere):
    already commits to a wiring; this Open Question is about documenting
    it. Owner: hardware build. Latest acceptable resolution: before
    sensing code is written. Block: no.
+   > Resolved 2026-06-28: **8×8 direct GPIO**, native scan. The real bring-up
+   > wiring drives the columns as outputs (LOW one at a time) and reads the rows
+   > as pull-up inputs (anti-ghosting diodes one-per-square, cathode toward the
+   > column — installed and required). Authoritative pin map: `firmware/src/pins.h`;
+   > per-board detail in `firmware/HARDWARE.md` / `PINOUT.md`.
 
 4. **Firmware toolchain** — ESP-IDF (more control over BLE stack and
    power management) vs Arduino framework (faster start, smaller learning
