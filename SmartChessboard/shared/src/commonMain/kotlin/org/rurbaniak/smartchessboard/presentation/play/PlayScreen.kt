@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,13 +38,19 @@ import org.rurbaniak.smartchessboard.domain.chess.Color
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
 import org.rurbaniak.smartchessboard.domain.games.GameResult
+import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
+import org.rurbaniak.smartchessboard.domain.preferences.effectiveMoveListMode
 import org.rurbaniak.smartchessboard.presentation.board.BoardInteraction
+import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
+import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
+import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 
-/** Caps the board on wide screens (web/desktop) so it doesn't stretch edge-to-edge (matches Replay). */
-private val BOARD_MAX_WIDTH = 480.dp
+/** Caps the non-board sections (status, controls, move list) so they don't stretch edge-to-edge on wide screens. */
+private val SECTION_MAX_WIDTH = 480.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +64,11 @@ fun PlayScreen(
     // Keyed by game so reopening a different game never reuses a stale state machine.
     val viewModel = koinViewModel<PlayViewModel>(key = "play-$gameId") { parametersOf(gameId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
+    val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
+    val isWide = rememberIsWideScreen()
+    val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
+    val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
     Scaffold(
         topBar = {
             TopAppBar(
@@ -101,7 +113,16 @@ fun PlayScreen(
 
                 is PlayUiState.Playing -> {
                     PlayingContent(
+                        modifier =
+                            Modifier
+                                .widthIn(max = CONTENT_MAX_WIDTH)
+                                .fillMaxHeight()
+                                .align(Alignment.TopCenter),
                         state = state,
+                        isWide = isWide,
+                        tableMoveList = tableMoveList,
+                        boardSize = boardSize,
+                        onBoardSizeChange = boardPrefs::setBoardSize,
                         onSquareTap = viewModel::onSquareTap,
                         onPromotionPick = viewModel::onPromotionPick,
                         onPromotionDismiss = viewModel::onPromotionDismiss,
@@ -121,6 +142,10 @@ fun PlayScreen(
 @Composable
 private fun PlayingContent(
     state: PlayUiState.Playing,
+    isWide: Boolean,
+    tableMoveList: Boolean,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
     onSquareTap: (Int) -> Unit,
     onPromotionPick: (PieceType) -> Unit,
     onPromotionDismiss: () -> Unit,
@@ -130,35 +155,37 @@ private fun PlayingContent(
     onEndGameDismiss: () -> Unit,
     onReviewGame: () -> Unit,
     onBackToHistory: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier =
-            Modifier
-                .fillMaxSize()
+            modifier
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
+        val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
         StatusBanner(state = state, modifier = sectionModifier)
         Spacer(Modifier.height(12.dp))
-        ChessBoardView(
-            position = state.position,
-            modifier = sectionModifier,
-            orientation = state.orientation,
-            // A terminal position or a finished game freezes input — display-only, no highlights.
-            // A manual end (FR-018) on a non-terminal position is frozen via result, not terminal.
-            interaction =
-                if (state.terminal || state.result != null) {
-                    null
-                } else {
-                    BoardInteraction(
-                        selectedSquare = state.selectedSquare,
-                        targetSquares = state.targetSquares,
-                        onSquareTap = onSquareTap,
-                    )
-                },
-        )
+        ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
+            ChessBoardView(
+                position = state.position,
+                modifier = boardModifier,
+                orientation = state.orientation,
+                // A terminal position or a finished game freezes input — display-only, no highlights.
+                // A manual end (FR-018) on a non-terminal position is frozen via result, not terminal.
+                interaction =
+                    if (state.terminal || state.result != null) {
+                        null
+                    } else {
+                        BoardInteraction(
+                            selectedSquare = state.selectedSquare,
+                            targetSquares = state.targetSquares,
+                            onSquareTap = onSquareTap,
+                        )
+                    },
+            )
+        }
         Spacer(Modifier.height(8.dp))
         SyncIndicator(syncPending = state.syncPending, modifier = sectionModifier)
         Spacer(Modifier.height(12.dp))
@@ -174,6 +201,7 @@ private fun PlayingContent(
             sanMoves = state.sanMoves,
             currentPly = state.sanMoves.size,
             modifier = sectionModifier,
+            tableMode = tableMoveList,
         )
     }
 

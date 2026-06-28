@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.rurbaniak.smartchessboard.domain.chess.pgn.parsePgn
+import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_DEFAULT
 
 /**
  * Verifies Phase 4 §4.6 without any backend: `Nf6` is unreachable on move 2, so the parser
@@ -18,6 +19,9 @@ private fun ReplayTruncatedPreview() {
     MaterialTheme {
         LoadedReplay(
             state = ReplayUiState.Loaded(game = game, currentPly = game.sanMoves.size),
+            boardSize = BOARD_SIZE_DEFAULT,
+            onBoardSizeChange = {},
+            tableMoveList = false,
             onStart = {},
             onStepBack = {},
             onStepForward = {},

@@ -1,5 +1,6 @@
 package org.rurbaniak.smartchessboard.presentation.replay
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -36,13 +37,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.rurbaniak.smartchessboard.domain.chess.pgn.PgnHeaders
+import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_DEFAULT
+import org.rurbaniak.smartchessboard.domain.preferences.BOARD_SIZE_MAX
+import org.rurbaniak.smartchessboard.domain.preferences.MoveListMode
+import org.rurbaniak.smartchessboard.domain.preferences.effectiveMoveListMode
 import org.rurbaniak.smartchessboard.presentation.board.BoardArrow
+import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewModel
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
+import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
+import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
+import org.rurbaniak.smartchessboard.presentation.components.SIDE_PANEL_MAX_WIDTH
 
-/** Caps the board on wide screens (web/desktop) so it doesn't stretch edge-to-edge. */
-private val BOARD_MAX_WIDTH = 480.dp
+/** Caps the non-board sections (player line, panel, controls, move list) so they don't stretch edge-to-edge. */
+private val SECTION_MAX_WIDTH = 480.dp
 
 /** Material "expanded" breakpoint — at and above this width ReplayScreen lays out as two panes. */
 private val TWO_PANE_MIN_WIDTH = 840.dp
@@ -57,6 +67,13 @@ fun ReplayScreen(
     val viewModel =
         koinViewModel<ReplayViewModel>(key = "replay-$gameId") { parametersOf(gameId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
+    val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
+    val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
+    // The move list defaults to the lichess-style table on wide screens and the compact inline flow on
+    // phones; an explicit toggle (persisted) overrides that. One effective value drives the top-bar
+    // control and the lists below.
+    val effectiveMoveListMode = effectiveMoveListMode(moveListOverride, rememberIsWideScreen())
     Scaffold(
         topBar = {
             TopAppBar(
@@ -68,6 +85,20 @@ fun ReplayScreen(
                 },
                 actions = {
                     (uiState as? ReplayUiState.Loaded)?.let { state ->
+                        // Shows the current layout and toggles to the other one (persisted).
+                        TextButton(
+                            onClick = {
+                                boardPrefs.setMoveListMode(
+                                    if (effectiveMoveListMode == MoveListMode.TABLE) {
+                                        MoveListMode.INLINE
+                                    } else {
+                                        MoveListMode.TABLE
+                                    },
+                                )
+                            },
+                        ) {
+                            Text(if (effectiveMoveListMode == MoveListMode.TABLE) "Table" else "Inline")
+                        }
                         TextButton(onClick = viewModel::toggleAnalysis) {
                             Text(
                                 "Analysis",
@@ -111,6 +142,9 @@ fun ReplayScreen(
                 is ReplayUiState.Loaded -> {
                     LoadedReplay(
                         state = state,
+                        boardSize = boardSize,
+                        onBoardSizeChange = boardPrefs::setBoardSize,
+                        tableMoveList = effectiveMoveListMode == MoveListMode.TABLE,
                         onStart = viewModel::goToStart,
                         onStepBack = viewModel::stepBack,
                         onStepForward = viewModel::stepForward,
@@ -127,6 +161,9 @@ fun ReplayScreen(
 @Composable
 internal fun LoadedReplay(
     state: ReplayUiState.Loaded,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
+    tableMoveList: Boolean,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -135,10 +172,35 @@ internal fun LoadedReplay(
     onRetryEval: () -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        if (maxWidth >= TWO_PANE_MIN_WIDTH) {
-            WideReplay(state, onStart, onStepBack, onStepForward, onEnd, onJump, onRetryEval)
+        // The two-pane breakpoint doubles as the board's "wide" flag — at/above it the board auto-fits
+        // and gets a resize handle; below it the board is full-width auto-fit with no handle.
+        val isWide = maxWidth >= TWO_PANE_MIN_WIDTH
+        if (isWide) {
+            WideReplay(
+                state,
+                boardSize,
+                onBoardSizeChange,
+                tableMoveList,
+                onStart,
+                onStepBack,
+                onStepForward,
+                onEnd,
+                onJump,
+                onRetryEval,
+            )
         } else {
-            NarrowReplay(state, onStart, onStepBack, onStepForward, onEnd, onJump, onRetryEval)
+            NarrowReplay(
+                state,
+                boardSize,
+                onBoardSizeChange,
+                tableMoveList,
+                onStart,
+                onStepBack,
+                onStepForward,
+                onEnd,
+                onJump,
+                onRetryEval,
+            )
         }
     }
 }
@@ -147,6 +209,9 @@ internal fun LoadedReplay(
 @Composable
 private fun NarrowReplay(
     state: ReplayUiState.Loaded,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
+    tableMoveList: Boolean,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -162,13 +227,17 @@ private fun NarrowReplay(
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
+        val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
         PlayerLine(state.game.headers)
         Spacer(Modifier.height(12.dp))
-        BoardWithEvalBar(state = state, modifier = sectionModifier)
+        // Phones are never "wide": full-width auto-fit board, no resize handle.
+        BoardWithEvalBar(state = state, isWide = false, boardSize = boardSize, onBoardSizeChange = onBoardSizeChange)
         if (state.analysisEnabled) {
             Spacer(Modifier.height(8.dp))
-            EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = sectionModifier)
+            // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+            Crossfade(targetState = state.currentEval, modifier = sectionModifier, label = "evalPanel") { eval ->
+                EvalPanel(eval = eval, onRetry = onRetryEval)
+            }
         }
         Spacer(Modifier.height(12.dp))
         if (state.isTruncated) {
@@ -189,6 +258,7 @@ private fun NarrowReplay(
             currentPly = state.currentPly,
             onJump = onJump,
             modifier = sectionModifier,
+            tableMode = tableMoveList,
         )
     }
 }
@@ -200,6 +270,9 @@ private fun NarrowReplay(
 @Composable
 private fun WideReplay(
     state: ReplayUiState.Loaded,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
+    tableMoveList: Boolean,
     onStart: () -> Unit,
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
@@ -207,76 +280,124 @@ private fun WideReplay(
     onJump: (Int) -> Unit,
     onRetryEval: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
-    ) {
-        Column(
+    // Centre the two-pane content. The width cap is the default margin, but it expands toward the full
+    // window as the board is enlarged past its default — so dragging the board bigger can spill past
+    // the default margins instead of being trapped inside them.
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val fullWidth = maxWidth
+        val enlargement = ((boardSize - BOARD_SIZE_DEFAULT) / (BOARD_SIZE_MAX - BOARD_SIZE_DEFAULT)).coerceIn(0f, 1f)
+        val containerMax =
+            if (fullWidth <= CONTENT_MAX_WIDTH) {
+                fullWidth
+            } else {
+                CONTENT_MAX_WIDTH + (fullWidth - CONTENT_MAX_WIDTH) * enlargement
+            }
+        Row(
             modifier =
                 Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                    .widthIn(max = containerMax)
+                    .fillMaxSize()
+                    .align(Alignment.TopCenter)
+                    .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val sectionModifier = Modifier.widthIn(max = BOARD_MAX_WIDTH).fillMaxWidth()
-            PlayerLine(state.game.headers)
-            Spacer(Modifier.height(12.dp))
-            BoardWithEvalBar(state = state, modifier = sectionModifier)
-            Spacer(Modifier.height(12.dp))
-            if (state.isTruncated) {
-                TruncationBanner(modifier = sectionModifier)
+            // Board column takes the remaining width; the side panel is bounded so the move list never
+            // takes half the screen.
+            Column(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
+                PlayerLine(state.game.headers)
                 Spacer(Modifier.height(12.dp))
+                // Wide layout: the board auto-fits the pane (bounded by viewport height) and gets a resize handle.
+                BoardWithEvalBar(
+                    state = state,
+                    isWide = true,
+                    boardSize = boardSize,
+                    onBoardSizeChange = onBoardSizeChange,
+                )
+                Spacer(Modifier.height(12.dp))
+                if (state.isTruncated) {
+                    TruncationBanner(modifier = sectionModifier)
+                    Spacer(Modifier.height(12.dp))
+                }
+                TransportControls(
+                    state = state,
+                    onStart = onStart,
+                    onBack = onStepBack,
+                    onForward = onStepForward,
+                    onEnd = onEnd,
+                    modifier = sectionModifier,
+                )
             }
-            TransportControls(
-                state = state,
-                onStart = onStart,
-                onBack = onStepBack,
-                onForward = onStepForward,
-                onEnd = onEnd,
-                modifier = sectionModifier,
-            )
-        }
-        Column(
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
-        ) {
-            if (state.analysisEnabled) {
-                EvalPanel(eval = state.currentEval, onRetry = onRetryEval, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(16.dp))
+            Column(
+                modifier =
+                    Modifier
+                        .widthIn(max = SIDE_PANEL_MAX_WIDTH)
+                        .verticalScroll(rememberScrollState()),
+            ) {
+                if (state.analysisEnabled) {
+                    // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+                    Crossfade(
+                        targetState = state.currentEval,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = "evalPanel",
+                    ) { eval ->
+                        EvalPanel(eval = eval, onRetry = onRetryEval)
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+                MoveList(
+                    sanMoves = state.game.sanMoves,
+                    currentPly = state.currentPly,
+                    onJump = onJump,
+                    modifier = Modifier.fillMaxWidth(),
+                    tableMode = tableMoveList,
+                )
             }
-            MoveList(
-                sanMoves = state.game.sanMoves,
-                currentPly = state.currentPly,
-                onJump = onJump,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }
 
 /**
- * The board with the vertical eval bar on its right (the bar matches the board's height via
- * intrinsics). The bar appears only while analysis is enabled, so the board keeps the full
- * section width otherwise.
+ * The board, sized by [ResizableBoardBox] (auto-fit + resize handle on wide screens), with the
+ * vertical eval bar on its right. The board's modifier is a concrete square, so the inner
+ * `IntrinsicSize.Min` Row gives the eval bar the board's exact height — without querying the
+ * surrounding `BoxWithConstraints` for intrinsics (which a SubcomposeLayout can't answer). The bar
+ * appears only while analysis is enabled.
  */
 @Composable
 private fun BoardWithEvalBar(
     state: ReplayUiState.Loaded,
-    modifier: Modifier = Modifier,
+    isWide: Boolean,
+    boardSize: Float,
+    onBoardSizeChange: (Float) -> Unit,
 ) {
-    Row(
-        modifier = modifier.height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ChessBoardView(
-            position = state.position,
-            modifier = Modifier.weight(1f),
-            bestMoveArrow = bestMoveArrowFor(state),
-        )
-        if (state.analysisEnabled) {
-            EvalBar(eval = state.currentEval, modifier = Modifier.fillMaxHeight())
+    // When the eval bar is shown, reserve its width (+ the Row gap) so the board leaves room for it —
+    // otherwise on a phone the full-width board pushes the bar off-screen.
+    val reserved = if (state.analysisEnabled) EvalBarWidth + 8.dp else 0.dp
+    ResizableBoardBox(
+        isWide = isWide,
+        size = boardSize,
+        onSizeChange = onBoardSizeChange,
+        reservedWidth = reserved,
+    ) { boardModifier ->
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ChessBoardView(
+                position = state.position,
+                modifier = boardModifier,
+                bestMoveArrow = bestMoveArrowFor(state),
+            )
+            if (state.analysisEnabled) {
+                EvalBar(eval = state.currentEval, modifier = Modifier.fillMaxHeight())
+            }
         }
     }
 }

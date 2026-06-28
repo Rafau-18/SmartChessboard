@@ -1,5 +1,9 @@
 package org.rurbaniak.smartchessboard.presentation.play
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -37,7 +42,16 @@ fun EndGamePicker(
     onDismiss: () -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        EndGamePickerSurface(prompt = prompt, onPick = onPick, onConfirm = onConfirm, onDismiss = onDismiss)
+        // Animate the surface in (fade + slight scale-up). The Dialog window itself can't be tweened,
+        // so the enter transition runs on the content; dismissal removes the dialog wholesale. The
+        // Picking → Confirming step swap stays instant (no logic change).
+        val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+        AnimatedVisibility(
+            visibleState = visibleState,
+            enter = fadeIn() + scaleIn(initialScale = 0.92f),
+        ) {
+            EndGamePickerSurface(prompt = prompt, onPick = onPick, onConfirm = onConfirm, onDismiss = onDismiss)
+        }
     }
 }
 
