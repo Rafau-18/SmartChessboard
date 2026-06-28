@@ -126,20 +126,20 @@ pull-up), GPIO0/2/12/15 (strapping, kept out of the matrix). None are used.
 
 ---
 
-## Confirmation buttons (F-03) — additive, watch the target-map overlap
+## Confirmation buttons (F-03) — DGT clock via ADC1
 
 The F-03 game firmware reads two confirmation buttons (FR-FW-007) on
-**GPIO22 (white → `BUTTON_EVENT 0x00`)** and **GPIO23 (black → `0x01`)**, wired
-as momentary switches to **GND** with the internal pull-up (idle HIGH, pressed
-LOW). They are **additive** — none of the matrix wiring above changes.
+**GPIO34 (white → `BUTTON_EVENT 0x00`, ADC1_CH6)** and
+**GPIO35 (black → `0x01`, ADC1_CH7)**. They are **additive** — none of the matrix
+wiring changes, and GPIO34/35 are input-only pins the matrix never used.
 
-> ⚠ **Overlap with the hazard-free target map.** The recommended column map at
-> the top of this file claims GPIO22 = **C5 (file f)** and GPIO23 = **C6
-> (file g)** — the buttons sit on those same two pins. This is harmless
-> **today** because the current `src/pins.h` prototype uses a *different*
-> column set (`{19,18,5,17,16,4,21,15}`), leaving GPIO22/23 free. But a future
-> clean build that adopts the target map drawn here must relocate **either**
-> the two buttons **or** files f/g — they cannot both occupy GPIO22/23.
+The buttons are the original **DGT chess-clock** buttons, brought out via diode
+isolation: terminal C idles ~0 V and rises to **~1.5 V** when pressed. That level
+is below the ESP32 digital-HIGH threshold, so each pin is read on **ADC1** and
+thresholded in firmware (Schmitt hysteresis). Each pin needs an **external
+~100 kΩ pull-down** to the **common ground** shared with the clock's battery-minus,
+and **the clock must be powered on**. Full rationale plus the temporary-vs-transistor
+note: [`HARDWARE.md`](./HARDWARE.md) “Confirmation buttons”.
 
 ## Wiring tip
 

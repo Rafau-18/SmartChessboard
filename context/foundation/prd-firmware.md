@@ -47,7 +47,11 @@ Out of scope (covered elsewhere):
 - 64-position reed-switch matrix (8×8). Wiring topology (multiplexed vs
   direct GPIO) determined by the existing physical prototype.
 - Two physical confirmation buttons, one per side, organized chess-clock
-  style (PRD FR-009).
+  style (PRD FR-009). MVP bring-up reuses the original **DGT chess-clock**
+  buttons via diode isolation; their ~1.5 V pressed level is read on **ADC1**
+  (GPIO34/35) with a software threshold, not as a digital input. This is a
+  firmware/wiring detail with **no contract impact** — `BUTTON_EVENT` is
+  unchanged. See `firmware/HARDWARE.md`.
 - Power: USB or battery — exact source for MVP is an open question (see
   Open Questions).
 - No LEDs, display, or speaker required in MVP.

@@ -133,26 +133,44 @@ pin-count blocker, but it would NOT fix the missing BLE** — there is no radio 
 add Bluetooth to. Because BLE is non-negotiable for this design, the ESP-12E is
 out regardless of any GPIO workaround.
 
-## Confirmation buttons (F-03)
+## Confirmation buttons (F-03) — DGT clock via ADC1
 
-The F-03 game firmware adds two physical confirmation buttons (FR-FW-007),
-**additive to the 8×8 matrix** — none of the matrix wiring above changes.
+The F-03 game firmware reads two physical confirmation buttons (FR-FW-007),
+**additive to the 8×8 matrix** — none of the matrix wiring changes.
 
-| Button | GPIO | Wiring | Event |
+The buttons are the **original DGT chess-clock buttons**, brought out via **diode
+isolation** (the clock runs at a lower voltage). Three wires leave the clock: its
+**battery-minus** (common ground) and the two button **C** terminals. Terminal C
+idles near 0 V and rises to **~1.5 V** when pressed. That ~1.5 V is **below the
+ESP32 digital-HIGH threshold (~2.475 V @3V3)**, so the buttons are read on **ADC1**
+and thresholded in firmware — not as plain digital inputs.
+
+| Button | GPIO (ADC1 ch) | Wiring | Event |
 |---|---|---|---|
-| White | **GPIO22** | momentary switch to **GND**; internal pull-up (idle HIGH, pressed LOW) | `BUTTON_EVENT` `0x00` |
-| Black | **GPIO23** | momentary switch to **GND**; internal pull-up (idle HIGH, pressed LOW) | `BUTTON_EVENT` `0x01` |
+| White | **GPIO34** (CH6) | DGT clock terminal C (via its isolation diode) → GPIO34; **~100 kΩ pull-down** to common GND | `BUTTON_EVENT` `0x00` |
+| Black | **GPIO35** (CH7) | DGT clock terminal C (via its isolation diode) → GPIO35; **~100 kΩ pull-down** to common GND | `BUTTON_EVENT` `0x01` |
 
-GPIO22/23 are bonded out on both ESP32 boards, are not strapping pins, and are
-free in the **current prototype `src/pins.h`** (whose columns are
-`{19,18,5,17,16,4,21,15}`).
+Wiring / firmware notes:
+- **Common ground is mandatory** — the clock's battery-minus, both pull-downs, and
+  the ESP32 GND must tie to one point, or the ~1.5 V has no reference.
+- **The DGT clock must be powered on** — it is the signal source; with the clock
+  off the buttons read nothing.
+- The firmware applies **Schmitt-trigger hysteresis** to the ADC value (press above
+  the high threshold, release below the low one) plus the matrix debounce, so the
+  noisy mid-range neither miscounts nor flickers the console — see `src/main.cpp`
+  (`kButtonAdcHigh` / `kButtonAdcLow`).
+- Idle does **not** sit at 0 V (~0.5 V): the clock injects a few µA even at rest and
+  the signal is high-impedance, so a low-value pull-down would collapse the press
+  level. ~100 kΩ is the compromise; the hysteresis absorbs the offset.
 
-> ⚠ **Target-map overlap.** GPIO22/23 are **not** free in the hazard-free
-> *target* column map drawn in [`PINOUT.md`](./PINOUT.md)
-> (`kColPins = {16,17,18,19,21,22,23,4}`), where GPIO22 = C5 (file f) and
-> GPIO23 = C6 (file g). A future clean build that adopts the target map must
-> relocate **either** the two buttons **or** files f/g — they cannot both use
-> GPIO22/23. See the matching note in `PINOUT.md`.
+> **Status: temporary (direct ADC).** This is a bring-up solution. The robust fix is
+> a small **NPN transistor buffer per button** (base via ~10 kΩ from the 1.5 V
+> signal, collector to a pulled-up GPIO): it barely loads the signal, gives a clean
+> 3.3 V swing, and re-inverts to plain active-LOW digital reads. Planned once the
+> parts are on hand — see the firmware bring-up plan.
+
+GPIO34/35 are input-only ADC1 pins, unused by the matrix; the previous GPIO22/23
+button pins (digital) are now free.
 
 ## References
 
