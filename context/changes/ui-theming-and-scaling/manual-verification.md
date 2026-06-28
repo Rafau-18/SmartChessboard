@@ -123,3 +123,5 @@ Small fixes raised during the manual pass, after the planned phases. Same 3-targ
   screen is themed too. Confirmed on Android, iOS, and web.
 - [ ] R.3 The Sign-in screen has a theme-cycle control (Auto → Light → Dark) in the top-end corner;
   the choice persists and is reflected once signed in.
+- [ ] R.4 The piece-slide has no first-frame flash/teleport on Android and web (previously the piece
+  blinked at its destination before sliding from the source); the slide is as smooth as on iOS.

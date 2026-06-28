@@ -133,21 +133,32 @@ fun ChessBoardView(
     // Piece-slide animation: when [position] advances by exactly one resolvable move, slide the moved
     // piece(s) from→to over the static grid; any other delta (a multi-ply jump, a load, an unresolvable
     // change) renders instantly. The slide is display-only — it never touches selection/tap handling.
+    //
+    // The diff and the destination suppression are derived SYNCHRONOUSLY during composition (not in a
+    // LaunchedEffect), so the destination square is already suppressed in the *first* frame the new
+    // position renders. Deferring this to an effect drew one frame with the piece already at its
+    // destination before the overlay took over — a visible flash/teleport on Android & web (iOS folded
+    // the effect into the same frame, so it looked smooth). Each move gets a fresh Animatable via
+    // remember(slideKey), guaranteeing the overlay starts at the source (progress 0) rather than a
+    // stale 1f left by the previous slide. prevPosition advances synchronously too, so rapid stepping
+    // animates each single step instead of collapsing into a multi-ply (unresolvable) diff.
     var boardSizePx by remember { mutableStateOf(0) }
     var prevPosition by remember { mutableStateOf(position) }
     var slide by remember { mutableStateOf<BoardMoveAnimation?>(null) }
-    val slideProgress = remember { Animatable(0f) }
-    val slideSpec = tween<Float>(durationMillis = PIECE_SLIDE_DURATION_MS, easing = FastOutSlowInEasing)
-    LaunchedEffect(position) {
-        val previous = prevPosition
+    var slideKey by remember { mutableStateOf(0) }
+    if (position !== prevPosition) {
+        val resolved = diffSingleMove(prevPosition, position)
         prevPosition = position
-        val resolved = if (previous !== position) diffSingleMove(previous, position) else null
-        if (resolved != null) {
-            slide = resolved
-            slideProgress.snapTo(0f)
+        slide = resolved
+        if (resolved != null) slideKey++
+    }
+    val slideProgress = remember(slideKey) { Animatable(0f) }
+    val slideSpec = tween<Float>(durationMillis = PIECE_SLIDE_DURATION_MS, easing = FastOutSlowInEasing)
+    LaunchedEffect(slideKey) {
+        if (slide != null) {
             slideProgress.animateTo(1f, slideSpec)
+            slide = null
         }
-        slide = null
     }
     // Destination square(s) of the moving piece(s) are suppressed in the static grid while the slide
     // runs, so the grid and the overlay never draw the same piece twice; the grid reveals the final
