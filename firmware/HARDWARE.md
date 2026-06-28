@@ -14,9 +14,16 @@ updated: 2026-06-19
 This document inventories the three ESP-family boards the user already owns and
 ranks them for the Smart Chessboard firmware. The firmware (ESP-IDF + NimBLE)
 has two hard hardware needs: enough usable GPIO to scan an 8x8 reed-switch
-matrix natively (16 lines — 8 row outputs + 8 column inputs with internal
-pull-ups), and a working **BLE peripheral** radio to stream board events to the
-mobile app. Each board is scored against those two needs.
+matrix natively (16 lines — 8 outputs + 8 inputs with internal pull-ups), and a
+working **BLE peripheral** radio to stream board events to the mobile app. Each
+board is scored against those two needs.
+
+> **Scan direction (real bring-up wiring).** The firmware drives the **columns**
+> as outputs (LOW, one at a time) and reads the **rows** as pull-up inputs — the
+> anti-ghosting diodes are mounted cathode-toward-column. One 1N4148 per square is
+> **installed and required**. The authoritative pin map + direction live in
+> `src/pins.h`; the per-board diagrams below predate the inversion and are kept for
+> header-location reference only (the row/column electrical roles are swapped).
 
 ## Summary verdict
 
@@ -54,8 +61,8 @@ mobile app. Each board is scored against those two needs.
 
 > GPIO notes that drive the table: on the ESP32, **GPIO6-11 are consumed by the
 > integrated SPI flash** and must never be wired. **GPIO34-39 are input-only and
-> have no internal pull-up/pull-down**, so they cannot serve as matrix columns
-> (columns need internal pull-ups) and cannot be matrix rows (outputs).
+> have no internal pull-up/pull-down**, so they cannot serve as matrix rows
+> (rows need internal pull-ups) and cannot be driven matrix columns (outputs).
 > **GPIO0/2/12/15 are strapping pins** and need care. After excluding all of
 > those, the firmware's reference pin map still finds 16 safe lines comfortably
 > (see `firmware/README.md` §1).

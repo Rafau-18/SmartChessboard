@@ -26,11 +26,15 @@ The `[Rn]`/`[Cn]` tags below show the **recommended hazard-free map**
 (`kRowPins = {13,14,25,26,27,32,33,5}`, `kColPins = {16,17,18,19,21,22,23,4}`).
 Square index = `file + 8*rank`.
 
-> **⚠ Current `src/pins.h` differs.** It uses an existing **prototype** wiring on
-> the DevKit V1 (rows D32→D13, columns D19→D15) so the bringup runs without
-> rewiring. The file-g column was moved off GPIO2 (onboard LED) to GPIO21; the
-> only remaining watch item is GPIO12 (flash-strapping). Migrating fully to the
-> map drawn here is a tracked TODO in the `pins.h` header.
+> **⚠ CURRENT REALITY — `src/pins.h` is authoritative and differs from the maps below.**
+> The real bring-up wiring **inverts the scan**: the firmware drives the **columns**
+> as outputs (LOW) and reads the **rows** as pull-up inputs (anti-ghosting diodes
+> mounted cathode-toward-column, one per square, installed and required). The legend
+> tags `[Rn]`/`[Cn]` and the board diagrams below describe the older row-drive layout
+> and are kept for **header-location reference only** — the electrical roles are
+> swapped and the current GPIO→file/rank assignment lives in `src/pins.h`
+> (cols a..h = `{15,4,16,17,5,18,19,21}`, rows rank1..8 = `{32,33,25,26,27,14,12,13}`).
+> Confirmation buttons moved off the matrix entirely to GPIO34/35 (ADC) — see below.
 
 ---
 

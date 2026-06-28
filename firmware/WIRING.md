@@ -16,14 +16,14 @@ DevKit V1, GPIO16/GPIO17 are silkscreened `RX2`/`TX2`).
 
 Full header reference: `PINOUT.md`. Wiring rules / diodes: `README.md` §1.
 
-> **⚠ This sheet shows the RECOMMENDED hazard-free map.** The currently committed
-> `src/pins.h` instead matches an existing **prototype** wiring on the DevKit V1
-> (rows block D32→D13, columns block D19→D15) reused from an earlier project — so
-> the bringup can run without rewiring. The file-g column was moved off GPIO2
-> (DOIT onboard LED) to **GPIO21 / `D21`**; the only remaining watch item is
-> GPIO12 (ROW6, flash-strapping). Migrating fully to this sheet is a tracked TODO
-> (see the `pins.h` header). The tables/diagrams below are the migration target,
-> **not** the current `pins.h`.
+> **⚠ CURRENT REALITY — `src/pins.h` is authoritative; this sheet is reference only.**
+> The real bring-up wiring **inverts the scan**: the firmware drives the **columns**
+> as outputs (LOW) and reads the **rows** as pull-up inputs. Anti-ghosting diodes
+> (one 1N4148 per square, **cathode toward the column**) are **installed and required** —
+> not optional. The "Rows = MCU outputs / Columns = MCU inputs" framing in the tables
+> below is the older row-drive layout, kept for header-location reference only; the
+> current authoritative GPIO map is in `src/pins.h` (cols a..h = `{15,4,16,17,5,18,19,21}`,
+> rows rank1..8 = `{32,33,25,26,27,14,12,13}`).
 
 ---
 
@@ -130,9 +130,10 @@ Each square = one reed switch bridging its **row wire** and its **column wire**:
 
 - A square at (file, rank) connects `COL[file]` ↔ `ROW[rank]`. Example: **e4** =
   COL4 (e) ↔ ROW3 (rank 4) = `D21` ↔ `D26` on the V1.
-- No external resistors — the firmware enables internal pull-ups on the columns.
-- **Bringup (≤2 magnets): no diodes needed.** Full board (≥3 magnets) needs one
-  1N4148 per square to stop ghosting (`README.md` §6).
+- No external resistors — the firmware enables internal pull-ups on the **rows** (inputs).
+- **Diodes installed and required:** one 1N4148 per square, **cathode toward the
+  column** (the scan drives columns LOW and reads rows). No longer "optional for
+  ≥3 magnets" — it is part of the working scan.
 
 ## Sanity check after flashing
 
