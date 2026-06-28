@@ -540,8 +540,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 5.1 Move-diff helper unit-tested (normal/capture/castle/en-passant/promotion/none), host + iOS sim
-- [x] 5.2 All targets compile; ktlint clean
+- [x] 5.1 Move-diff helper unit-tested (normal/capture/castle/en-passant/promotion/none), host + iOS sim — 2f24b64
+- [x] 5.2 All targets compile; ktlint clean — 2f24b64
 
 #### Manual
 
