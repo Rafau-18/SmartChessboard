@@ -375,9 +375,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 2.1 `clampBoardSize` boundary unit test passes (`:shared:testAndroidHostTest`)
-- [x] 2.2 Board-size persistence round-trip passes (host + `:shared:iosSimulatorArm64Test`)
-- [x] 2.3 All targets compile (`:androidApp:assembleDebug`, `:webApp`), ktlint clean
+- [x] 2.1 `clampBoardSize` boundary unit test passes (`:shared:testAndroidHostTest`) — 5ce7104
+- [x] 2.2 Board-size persistence round-trip passes (host + `:shared:iosSimulatorArm64Test`) — 5ce7104
+- [x] 2.3 All targets compile (`:androidApp:assembleDebug`, `:webApp`), ktlint clean — 5ce7104
 
 #### Manual
 
@@ -389,8 +389,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [ ] 3.1 Hold-last fraction/score unit test passes (host + `:shared:iosSimulatorArm64Test`)
-- [ ] 3.2 `whiteBarFraction(0,null)==0.5` regression intact; web compiles
+- [x] 3.1 Hold-last fraction/score unit test passes (host + `:shared:iosSimulatorArm64Test`)
+- [x] 3.2 `whiteBarFraction(0,null)==0.5` regression intact; web compiles
 
 #### Manual
 

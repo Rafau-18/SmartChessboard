@@ -1,11 +1,18 @@
 package org.rurbaniak.smartchessboard.presentation.replay
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,8 +24,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,11 +38,54 @@ import org.rurbaniak.smartchessboard.domain.chess.GameStatus
 import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import kotlin.math.abs
 
+/** Fixed bar thickness — wide enough for a `±d.dd` / `M#` label at [MaterialTheme.typography]'s 11 sp. */
+private val EvalBarWidth = 32.dp
+
+/**
+ * The bar's held display: the last shown White-POV fill [fraction] (0..1, from the bottom) and the
+ * [score] string drawn inside the bar. Advanced only by a resolved [PlyEvalState.Evaluated]
+ * (see [evalBarDisplay]), so the bar never snaps to centre while the next position's eval loads.
+ */
+internal data class EvalBarDisplay(
+    val fraction: Float,
+    val score: String,
+) {
+    companion object {
+        /** Centred bar, em-dash score — shown until the first evaluation lands (or after a reset). */
+        val Neutral = EvalBarDisplay(fraction = 0.5f, score = "—")
+    }
+}
+
+/**
+ * Hold-last: only an [PlyEvalState.Evaluated] advances the shown fraction/score. Every other state
+ * (Loading, null, NoEval, Unavailable, Terminal) keeps [last], so stepping to a ply whose eval is
+ * still fetching holds the previous position's bar instead of resetting to the centre default.
+ */
+internal fun evalBarDisplay(
+    eval: PlyEvalState?,
+    last: EvalBarDisplay,
+): EvalBarDisplay =
+    when (eval) {
+        is PlyEvalState.Evaluated -> {
+            EvalBarDisplay(
+                fraction = whiteBarFraction(eval.evalCp, eval.mate),
+                score = formatEvalScore(eval.evalCp, eval.mate),
+            )
+        }
+
+        else -> {
+            last
+        }
+    }
+
 /**
  * At-a-glance advantage bar, vertical alongside the board: White-POV fill from the bottom (the
  * White side of the board). Clamped ±1000 cp linear; a forced mate pins the bar to the winning
- * side. Neutral (50/50) until an evaluation is present. The caller provides the height (typically
- * matching the board); width is fixed here.
+ * side. Holds the last resolved evaluation while the next one loads (no snap to centre), animates
+ * the fill to each new value, and draws a fixed numeric label at the bottom-centre anchor — the
+ * label never tracks the moving fill boundary. The caller provides the height (typically matching
+ * the board); width is fixed here. `remember` resets to neutral when the bar leaves composition
+ * (game/screen change, analysis toggled off).
  */
 @Composable
 internal fun EvalBar(
@@ -38,28 +93,72 @@ internal fun EvalBar(
     modifier: Modifier = Modifier,
 ) {
     val chess = LocalChessColors.current
-    val fraction =
-        when (eval) {
-            is PlyEvalState.Evaluated -> whiteBarFraction(eval.evalCp, eval.mate)
-            else -> 0.5f
+
+    // Hold-last: render the value computed this frame and persist it so a later Loading/absent ply
+    // holds it. The write only fires on an Evaluated transition (otherwise display == lastShown), so
+    // it converges in one recomposition.
+    var lastShown by remember { mutableStateOf(EvalBarDisplay.Neutral) }
+    val display = evalBarDisplay(eval, lastShown)
+    if (display != lastShown) {
+        lastShown = display
+    }
+
+    val animatedFraction by animateFloatAsState(
+        targetValue = display.fraction,
+        animationSpec = tween(durationMillis = 300),
+        label = "evalBarFraction",
+    )
+
+    // Loading affordance: while the viewed ply's eval is still fetching, the held label pulses to
+    // signal "this is the previous position's evaluation."
+    val loading = eval == null || eval is PlyEvalState.Loading
+    val pulse = rememberInfiniteTransition(label = "evalBarPulse")
+    val pulseAlpha by pulse.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 750), repeatMode = RepeatMode.Reverse),
+        label = "evalBarPulseAlpha",
+    )
+    val labelAlpha = if (loading) pulseAlpha else 1f
+
+    // The label sits over the light "white-advantage" fill for essentially the whole range, so keep
+    // it dark. The exception is a strong black advantage / forced mate for Black, where the fill has
+    // receded below the label and the dark track shows through — use the light fill colour there.
+    val labelColor = if (animatedFraction <= 0.08f) chess.evalBarFill else chess.evalBarLabel
+
+    Box(modifier = modifier.width(EvalBarWidth)) {
+        // Track + fill: rounded and clipped. The label overlays this on the (unclipped) parent Box so
+        // it is never clipped by the rounded corners.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(chess.evalBarTrack),
+        ) {
+            if (animatedFraction > 0f) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .fillMaxHeight(animatedFraction)
+                            .background(chess.evalBarFill),
+                )
+            }
         }
-    Box(
-        modifier =
-            modifier
-                .width(12.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(chess.evalBarTrack),
-    ) {
-        if (fraction > 0f) {
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .fillMaxHeight(fraction)
-                        .background(chess.evalBarFill),
-            )
-        }
+        Text(
+            text = display.score,
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 3.dp)
+                    .alpha(labelAlpha),
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 

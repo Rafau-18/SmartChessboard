@@ -31,3 +31,17 @@ Pending on-device confirmation:
 - [ ] 2.5 On a phone the board is full-width auto-fit with no handle and no regression.
 - [ ] 2.6 Replay (two-pane and single-column), Play, and PhysicalPlay all render the board correctly at
   narrow and wide widths; the eval bar still matches the board height in Replay.
+
+## Phase 3 — Eval-bar behaviour + numeric label + fill animation
+
+Automated (done, committed): hold-last fraction/score unit tests + `whiteBarFraction` regression on
+host + iOS-sim; `:shared:wasmJsTest` (web compiles), `:androidApp:assembleDebug`; ktlint — all green.
+
+Pending on-device confirmation (Replay, analysis enabled):
+
+- [ ] 3.3 Stepping forward/back through plies, the eval bar holds the prior evaluation and animates to
+  the new fraction instead of snapping to the centre while the next eval is fetching.
+- [ ] 3.4 A loading affordance (the held label pulsing) shows while the new ply's eval is being fetched.
+- [ ] 3.5 The numeric score label is readable, sits at a fixed bottom-centre spot inside the bar, and
+  does not jump as the fill moves; `0.00` fills exactly to the board's vertical centre. Check the
+  rare strong-black-advantage / forced-mate-for-Black case stays legible (light label on dark track).
