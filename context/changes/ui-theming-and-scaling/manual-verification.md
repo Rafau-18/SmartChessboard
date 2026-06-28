@@ -112,3 +112,14 @@ Pending on-device confirmation (Replay two-pane on a wide window):
 - [ ] 7.3 Dragging the board larger expands the layout toward the window edges — the board can grow
   past the default margins instead of being trapped inside them.
 - [ ] 7.4 The gap between the board (eval bar) and the right column is visibly tighter than before.
+
+## Post-plan refinements (manual-gate follow-ups)
+
+Small fixes raised during the manual pass, after the planned phases. Same 3-target gate.
+
+- [ ] R.1 Piece-slide no longer overshoots/bounces (spring → tween) and is a touch slower; tune via
+  `PIECE_SLIDE_DURATION_MS` in `ChessBoardView.kt`.
+- [ ] R.2 Signing out in dark mode keeps the Sign-in screen dark (no white flash); the Restoring
+  screen is themed too. Confirmed on Android, iOS, and web.
+- [ ] R.3 The Sign-in screen has a theme-cycle control (Auto → Light → Dark) in the top-end corner;
+  the choice persists and is reflected once signed in.
