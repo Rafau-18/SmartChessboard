@@ -56,7 +56,9 @@ burst shape + the `DEVICE_STATUS` bytes, not board contents).
 ## Phase 3 — Game Behavior (events / buttons / commands / diagnostic)
 
 Type: **on-hardware** (needs the ESP32 flashed + a BLE scanner such as nRF
-Connect + two temporary buttons jumpered to GPIO22/GPIO23 → GND). Deferred to
+Connect + the two confirmation buttons — now the **DGT clock buttons via diode
+isolation, read on ADC1 GPIO34/GPIO35**, already wired and serial-verified; the
+original GPIO22/23-to-GND plan was superseded during bring-up). Deferred to
 end-of-slice per the project manual-gate convention — the board (and the
 temporary buttons) may not be to hand at phase close. Automated gate already
 green: device build links (`pio run -e esp32dev`), host tests pass 15/15
@@ -68,7 +70,7 @@ Flash with `pio run -t upload` from `firmware/`, connect + subscribe to
 | # | Check | Expected |
 | --- | --- | --- |
 | 3.4 | Move a magnet on a working square | One `SQUARE_EVENT` lift (`02`, event bits `00`) then place (`02`, event bits `01`) with the correct square index in the low 6 bits — never coalesced |
-| 3.5 | Press the temporary white / black button (GPIO22 / GPIO23 → GND, active-LOW) | `BUTTON_EVENT` `03 00` (white) / `03 01` (black), one per debounced press edge |
+| 3.5 | Press the white / black confirmation button (DGT clock via diode isolation → ADC1 GPIO34 / GPIO35; already wired + serial-verified) | `BUTTON_EVENT` `03 00` (white) / `03 01` (black), one per debounced press edge |
 | 3.6 | Write `SET_MODE(diagnostic)` = `81 01`, then `SET_MODE(game)` = `81 00` to `mobile_command` (`787e0003-…`) | `81 01` starts a ~10 Hz `BOARD_SNAPSHOT` stream (ADDED to, not replacing, square events); `81 00` stops it |
 | 3.7 | Write `REQUEST_SNAPSHOT` = `82`, then `REQUEST_STATUS` = `83` | Each yields one immediate frame — `BOARD_SNAPSHOT` (9 B) / `DEVICE_STATUS` (9 B) |
 | 3.8 | Stay subscribed ~30 s | A `DEVICE_STATUS` (`04 64 01 00 00` + uptime u32 LE) arrives roughly every ~30 s |
