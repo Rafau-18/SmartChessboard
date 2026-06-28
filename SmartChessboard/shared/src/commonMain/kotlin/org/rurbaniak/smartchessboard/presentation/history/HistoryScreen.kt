@@ -31,6 +31,7 @@ import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
+import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +40,8 @@ fun HistoryScreen(
     onSignOut: () -> Unit,
     onNewGame: () -> Unit,
     onGameClick: (GameSummary) -> Unit,
+    themeMode: ThemeMode,
+    onCycleTheme: () -> Unit,
 ) {
     // Keyed by user so a sign-out → sign-in as someone else never reuses a stale list.
     val viewModel = koinViewModel<HistoryViewModel>(key = "history-$userId")
@@ -53,6 +56,11 @@ fun HistoryScreen(
             TopAppBar(
                 title = { Text("My games") },
                 actions = {
+                    // Cycles System → Light → Dark → System; the label is the current mode so the
+                    // control doubles as the live indicator. Lives here (no Settings screen, by decision).
+                    TextButton(onClick = onCycleTheme) {
+                        Text(themeMode.label())
+                    }
                     TextButton(onClick = onNewGame) {
                         Text("New game")
                     }
@@ -142,6 +150,14 @@ private fun GameRow(
     }
     HorizontalDivider()
 }
+
+/** Compact top-bar label for the active theme mode — doubles as the live indicator for the cycle control. */
+private fun ThemeMode.label(): String =
+    when (this) {
+        ThemeMode.SYSTEM -> "Auto"
+        ThemeMode.LIGHT -> "Light"
+        ThemeMode.DARK -> "Dark"
+    }
 
 /** An in-progress physical game is the FR-013 resume offer: tapping the row continues it on this device. */
 private fun GameSummary.isResumablePhysical(): Boolean = mode == GameMode.PHYSICAL && status == GameStatus.IN_PROGRESS

@@ -15,14 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import org.rurbaniak.smartchessboard.domain.chess.Color as PieceColor
-
-// A diagnostics view is deliberately *not* the wood board — neutral cells so the reed dots and the
-// mismatch tint read as a sensor readout, not a game position.
-private val DIAG_LIGHT_CELL = Color(0xFFECEFF1)
-private val DIAG_DARK_CELL = Color(0xFFB0BEC5)
 
 /**
  * A live 8×8 reed-switch readout (S-07, FR-011) that highlights which squares disagree with the
@@ -77,11 +72,14 @@ private fun DiagnosticsCell(
     dark: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val chess = LocalChessColors.current
+    // A diagnostics view is deliberately *not* the wood board — neutral cells (mode-aware tokens) so
+    // the reed dots and the mismatch tint read as a sensor readout, not a game position.
     val background =
         when {
             differs -> MaterialTheme.colorScheme.errorContainer
-            dark -> DIAG_DARK_CELL
-            else -> DIAG_LIGHT_CELL
+            dark -> chess.diagDarkCell
+            else -> chess.diagLightCell
         }
     Box(
         modifier = modifier.background(background).padding(2.dp),

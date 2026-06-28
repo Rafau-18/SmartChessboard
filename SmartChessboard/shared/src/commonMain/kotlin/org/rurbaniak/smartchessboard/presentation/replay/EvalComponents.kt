@@ -20,14 +20,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.rurbaniak.smartchessboard.domain.chess.GameStatus
+import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import kotlin.math.abs
-
-private val BAR_WHITE = Color(0xFFF5F5F5)
-private val BAR_BLACK = Color(0xFF424242)
 
 /**
  * At-a-glance advantage bar, vertical alongside the board: White-POV fill from the bottom (the
@@ -40,6 +37,7 @@ internal fun EvalBar(
     eval: PlyEvalState?,
     modifier: Modifier = Modifier,
 ) {
+    val chess = LocalChessColors.current
     val fraction =
         when (eval) {
             is PlyEvalState.Evaluated -> whiteBarFraction(eval.evalCp, eval.mate)
@@ -50,7 +48,7 @@ internal fun EvalBar(
             modifier
                 .width(12.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(BAR_BLACK),
+                .background(chess.evalBarTrack),
     ) {
         if (fraction > 0f) {
             Box(
@@ -59,7 +57,7 @@ internal fun EvalBar(
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .fillMaxHeight(fraction)
-                        .background(BAR_WHITE),
+                        .background(chess.evalBarFill),
             )
         }
     }

@@ -27,6 +27,7 @@ import org.rurbaniak.smartchessboard.domain.chess.Position
 import org.rurbaniak.smartchessboard.domain.chess.fileOf
 import org.rurbaniak.smartchessboard.domain.chess.rankOf
 import org.rurbaniak.smartchessboard.domain.chess.squareOf
+import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import smartchessboard.shared.generated.resources.Res
 import smartchessboard.shared.generated.resources.piece_bb
 import smartchessboard.shared.generated.resources.piece_bk
@@ -41,13 +42,6 @@ import smartchessboard.shared.generated.resources.piece_wp
 import smartchessboard.shared.generated.resources.piece_wq
 import smartchessboard.shared.generated.resources.piece_wr
 import org.rurbaniak.smartchessboard.domain.chess.Color as PieceColor
-
-private val LIGHT_SQUARE = Color(0xFFF0D9B5)
-private val DARK_SQUARE = Color(0xFFB58863)
-private val ARROW_COLOR = Color(0xCC2E7D32)
-private val SELECTED_TINT = Color(0x80FBE34D)
-private val TARGET_MARK = Color(0x662E7D32)
-private val HIGHLIGHT_TINT = Color(0x804FC3F7)
 
 /** A from→to square pair (Square.kt indexing) drawn as an arrow above the pieces. */
 data class BoardArrow(
@@ -108,6 +102,7 @@ fun ChessBoardView(
     bestMoveArrow: BoardArrow? = null,
     highlightedSquares: Set<Int> = emptySet(),
 ) {
+    val chess = LocalChessColors.current
     Box(modifier = modifier.aspectRatio(1f)) {
         Column(modifier = Modifier.fillMaxSize()) {
             for (rowFromTop in 0..7) {
@@ -120,7 +115,7 @@ fun ChessBoardView(
                                 Modifier
                                     .weight(1f)
                                     .fillMaxHeight()
-                                    .background(if (isDarkSquare(square)) DARK_SQUARE else LIGHT_SQUARE)
+                                    .background(if (isDarkSquare(square)) chess.darkSquare else chess.lightSquare)
                                     .let { base ->
                                         if (interaction != null) {
                                             base.clickable { interaction.onSquareTap(square) }
@@ -130,10 +125,10 @@ fun ChessBoardView(
                                     },
                         ) {
                             if (interaction?.selectedSquare == square) {
-                                Box(Modifier.matchParentSize().background(SELECTED_TINT))
+                                Box(Modifier.matchParentSize().background(chess.selectedTint))
                             }
                             if (square in highlightedSquares) {
-                                Box(Modifier.matchParentSize().background(HIGHLIGHT_TINT))
+                                Box(Modifier.matchParentSize().background(chess.liftHighlight))
                             }
                             piece?.let {
                                 Image(
@@ -144,7 +139,7 @@ fun ChessBoardView(
                             }
                             if (interaction != null && square in interaction.targetSquares) {
                                 Canvas(modifier = Modifier.matchParentSize()) {
-                                    drawTargetMark(occupied = piece != null)
+                                    drawTargetMark(occupied = piece != null, color = chess.targetMark)
                                 }
                             }
                         }
@@ -154,29 +149,33 @@ fun ChessBoardView(
         }
         if (bestMoveArrow != null) {
             Canvas(modifier = Modifier.fillMaxSize()) {
-                drawBestMoveArrow(bestMoveArrow, orientation)
+                drawBestMoveArrow(bestMoveArrow, orientation, color = chess.bestMoveArrow)
             }
         }
     }
 }
 
 /** An empty legal target gets a centered dot; a capture target gets a ring around the piece. */
-private fun DrawScope.drawTargetMark(occupied: Boolean) {
+private fun DrawScope.drawTargetMark(
+    occupied: Boolean,
+    color: Color,
+) {
     val extent = size.minDimension
     if (occupied) {
         drawCircle(
-            color = TARGET_MARK,
+            color = color,
             radius = extent * 0.42f,
             style = Stroke(width = extent * 0.08f),
         )
     } else {
-        drawCircle(color = TARGET_MARK, radius = extent * 0.16f)
+        drawCircle(color = color, radius = extent * 0.16f)
     }
 }
 
 private fun DrawScope.drawBestMoveArrow(
     arrow: BoardArrow,
     orientation: PieceColor,
+    color: Color,
 ) {
     val cell = size.width / 8f
 
@@ -198,7 +197,7 @@ private fun DrawScope.drawBestMoveArrow(
     val headLength = cell * 0.45f
     val headBase = to - unit * headLength
     drawLine(
-        color = ARROW_COLOR,
+        color = color,
         start = from,
         end = headBase,
         strokeWidth = cell * 0.18f,
@@ -215,7 +214,7 @@ private fun DrawScope.drawBestMoveArrow(
             lineTo(right.x, right.y)
             close()
         }
-    drawPath(head, ARROW_COLOR)
+    drawPath(head, color)
 }
 
 /**

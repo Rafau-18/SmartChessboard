@@ -9,17 +9,20 @@ import org.rurbaniak.smartchessboard.data.auth.SupabaseAuthRepository
 import org.rurbaniak.smartchessboard.data.eval.SupabaseEvalRepository
 import org.rurbaniak.smartchessboard.data.games.SupabaseGamesRepository
 import org.rurbaniak.smartchessboard.data.journal.SettingsGameJournal
+import org.rurbaniak.smartchessboard.data.preferences.SettingsUiPreferences
 import org.rurbaniak.smartchessboard.data.supabase.createAppSupabaseClient
 import org.rurbaniak.smartchessboard.domain.auth.AuthRepository
 import org.rurbaniak.smartchessboard.domain.eval.EvalRepository
 import org.rurbaniak.smartchessboard.domain.games.GameAutoSaver
 import org.rurbaniak.smartchessboard.domain.games.GameJournal
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
+import org.rurbaniak.smartchessboard.domain.preferences.UiPreferences
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.history.HistoryViewModel
 import org.rurbaniak.smartchessboard.presentation.newgame.NewGameViewModel
 import org.rurbaniak.smartchessboard.presentation.play.PlayViewModel
 import org.rurbaniak.smartchessboard.presentation.replay.ReplayViewModel
+import org.rurbaniak.smartchessboard.presentation.theme.ThemeViewModel
 
 val dataModule =
     module {
@@ -28,6 +31,9 @@ val dataModule =
         single<GamesRepository> { SupabaseGamesRepository(get()) }
         single<EvalRepository> { SupabaseEvalRepository(get()) }
         single<GameJournal> { SettingsGameJournal(get()) }
+        // UI-only choices (theme mode now, board size in Phase 2) over the same Settings store,
+        // under a `ui.` key prefix so it never collides with the journal's `journal.` keys.
+        single<UiPreferences> { SettingsUiPreferences(get()) }
         // Per-screen instance: syncPending tracks the one game a Play screen drives.
         factory { GameAutoSaver(gamesRepository = get(), journal = get()) }
     }
@@ -37,6 +43,7 @@ val presentationModule =
         viewModelOf(::AuthViewModel)
         viewModelOf(::HistoryViewModel)
         viewModelOf(::NewGameViewModel)
+        viewModelOf(::ThemeViewModel)
         // gameId arrives from the Replay nav entry via parametersOf(gameId).
         viewModel { (gameId: String) ->
             ReplayViewModel(gameId = gameId, gamesRepository = get(), evalRepository = get())

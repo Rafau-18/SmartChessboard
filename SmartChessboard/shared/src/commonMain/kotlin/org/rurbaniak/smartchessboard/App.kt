@@ -3,7 +3,6 @@ package org.rurbaniak.smartchessboard
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,10 +32,16 @@ import org.rurbaniak.smartchessboard.presentation.newgame.NewGameScreen
 import org.rurbaniak.smartchessboard.presentation.physical.PhysicalPlayScreen
 import org.rurbaniak.smartchessboard.presentation.play.PlayScreen
 import org.rurbaniak.smartchessboard.presentation.replay.ReplayScreen
+import org.rurbaniak.smartchessboard.presentation.theme.AppTheme
+import org.rurbaniak.smartchessboard.presentation.theme.ThemeViewModel
 
 @Composable
 fun App() {
-    MaterialTheme {
+    // Resolved at the composition root so the theme wraps every session state (Restoring / SignIn /
+    // SignedIn) and the History control can drive it. mode persists via UiPreferences.
+    val themeViewModel = koinViewModel<ThemeViewModel>()
+    val themeMode by themeViewModel.mode.collectAsStateWithLifecycle()
+    AppTheme(themeMode) {
         val authViewModel = koinViewModel<AuthViewModel>()
         val uiState by authViewModel.uiState.collectAsStateWithLifecycle()
         when (val session = uiState.sessionState) {
@@ -75,6 +80,8 @@ fun App() {
                                     userId = session.userId,
                                     onSignOut = authViewModel::signOut,
                                     onNewGame = { backStack.add(NewGameKey) },
+                                    themeMode = themeMode,
+                                    onCycleTheme = themeViewModel::cycle,
                                     // In-progress games resume on their board (physical only where the
                                     // platform supports it — a physical game on web falls through to
                                     // Replay); everything else opens in Replay (interview decision).
