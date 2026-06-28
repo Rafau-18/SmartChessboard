@@ -1,5 +1,6 @@
 package org.rurbaniak.smartchessboard.presentation.board
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -13,7 +14,12 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +32,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.util.lerp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.rurbaniak.smartchessboard.domain.chess.Piece
@@ -48,6 +59,7 @@ import smartchessboard.shared.generated.resources.piece_wn
 import smartchessboard.shared.generated.resources.piece_wp
 import smartchessboard.shared.generated.resources.piece_wq
 import smartchessboard.shared.generated.resources.piece_wr
+import kotlin.math.roundToInt
 import org.rurbaniak.smartchessboard.domain.chess.Color as PieceColor
 
 /** A from→to square pair (Square.kt indexing) drawn as an arrow above the pieces. */
@@ -100,6 +112,7 @@ private fun squareOrNull(
  * independent of [interaction], so a board can highlight without becoming tappable; empty by default,
  * so Replay/Play render exactly as before.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ChessBoardView(
     position: Position,
@@ -110,13 +123,38 @@ fun ChessBoardView(
     highlightedSquares: Set<Int> = emptySet(),
 ) {
     val chess = LocalChessColors.current
-    Box(modifier = modifier.aspectRatio(1f)) {
+
+    // Piece-slide animation: when [position] advances by exactly one resolvable move, slide the moved
+    // piece(s) from→to over the static grid; any other delta (a multi-ply jump, a load, an unresolvable
+    // change) renders instantly. The slide is display-only — it never touches selection/tap handling.
+    var boardSizePx by remember { mutableStateOf(0) }
+    var prevPosition by remember { mutableStateOf(position) }
+    var slide by remember { mutableStateOf<BoardMoveAnimation?>(null) }
+    val slideProgress = remember { Animatable(0f) }
+    val slideSpec = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    LaunchedEffect(position) {
+        val previous = prevPosition
+        prevPosition = position
+        val resolved = if (previous !== position) diffSingleMove(previous, position) else null
+        if (resolved != null) {
+            slide = resolved
+            slideProgress.snapTo(0f)
+            slideProgress.animateTo(1f, slideSpec)
+        }
+        slide = null
+    }
+    // Destination square(s) of the moving piece(s) are suppressed in the static grid while the slide
+    // runs, so the grid and the overlay never draw the same piece twice; the grid reveals the final
+    // piece (incl. a promotion) when [slide] clears.
+    val suppressed: Set<Int> = slide?.moves?.mapTo(HashSet()) { it.to } ?: emptySet()
+
+    Box(modifier = modifier.aspectRatio(1f).onSizeChanged { boardSizePx = it.width }) {
         Column(modifier = Modifier.fillMaxSize()) {
             for (rowFromTop in 0..7) {
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     for (column in 0..7) {
                         val square = squareAt(column, rowFromTop, orientation)
-                        val piece = position.pieceAt(square)
+                        val piece = if (square in suppressed) null else position.pieceAt(square)
                         Box(
                             modifier =
                                 Modifier
@@ -193,7 +231,82 @@ fun ChessBoardView(
                 drawBestMoveArrow(arrow, orientation, color = chess.bestMoveArrow)
             }
         }
+
+        val activeSlide = slide
+        if (activeSlide != null && boardSizePx > 0) {
+            PieceSlideOverlay(
+                slide = activeSlide,
+                progress = slideProgress,
+                boardSizePx = boardSizePx,
+                orientation = orientation,
+            )
+        }
     }
+}
+
+/**
+ * Absolutely-positioned layer that draws the moving piece(s) of [slide] over the static grid, from
+ * each piece's source cell to its destination as [progress] runs 0→1. A captured piece (normal
+ * capture or en passant) fades out at its square. The progress is read inside the layout/draw
+ * lambdas (not at composition), so a running slide re-lays-out one or two small images per frame
+ * rather than recomposing the 64-cell grid.
+ */
+@Composable
+private fun PieceSlideOverlay(
+    slide: BoardMoveAnimation,
+    progress: Animatable<Float, *>,
+    boardSizePx: Int,
+    orientation: PieceColor,
+) {
+    val cellPx = boardSizePx / 8f
+    val cellDp = with(LocalDensity.current) { cellPx.toDp() }
+
+    val captured = slide.capturedPiece
+    val capturedSquare = slide.capturedSquare
+    if (captured != null && capturedSquare != null) {
+        val (col, row) = cellOf(capturedSquare, orientation)
+        Image(
+            painter = painterResource(pieceDrawable(captured)),
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .offset { IntOffset((col * cellPx).roundToInt(), (row * cellPx).roundToInt()) }
+                    .size(cellDp)
+                    .graphicsLayer { alpha = 1f - progress.value },
+        )
+    }
+
+    for (move in slide.moves) {
+        val (fromCol, fromRow) = cellOf(move.from, orientation)
+        val (toCol, toRow) = cellOf(move.to, orientation)
+        Image(
+            painter = painterResource(pieceDrawable(move.piece)),
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .offset {
+                        val t = progress.value
+                        IntOffset(
+                            x = (lerp(fromCol.toFloat(), toCol.toFloat(), t) * cellPx).roundToInt(),
+                            y = (lerp(fromRow.toFloat(), toRow.toFloat(), t) * cellPx).roundToInt(),
+                        )
+                    }.size(cellDp),
+        )
+    }
+}
+
+/**
+ * Grid cell ([column] from the left, [rowFromTop] from the top) holding [square] for the given
+ * [orientation] — the inverse of [squareAt], and the cell-space twin of the `center` math in
+ * [drawBestMoveArrow]. Multiplied by the cell size it yields a piece image's top-left offset.
+ */
+private fun cellOf(
+    square: Int,
+    orientation: PieceColor,
+): Pair<Int, Int> {
+    val column = if (orientation == PieceColor.WHITE) fileOf(square) else 7 - fileOf(square)
+    val rowFromTop = if (orientation == PieceColor.WHITE) 7 - rankOf(square) else rankOf(square)
+    return column to rowFromTop
 }
 
 /** An empty legal target gets a centered dot; a capture target gets a ring around the piece. */

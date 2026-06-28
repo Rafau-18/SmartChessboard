@@ -540,8 +540,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [ ] 5.1 Move-diff helper unit-tested (normal/capture/castle/en-passant/promotion/none), host + iOS sim
-- [ ] 5.2 All targets compile; ktlint clean
+- [x] 5.1 Move-diff helper unit-tested (normal/capture/castle/en-passant/promotion/none), host + iOS sim
+- [x] 5.2 All targets compile; ktlint clean
 
 #### Manual
 
@@ -569,7 +569,7 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 7.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean
+- [x] 7.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean — 4d8a52c
 
 #### Manual
 

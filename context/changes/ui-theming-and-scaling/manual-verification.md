@@ -63,6 +63,22 @@ Pending on-device confirmation:
 - [ ] 4.4 The promotion and end-game dialogs animate in (fade + slight scale-up); the Replay eval
   panel crossfades between its states (Analyzing… ↔ score ↔ temporarily-unavailable …).
 
+## Phase 5 — Piece-slide animation
+
+Automated (done, committed): pure move-diff helper unit tests (quiet move, capture, en passant,
+castling, quiet promotion, capture promotion, identical → null, multi-ply jump → null) on host +
+iOS-sim; all targets compile (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`,
+`:shared:wasmJsTest`, `:androidApp:assembleDebug`); ktlint — all green.
+
+Pending on-device confirmation:
+
+- [ ] 5.3 In Play, a tapped move slides the piece from its source to its destination; captures,
+  castling, en passant, and promotion animate correctly under both board orientations (flip).
+- [ ] 5.4 In Replay, stepping forward animates the slide; jumping to an arbitrary ply or loading a
+  game renders instantly with no glitch (no piece flying across the board).
+- [ ] 5.5 In PhysicalPlay (emulator) a resolved physical move slides correctly; selection / lift
+  highlights and the best-move arrow are unaffected (no regression from Phase 4).
+
 ## Phase 6 — Wide-screen layout & move-list refinements
 
 Automated (done, committed): `effectiveMoveListMode` + move-list-mode persistence unit tests on host
