@@ -47,11 +47,11 @@ Flash with `pio run -t upload` from `firmware/`, then:
 | 2.6 | Enable notifications on `board_event` (`787e0002-…`) | Receive `BOARD_SNAPSHOT` (9 B, tag `0x01`) **then** `DEVICE_STATUS` (9 B: `04 64 01 00 00` + uptime u32 LE) in that order |
 | 2.7 | Disconnect the central | Board resumes advertising — reconnectable without a power cycle (FR-FW-012) |
 
-Status: **PENDING on-hardware** (recorded 2026-06-19). Note: the on-subscribe
-snapshot is built by the scan task from its own `stable` bitmap; with the
-reed-matrix only partially working, expect the snapshot to reflect whatever the
-working squares sense (a near-empty board is fine for this phase — 2.6 checks the
-burst shape + the `DEVICE_STATUS` bytes, not board contents).
+Status: **CONFIRMED on-hardware 2026-06-29** (nRF Connect, board `SmartChessboard-DA3A`).
+2.4 advertises as `SmartChessboard-DA3A` (service `787e0001…`); 2.5 connects and
+reconnects without re-pair (bond persisted in NVS); 2.6 on-subscribe burst delivers
+`BOARD_SNAPSHOT` (`01…`) then `DEVICE_STATUS` (`04 64 01 00 00` + uptime u32 LE) in
+order; 2.7 re-advertises after disconnect and is reconnectable without a power cycle.
 
 ## Phase 3 — Game Behavior (events / buttons / commands / diagnostic)
 
@@ -77,12 +77,14 @@ Flash with `pio run -t upload` from `firmware/`, connect + subscribe to
 | 3.9 | Disconnect → change a working square offline → reconnect + re-subscribe | The reconnect `BOARD_SNAPSHOT` reflects the offline change (mode also reset to GAME) |
 | 3.10 | Write a malformed/reserved command (e.g. `84`, `90`, `81 02`, `82 00`) | Ignored — no crash, no reset, no ATT error; the link stays up and live events keep flowing |
 
-Status: **PENDING on-hardware** (recorded 2026-06-19). Notes: square/button
-events are enqueued only while a central is subscribed ("dead link delivers
-nothing", §1.7); with the reed-matrix only partially working, run 3.4/3.9
-against a square that actually senses. Backpressure policy: SQUARE/BUTTON events
-are never silently dropped on a live link (they block briefly then log if ever
-dropped); diagnostic snapshots may drop under pressure (latest wins).
+Status: **CONFIRMED on-hardware 2026-06-29** (nRF Connect, board `SmartChessboard-DA3A`).
+3.4 lift/place decode to the right squares (`02 0C` lift e2 / `02 5C` place e4, etc.);
+3.5 `03 00` white / `03 01` black (the DGT-clock buttons via ADC1 GPIO34/35, `7bb2a12`);
+3.6 `81 01` starts the ~10 Hz `BOARD_SNAPSHOT` stream, `81 00` stops it; 3.7 `82`→one
+`BOARD_SNAPSHOT`, `83`→one `DEVICE_STATUS`; 3.8 `DEVICE_STATUS` ~every 30 s with monotonic
+uptime (no resets across the whole session); 3.9 offline change reflected in the reconnect
+snapshot (removed a1 → snapshot byte 0 `FF`→`FE`); 3.10 malformed `82 00` ignored — no
+crash, no ATT-error, link stayed live and events kept flowing.
 
 ## Phase 4 — Docs + Contract Consolidation
 

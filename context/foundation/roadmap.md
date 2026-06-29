@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-06-28
+updated: 2026-06-29
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -42,7 +42,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
 | S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | in progress     |
 | S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | in progress     |
-| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, US-02                 | blocked         |
+| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, US-02                 | ready           |
 
 ## Streams
 
@@ -52,8 +52,8 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
 | B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green). S-05 implemented 2026-06-17 (game end & result, three-surface E2E green).** |
-| C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` stays blocked on the on-hardware F-03 verification pass (the reed-matrix repair is now done, 2026-06-28). **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
-| D      | Firmware       | `F-03`                                         | Firmware software (BLE GATT service) for the ESP32 board — unit-tested + validated against the F-02 emulator's contract; runs fully parallel to Streams A–C from now and joins Stream C at `S-09` for on-hardware integration. **F-03 implemented + impl-reviewed + merged to `main` 2026-06-20 (`b4b2810`); automated gates green, on-hardware pass pending — the reed matrix is now repaired (2026-06-28), so `S-09` waits only on the on-hardware F-03 verification pass.** |
+| C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is now unblocked — reed-matrix repair done (2026-06-28) and F-03 on-hardware gates confirmed (2026-06-29); ready to plan. **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
+| D      | Firmware       | `F-03`                                         | Firmware software (BLE GATT service) for the ESP32 board — unit-tested + validated against the F-02 emulator's contract; runs fully parallel to Streams A–C from now and joins Stream C at `S-09` for on-hardware integration. **F-03 implemented + impl-reviewed + merged to `main` 2026-06-20 (`b4b2810`); automated gates green; reed matrix repaired (2026-06-28) and **on-hardware F-03 gates 2.4–3.10 confirmed 2026-06-29** — `S-09` is unblocked and ready to plan.** |
 
 ## Baseline
 
@@ -110,7 +110,7 @@ Context note (outside the app codebase): firmware status has since advanced well
   - GATT service / characteristic UUIDs are unassigned (`prd-firmware.md` OQ-5 / contract §1.2) — assigned during firmware implementation and written back into `contract-surfaces.md` §1.2 (the one firmware unknown that touches a shared contract surface). Owner: firmware implementer. Block: no.
   - Remaining `prd-firmware.md` open questions — ESP32 variant (OQ-1), power source (OQ-2), matrix wiring (OQ-3), toolchain ESP-IDF vs Arduino (OQ-4) — are firmware-internal, settled before the first firmware commit, and gate neither F-03 planning nor any other roadmap item. Owner: firmware implementer / hardware build. Block: no.
 - **Risk:** Firmware is validated only against the contract + the F-02 emulator until S-09 puts it on real hardware, so the residual risk is contract drift between the emulator's assumptions and real firmware behaviour (the 2026-06-16 `BOARD_SNAPSHOT` byte-layout clarification is exactly this class of bug). Keep the firmware byte-for-byte identical to `contract-surfaces.md` §1 and the emulator's event stream so the S-06–S-08 verification transfers to hardware. The physical reed-matrix repair is a separate hardware task — a precondition for S-09's on-hardware test, not for writing F-03.
-- **Status:** implemented — all 4 phases shipped and impl-reviewed (verdict NEEDS ATTENTION → 3 hardening warnings fixed: BLE-consumer task stack, `volatile` conn handle, timer-command logging), merged to `main` 2026-06-20 (`b4b2810`). Automated gates green (`pio test -e native` 15/15, `pio run -e esp32dev` links with NimBLE); the three GATT UUIDs (OQ-5) are written back to `contract-surfaces.md` §1.2, and OQ-2 (USB power, `battery_pct`=100) / OQ-4 (ESP-IDF + NimBLE) are resolved in `prd-firmware.md`. `change.md` status `impl_reviewed`. On-hardware manual gates 2.4–3.10 (advertising, bonding, on-subscribe burst, live square/button events, diagnostic stream, reconnect, malformed-write ignore) are deferred to `manual-verification.md` until the partially-working board is to hand; then `/10x-archive`. Unblocks the firmware half of S-09; the reed matrix has since been repaired (2026-06-28) and the firmware adapted to the real wiring (matrix-scan inversion + DGT-clock ADC buttons, `7bb2a12`/`c9719c9`), so the on-hardware F-03 gates can now run.
+- **Status:** implemented — all 4 phases shipped and impl-reviewed (verdict NEEDS ATTENTION → 3 hardening warnings fixed: BLE-consumer task stack, `volatile` conn handle, timer-command logging), merged to `main` 2026-06-20 (`b4b2810`). Automated gates green (`pio test -e native` 15/15, `pio run -e esp32dev` links with NimBLE); the three GATT UUIDs (OQ-5) are written back to `contract-surfaces.md` §1.2, and OQ-2 (USB power, `battery_pct`=100) / OQ-4 (ESP-IDF + NimBLE) are resolved in `prd-firmware.md`. `change.md` status `impl_reviewed`. On-hardware manual gates 2.4–3.10 (advertising, bonding, on-subscribe burst, live square/button events, diagnostic stream, reconnect, malformed-write ignore) are deferred to `manual-verification.md` until the partially-working board is to hand; then `/10x-archive`. Unblocks the firmware half of S-09; the reed matrix was repaired (2026-06-28) and the firmware adapted to the real wiring (matrix-scan inversion + DGT-clock ADC buttons, `7bb2a12`/`c9719c9`). **On-hardware gates 2.4–3.10 confirmed 2026-06-29** — F-03 is ready for `/10x-archive`.
 
 ## Slices
 
@@ -224,9 +224,9 @@ Context note (outside the app codebase): firmware status has since advanced well
 - **Parallel with:** S-08
 - **Blockers:** —
 - **Unknowns:**
-  - The physical reed matrix has been **repaired** (2026-06-28) and the firmware bring-up reworked to the real wiring (committed). What remains before S-09 can run is the **on-hardware F-03 verification pass** — advertising, bonding, and live square/button events over BLE on the real board (gates 2.4–3.10 in `firmware-ble-gatt-service/manual-verification.md`). — Owner: user (hardware bring-up). Block: yes (until the on-hardware F-03 gates pass).
+  - The physical reed matrix was **repaired** (2026-06-28) and the firmware bring-up reworked to the real wiring. The **on-hardware F-03 verification pass is COMPLETE** — gates 2.4–3.10 confirmed 2026-06-29 via nRF Connect (advertising, bonding, on-subscribe burst, live square/button events, diagnostic stream, REQUEST_*, periodic status, offline-change reconnect snapshot, malformed-ignore). — Owner: user (hardware). Block: **resolved** — S-09 is ready to plan.
 - **Risk:** The only slice touching real hardware; everything upstream is de-risked on the emulator, so residual risk concentrates in BLE fidelity and real reed-switch noise.
-- **Status:** blocked — prerequisites S-06 / S-07 / F-03 are code-complete and merged, and the reed matrix is now repaired (2026-06-28); blocked only on the on-hardware F-03 verification pass before `/10x-plan real-board-over-ble`.
+- **Status:** ready for `/10x-plan` — all prerequisites met: S-06 / S-07 / F-03 code-complete and merged, reed matrix repaired (2026-06-28), and F-03 on-hardware gates 2.4–3.10 confirmed 2026-06-29 (nRF Connect, board `SmartChessboard-DA3A`). Next: `/10x-plan real-board-over-ble`.
 
 ## Backlog Handoff
 
