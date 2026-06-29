@@ -631,10 +631,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [ ] 6.1 Reducer unit tests pass (set/clear/hold + idempotent duplicate snapshot) (`testAndroidHostTest`)
-- [ ] 6.2 Native parity for reducer/E2E (`iosSimulatorArm64Test`)
-- [ ] 6.3 Reconnect E2E passes (`runCurrent` discipline + injected occupancy + offline-change pattern)
-- [ ] 6.4 ktlint clean
+- [x] 6.1 Reducer unit tests pass (set/clear/hold + idempotent duplicate snapshot) (`testAndroidHostTest`)
+- [x] 6.2 Native parity for reducer/E2E (`iosSimulatorArm64Test`)
+- [x] 6.3 Reconnect E2E passes (`runCurrent` discipline + injected occupancy + offline-change pattern)
+- [x] 6.4 ktlint clean
 
 #### Manual
 
