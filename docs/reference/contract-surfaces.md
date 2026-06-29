@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-06-19
+updated: 2026-06-30
 ---
 
 ## Purpose
@@ -61,7 +61,7 @@ Any change to an interface in this document requires:
 
 - **Roles**: ESP32 is BLE peripheral; mobile app is BLE central.
 - **Advertising**: board advertises with a fixed local name (e.g., `SmartChessboard-XXXX` where `XXXX` is the last 4 hex chars of MAC) and a chess-board service UUID.
-- **Pairing / bonding**: bonded after first connection; mobile remembers the board across sessions (no re-pairing on relaunch).
+- **Pairing / bonding**: bonded after first connection; the link is **encrypted** (Just-Works, `NO_INPUT_OUTPUT` → encrypted-but-unauthenticated). Both characteristics require encryption, so the first access (subscribe or write) triggers OS pairing/bonding. Mobile remembers the board across sessions (no re-pairing on relaunch). Hardening pairing against MITM (authenticated pairing) is post-MVP — see §1.8.
 - **Single-central**: only one mobile may be connected at a time (consistent with PRD non-goal "No multi-client realtime physical play").
 
 ### 1.2 GATT structure
@@ -71,14 +71,23 @@ One custom GATT service exposing two characteristics:
 | Characteristic | Direction | Properties | Purpose | UUID |
 | --- | --- | --- | --- | --- |
 | (service) | — | primary | Chess-board service | `787e0001-15a4-4fc9-a469-05096dbad1a1` |
-| `board_event` | board → mobile | notify | Board pushes events to mobile | `787e0002-15a4-4fc9-a469-05096dbad1a1` |
-| `mobile_command` | mobile → board | write | Mobile sends commands to board | `787e0003-15a4-4fc9-a469-05096dbad1a1` |
+| `board_event` | board → mobile | notify (encryption-required) | Board pushes events to mobile | `787e0002-15a4-4fc9-a469-05096dbad1a1` |
+| `mobile_command` | mobile → board | write (encryption-required) | Mobile sends commands to board | `787e0003-15a4-4fc9-a469-05096dbad1a1` |
 
 UUIDs assigned during firmware implementation (F-03, 2026-06-19): one custom
 128-bit base `787e000X-15a4-4fc9-a469-05096dbad1a1`, where `X` = 1 service /
 2 `board_event` / 3 `mobile_command`. Firmware and mobile (S-09) must use these
 exact bytes. The `board_event` notify characteristic carries a standard CCCD
 (`0x2902`) that the central writes to subscribe.
+
+Encryption (S-09, 2026-06-30): both characteristics require an encrypted link.
+The `mobile_command` write is gated by `BLE_GATT_CHR_F_WRITE_ENC`; the
+`board_event` subscribe is gated by `BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC`, which
+the firmware's NimBLE build propagates to the auto-CCCD's write permission. A
+central must bond before it can subscribe or write, so the link is
+encrypted-but-unauthenticated (Just-Works, `NO_INPUT_OUTPUT`). The load-bearing
+bond trigger is the write — the app sends `REQUEST_SNAPSHOT` on every
+(re)connect, forcing pairing/bonding before the on-subscribe burst is usable.
 
 ### 1.3 Message catalog — board → mobile (via `board_event` notifications)
 
@@ -180,8 +189,12 @@ before the disconnect remain persisted.
 - LED-based visual feedback on the board (board does not need to render hints).
 - OTA firmware updates over BLE (firmware updated via cable in MVP).
 - Multi-board support (one paired board per mobile install).
-- Authentication of the board to the mobile (trust-on-first-pair is enough for
-  small-circle MVP; can be hardened post-MVP).
+- **Authenticated** pairing of the board to the mobile (MITM protection). The
+  MVP link is **encrypted** — S-09 forced encryption on both characteristics
+  (2026-06-30), so pairing is Just-Works (`NO_INPUT_OUTPUT`) →
+  encrypted-but-unauthenticated, a step up from the original plaintext
+  trust-on-first-pair. Authenticated pairing needs a display/keypad the board
+  lacks, so MITM hardening stays post-MVP.
 
 ---
 

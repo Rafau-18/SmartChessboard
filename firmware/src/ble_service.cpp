@@ -110,13 +110,32 @@ void post_request(ble_service::Request req);
 // for the notify characteristic. Named arrays (not inline GNU compound
 // literals) keep this valid C++. Every field is initialized — ESP-IDF builds
 // with -Werror=missing-field-initializers.
+//
+// Both characteristics require an encrypted link (S-09 Phase 2, contract §1.2):
+// a central must bond before it can subscribe or write, so the link is
+// encrypted-but-unauthenticated (Just-Works, sm config below). Two gates,
+// belt-and-suspenders:
+//   - mobile_command: BLE_GATT_CHR_F_WRITE_ENC gates the value write. This is
+//     the load-bearing trigger — the app sends REQUEST_SNAPSHOT on every
+//     (re)connect, so an unbonded central is forced to pair before the burst is
+//     usable.
+//   - board_event: BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC gates the auto-CCCD's
+//     write. This NimBLE build propagates that flag to the CCCD's write
+//     permission (ble_gatts.c ble_gatts_chr_clt_cfg_flags_from_chr_flags →
+//     BLE_ATT_F_WRITE_ENC), so subscribing also forces pairing. There is no
+//     BLE_GATT_CHR_F_NOTIFY_ENC; the _NOTIFY_INDICATE_ENC flag is the lever.
+//     min_key_size does NOT reach the CCCD in this build (registered with 0),
+//     so the flag — not min_key_size — is what carries the gate.
+// Which path the OS pairing prompt actually fires on is verified at the nRF gate
+// (manual 2.3); the write requirement carries the bond even if a stack ignores
+// the CCCD gate.
 const struct ble_gatt_chr_def k_chrs[] = {
     {
         .uuid = &kBoardEventUuid.u,
         .access_cb = gatt_access,
         .arg = nullptr,
         .descriptors = nullptr,
-        .flags = BLE_GATT_CHR_F_NOTIFY,
+        .flags = BLE_GATT_CHR_F_NOTIFY | BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC,
         .min_key_size = 0,
         .val_handle = &s_board_event_handle,
         .cpfd = nullptr,
@@ -126,7 +145,7 @@ const struct ble_gatt_chr_def k_chrs[] = {
         .access_cb = gatt_access,
         .arg = nullptr,
         .descriptors = nullptr,
-        .flags = BLE_GATT_CHR_F_WRITE,
+        .flags = BLE_GATT_CHR_F_WRITE | BLE_GATT_CHR_F_WRITE_ENC,
         .min_key_size = 0,
         .val_handle = &s_mobile_command_handle,
         .cpfd = nullptr,

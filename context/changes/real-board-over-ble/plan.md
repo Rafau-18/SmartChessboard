@@ -567,25 +567,25 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 1.1 Catalog resolves and the shared module builds (`:shared:assemble`)
-- [x] 1.2 All three target suites pass (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`)
-- [x] 1.3 ktlint clean
+- [x] 1.1 Catalog resolves and the shared module builds (`:shared:assemble`) — 6c66b27
+- [x] 1.2 All three target suites pass (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`) — 6c66b27
+- [x] 1.3 ktlint clean — 6c66b27
 
 #### Manual
 
-- [x] 1.4 Kable in Android/iOS dependency tree but NOT wasm
+- [x] 1.4 Kable in Android/iOS dependency tree but NOT wasm — 6c66b27
 
 ### Phase 2: Firmware encryption (F-03 delta) + contract update
 
 #### Automated
 
-- [ ] 2.1 Firmware host codec tests pass (`pio test -e native`)
-- [ ] 2.2 Firmware builds (`pio run`)
+- [x] 2.1 Firmware host codec tests pass (`pio test -e native`)
+- [x] 2.2 Firmware builds (`pio run`)
 
 #### Manual
 
-- [ ] 2.3 nRF Connect: unbonded `mobile_command` write triggers pairing+encryption (load-bearing); record whether `board_event` subscribe also does
-- [ ] 2.4 Bond persists across reconnect without re-pairing (Just-Works)
+- [x] 2.3 nRF Connect: unbonded `mobile_command` write triggers pairing+encryption (load-bearing); record whether `board_event` subscribe also does
+- [x] 2.4 Bond persists across reconnect without re-pairing (Just-Works)
 
 ### Phase 3: BLE adapter (`data/board/ble/`)
 
