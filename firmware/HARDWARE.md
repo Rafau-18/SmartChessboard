@@ -170,11 +170,13 @@ Wiring / firmware notes:
   the signal is high-impedance, so a low-value pull-down would collapse the press
   level. ~100 kΩ is the compromise; the hysteresis absorbs the offset.
 
-> **Status: temporary (direct ADC).** This is a bring-up solution. The robust fix is
-> a small **NPN transistor buffer per button** (base via ~10 kΩ from the 1.5 V
-> signal, collector to a pulled-up GPIO): it barely loads the signal, gives a clean
-> 3.3 V swing, and re-inverts to plain active-LOW digital reads. Planned once the
-> parts are on hand — see the firmware bring-up plan.
+> **Status: ADC-direct is the MVP solution** (accepted 2026-06-29 — the transistor
+> buffer was dropped from MVP scope). The board is functioning this way and S-09
+> on-hardware acceptance runs against it. An **optional post-MVP refinement** is a
+> small **NPN transistor buffer per button** (base via ~10 kΩ from the 1.5 V signal,
+> collector to a pulled-up GPIO): it barely loads the signal, gives a clean 3.3 V
+> swing, and re-inverts to plain active-LOW digital reads — worth adding only if the
+> ADC read proves noisy in practice.
 
 GPIO34/35 are input-only ADC1 pins, unused by the matrix; the previous GPIO22/23
 button pins (digital) are now free.
