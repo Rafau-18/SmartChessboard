@@ -644,10 +644,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 7.1 Reducer tests: `sensedOccupancy` reset/clear/set + excluded from `acceptanceBlocked` (`testAndroidHostTest`, `iosSimulatorArm64Test`)
-- [x] 7.2 `ChessBoardView` overlay renders from a bitfield; Replay/Play unchanged with default (`testAndroidHostTest`)
-- [x] 7.3 wasm build unaffected (`wasmJsTest`)
-- [x] 7.4 ktlint clean
+- [x] 7.1 Reducer tests: `sensedOccupancy` reset/clear/set + excluded from `acceptanceBlocked` (`testAndroidHostTest`, `iosSimulatorArm64Test`) — c7d6132
+- [x] 7.2 `ChessBoardView` overlay renders from a bitfield; Replay/Play unchanged with default (`testAndroidHostTest`) — c7d6132
+- [x] 7.3 wasm build unaffected (`wasmJsTest`) — c7d6132
+- [x] 7.4 ktlint clean — c7d6132
 
 #### Manual
 
