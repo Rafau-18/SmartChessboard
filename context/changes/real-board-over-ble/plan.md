@@ -579,22 +579,22 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 2.1 Firmware host codec tests pass (`pio test -e native`)
-- [x] 2.2 Firmware builds (`pio run`)
+- [x] 2.1 Firmware host codec tests pass (`pio test -e native`) — 1f1789c
+- [x] 2.2 Firmware builds (`pio run`) — 1f1789c
 
 #### Manual
 
-- [x] 2.3 nRF Connect: unbonded `mobile_command` write triggers pairing+encryption (load-bearing); record whether `board_event` subscribe also does
-- [x] 2.4 Bond persists across reconnect without re-pairing (Just-Works)
+- [x] 2.3 nRF Connect: unbonded `mobile_command` write triggers pairing+encryption (load-bearing); record whether `board_event` subscribe also does — 1f1789c
+- [x] 2.4 Bond persists across reconnect without re-pairing (Just-Works) — 1f1789c
 
 ### Phase 3: BLE adapter (`data/board/ble/`)
 
 #### Automated
 
-- [ ] 3.1 Mapping/state seam tests pass on Native (`iosSimulatorArm64Test`)
-- [ ] 3.2 Mapping/state + emulator-parity tests pass on JVM (`testAndroidHostTest`)
-- [ ] 3.3 wasm suite unaffected (`wasmJsTest`)
-- [ ] 3.4 ktlint clean
+- [x] 3.1 Mapping/state seam tests pass on Native (`iosSimulatorArm64Test`)
+- [x] 3.2 Mapping/state + emulator-parity tests pass on JVM (`testAndroidHostTest`)
+- [x] 3.3 wasm suite unaffected (`wasmJsTest`)
+- [x] 3.4 ktlint clean
 
 #### Manual
 
