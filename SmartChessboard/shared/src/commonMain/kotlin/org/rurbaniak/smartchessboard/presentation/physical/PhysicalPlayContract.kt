@@ -98,6 +98,17 @@ sealed interface PhysicalPlayState {
          * [awaitingResumeConfirm] so the UI can tell "reconnecting" from "resuming" from "your move was rejected".
          */
         val reconnectReconciling: Boolean = false,
+        /**
+         * The live reed-matrix mirror for the play-board overlay (S-09, Phase 7): the board's
+         * occupancy as currently sensed, reset to each [PhysicalMsg.SnapshotReceived] occupancy and
+         * folded by every lift (clear bit) / place (set bit) in between, so the corner dots track the
+         * physical matrix in real time before the player confirms. **Display-only** — kept distinct
+         * from [latestOccupancy] (the at-rest snapshot the restore/resume/reconnect gates compare) and
+         * **never** read by [acceptanceBlocked] or any commit/confirm logic; folding live deltas into
+         * [latestOccupancy] would break the at-rest board-match. Null until the first snapshot seeds a
+         * baseline. h8-safe bit ops (square 63 is the sign bit).
+         */
+        val sensedOccupancy: Long? = null,
     ) : PhysicalPlayState {
         val position: Position get() = positions.last()
 

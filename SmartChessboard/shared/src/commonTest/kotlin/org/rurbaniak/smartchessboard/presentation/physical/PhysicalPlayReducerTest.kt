@@ -53,6 +53,7 @@ class PhysicalPlayReducerTest {
         manualDiagnostics: Boolean = false,
         awaitingResumeConfirm: Boolean = false,
         reconnectReconciling: Boolean = false,
+        sensedOccupancy: Long? = null,
     ) = PhysicalPlayState.Playing(
         positions = positions,
         sanMoves = sanMoves,
@@ -74,6 +75,7 @@ class PhysicalPlayReducerTest {
         manualDiagnostics = manualDiagnostics,
         awaitingResumeConfirm = awaitingResumeConfirm,
         reconnectReconciling = reconnectReconciling,
+        sensedOccupancy = sensedOccupancy,
     )
 
     private fun playingAfter(reduceResult: ReduceResult): PhysicalPlayState.Playing =
@@ -729,5 +731,62 @@ class PhysicalPlayReducerTest {
         val playing = playingAfter(reduce(state, PhysicalMsg.MoveCommitted(positionAfter("1. e4"), "e4")))
         assertTrue(!playing.reconnectReconciling)
         assertEquals(2, playing.positions.size)
+    }
+
+    // --- S-09 Phase 7: live sensed-occupancy mirror (display-only overlay, never gates) ---
+
+    @Test
+    fun snapshotResetsTheSensedOccupancyMirrorToTheGroundTruth() {
+        // Every snapshot is the matrix's absolute truth, so the live mirror resets to it — kept alongside
+        // (but distinct from) latestOccupancy, which the at-rest gates compare.
+        val state = playing(sensedOccupancy = 0L)
+        val playing = playingAfter(reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy())))
+        assertEquals(startOccupancy(), playing.sensedOccupancy)
+        assertEquals(startOccupancy(), playing.latestOccupancy, "the gate's occupancy still tracks too")
+    }
+
+    @Test
+    fun liftClearsAndPlaceSetsTheSensedOccupancyBit() {
+        // The mirror folds the live deltas between snapshots: a lift clears the square's bit, a place sets it.
+        val seeded = playing(sensedOccupancy = startOccupancy())
+        val afterLift = playingAfter(reduce(seeded, PhysicalMsg.SquareLifted(sq("e2"))))
+        assertEquals(startOccupancy() and (1L shl sq("e2")).inv(), afterLift.sensedOccupancy, "a lift clears the bit")
+        val afterPlace = playingAfter(reduce(afterLift, PhysicalMsg.SquarePlaced(sq("e2"))))
+        assertEquals(startOccupancy(), afterPlace.sensedOccupancy, "a place sets it back")
+    }
+
+    @Test
+    fun theSensedMirrorIsH8SignBitSafe() {
+        // h8 is square 63 (the sign bit; 1L shl 63 == Long.MIN_VALUE) — a signed bit op misreads exactly it.
+        val afterPlace = playingAfter(reduce(playing(sensedOccupancy = 0L), PhysicalMsg.SquarePlaced(sq("h8"))))
+        assertEquals(1L shl 63, afterPlace.sensedOccupancy, "placing on h8 sets the sign bit")
+        val afterLift = playingAfter(reduce(afterPlace, PhysicalMsg.SquareLifted(sq("h8"))))
+        assertEquals(0L, afterLift.sensedOccupancy, "lifting from h8 clears the sign bit")
+    }
+
+    @Test
+    fun theSensedMirrorStaysNullUntilTheFirstSnapshotSeedsIt() {
+        // No baseline yet → a stray pre-snapshot lift/place mirrors nothing (and never trips on the null field).
+        assertNull(playingAfter(reduce(playing(), PhysicalMsg.SquareLifted(sq("e2")))).sensedOccupancy)
+        assertNull(playingAfter(reduce(playing(), PhysicalMsg.SquarePlaced(sq("e4")))).sensedOccupancy)
+    }
+
+    @Test
+    fun theSensedMirrorNeverBlocksAcceptance() {
+        // Display-only: neither an empty nor a fully-sensed mirror gates a connected, otherwise-ungated game.
+        assertTrue(!playing(sensedOccupancy = 0L).acceptanceBlocked)
+        assertTrue(!playing(sensedOccupancy = -1L).acceptanceBlocked)
+        assertTrue(!playing(sensedOccupancy = startOccupancy()).acceptanceBlocked)
+    }
+
+    @Test
+    fun theSensedMirrorTracksTheBoardEvenWhileAGateHolds() {
+        // During a reconnect/resume/recovery restore the overlay must still mirror the board, even though the
+        // same lift builds no move while the gate holds — the mirror is display-only, independent of the gate.
+        val seeded = playing(reconnectReconciling = true, sensedOccupancy = startOccupancy())
+        val afterLift = playingAfter(reduce(seeded, PhysicalMsg.SquareLifted(sq("e2"))))
+        assertEquals(startOccupancy() and (1L shl sq("e2")).inv(), afterLift.sensedOccupancy, "the mirror tracks")
+        assertTrue(afterLift.eventsSinceConfirm.isEmpty(), "but the gate still builds no move")
+        assertTrue(afterLift.reconnectReconciling, "and the gate still holds")
     }
 }

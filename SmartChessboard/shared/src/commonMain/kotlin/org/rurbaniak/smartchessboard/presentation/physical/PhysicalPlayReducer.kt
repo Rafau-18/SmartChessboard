@@ -145,6 +145,9 @@ private fun reducePlaying(
             val next =
                 state.copy(
                     latestOccupancy = msg.occupancy,
+                    // The live overlay's matrix mirror resets to the snapshot's ground truth on every
+                    // snapshot (display-only; kept separate from latestOccupancy, never gates acceptance).
+                    sensedOccupancy = msg.occupancy,
                     setupMismatch = if (atRest) !matchesExpected else state.setupMismatch,
                     recovering = if (restoreVerified) false else state.recovering,
                     awaitingResumeConfirm = if (resumeVerified) false else state.awaitingResumeConfirm,
@@ -160,11 +163,20 @@ private fun reducePlaying(
         }
 
         is PhysicalMsg.SquareLifted -> {
-            accumulate(state, BoardEvent.SquareEvent(msg.square, SquareEventType.LIFT))
+            // Fold the lift into the display-only live matrix mirror first (clear the bit), then run the
+            // normal move accumulation. Threading it through state.copy means the overlay tracks the board
+            // even while a gate short-circuits the move build (the mirror is display-only — see accumulate).
+            accumulate(
+                state.copy(sensedOccupancy = sensedAfter(state.sensedOccupancy, msg.square, occupied = false)),
+                BoardEvent.SquareEvent(msg.square, SquareEventType.LIFT),
+            )
         }
 
         is PhysicalMsg.SquarePlaced -> {
-            accumulate(state, BoardEvent.SquareEvent(msg.square, SquareEventType.PLACE))
+            accumulate(
+                state.copy(sensedOccupancy = sensedAfter(state.sensedOccupancy, msg.square, occupied = true)),
+                BoardEvent.SquareEvent(msg.square, SquareEventType.PLACE),
+            )
         }
 
         is PhysicalMsg.ConfirmPressed -> {
@@ -450,6 +462,18 @@ private fun effectsForModeChange(
             emptyList()
         }
     }
+
+/**
+ * Fold one physical lift/place into the display-only live sensed-occupancy mirror (the play-board
+ * overlay, S-09 Phase 7): a PLACE sets the square's bit, a LIFT clears it, with the h8-safe
+ * `(1L shl square)` mask (square 63 is the sign bit — a signed op would misread exactly h8). Null
+ * stays null until the first snapshot seeds a baseline, so a stray pre-snapshot event mirrors nothing.
+ */
+private fun sensedAfter(
+    current: Long?,
+    square: Int,
+    occupied: Boolean,
+): Long? = current?.let { if (occupied) it or (1L shl square) else it and (1L shl square).inv() }
 
 /** Squares with a piece currently lifted: a LIFT adds, a PLACE back onto the same square removes. */
 private fun liftedSquaresOf(events: List<BoardEvent.SquareEvent>): Set<Int> {
