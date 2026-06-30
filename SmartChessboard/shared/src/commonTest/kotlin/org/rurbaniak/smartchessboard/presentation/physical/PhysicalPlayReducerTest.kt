@@ -52,6 +52,8 @@ class PhysicalPlayReducerTest {
         recovering: Boolean = false,
         manualDiagnostics: Boolean = false,
         awaitingResumeConfirm: Boolean = false,
+        reconnectReconciling: Boolean = false,
+        sensedOccupancy: Long? = null,
     ) = PhysicalPlayState.Playing(
         positions = positions,
         sanMoves = sanMoves,
@@ -72,6 +74,8 @@ class PhysicalPlayReducerTest {
         recovering = recovering,
         manualDiagnostics = manualDiagnostics,
         awaitingResumeConfirm = awaitingResumeConfirm,
+        reconnectReconciling = reconnectReconciling,
+        sensedOccupancy = sensedOccupancy,
     )
 
     private fun playingAfter(reduceResult: ReduceResult): PhysicalPlayState.Playing =
@@ -623,5 +627,166 @@ class PhysicalPlayReducerTest {
         val state = playing(awaitingResumeConfirm = true)
         assertEquals(state, reduce(state, PhysicalMsg.SquareLifted(sq("e2"))).state)
         assertEquals(state, reduce(state, PhysicalMsg.SquarePlaced(sq("e4"))).state)
+    }
+
+    // --- S-09: reconnect-reconcile gate (FR-012) — armed on BoardConnected, cleared by the shared seam ---
+
+    @Test
+    fun boardConnectedArmsTheReconnectGateAndRequestsASnapshot() {
+        // FR-012: every BLE (re)connect holds acceptance from CONNECTED until the post-reconnect snapshot
+        // confirms the board still matches — it may have changed while out of range.
+        val result = reduce(playing(connectionState = BoardConnectionState.DISCONNECTED), PhysicalMsg.BoardConnected)
+        val playing = playingAfter(result)
+        assertTrue(playing.reconnectReconciling, "a reconnect arms the reconcile gate")
+        assertTrue(!playing.paused, "the board is connected again")
+        assertTrue(playing.acceptanceBlocked, "acceptance stays blocked by the gate even though connected")
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
+    }
+
+    @Test
+    fun aMatchingSnapshotAfterReconnectClearsTheGateWithNoDiagnosticsAndNoSetMode() {
+        // Auto-reconnect-on-match: the board still matches the live position, so the gate clears with no extra
+        // input and the board never left GAME mode — NO SetMode is emitted (the clean-match path).
+        val state = playing(reconnectReconciling = true)
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        val playing = playingAfter(result)
+        assertTrue(!playing.reconnectReconciling, "an exact match clears the reconnect gate")
+        assertTrue(!playing.acceptanceBlocked)
+        assertTrue(!playing.diagnosticsVisible)
+        assertTrue(result.effects.isEmpty(), "a clean match leaves the board in GAME mode — no SetMode")
+    }
+
+    @Test
+    fun aMismatchingSnapshotAfterReconnectKeepsTheGateBlockedAndOpensDiagnostics() {
+        // An offline board change holds the gate, auto-opens the reed grid (setupMismatch edge), enters DIAGNOSTIC.
+        val state = playing(reconnectReconciling = true)
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = 0L))
+        val playing = playingAfter(result)
+        assertTrue(playing.reconnectReconciling, "a mismatching board keeps the reconnect gate closed")
+        assertTrue(playing.acceptanceBlocked)
+        assertTrue(playing.setupMismatch)
+        assertTrue(playing.diagnosticsVisible)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.DIAGNOSTIC))), result.effects)
+    }
+
+    @Test
+    fun restoringTheBoardAfterAReconnectMismatchClearsTheGateWithExactlyOneSetModeGame() {
+        // The restore path: the mismatch already opened the grid; restoring the board delivers the matching
+        // snapshot that clears the gate and exits DIAGNOSTIC via the shown→hidden edge — one SetMode(GAME).
+        val state = playing(reconnectReconciling = true, setupMismatch = true)
+        val result = reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        val playing = playingAfter(result)
+        assertTrue(!playing.reconnectReconciling)
+        assertTrue(!playing.acceptanceBlocked)
+        assertTrue(!playing.diagnosticsVisible)
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.SetMode(BoardMode.GAME))), result.effects)
+    }
+
+    @Test
+    fun backToBackDuplicatePostReconnectSnapshotsAreIdempotent() {
+        // The reconnect burst snapshot and the BoardConnected arm's RequestSnapshot can both deliver the same
+        // snapshot. The first match clears the gate; the duplicate is a pure no-op — gate stays clear, no SetMode.
+        val state = playing(reconnectReconciling = true)
+        val first = playingAfter(reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy())))
+        assertTrue(!first.reconnectReconciling, "the first matching snapshot clears the gate")
+        val second = reduce(first, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy()))
+        assertTrue(!playingAfter(second).reconnectReconciling, "a duplicate snapshot keeps the gate clear")
+        assertTrue(!playingAfter(second).setupMismatch)
+        assertTrue(second.effects.isEmpty(), "the duplicate fires no SetMode — idempotent")
+    }
+
+    @Test
+    fun confirmWhileReconnectReconcilingIsBlockedButRequestsASnapshot() {
+        // The acceptance gate holds on reconnect exactly as on resume/recovery: a confirm can't advance the
+        // game until the board is verified, but it re-pulls a snapshot so the match can clear the gate.
+        val state =
+            playing(
+                reconnectReconciling = true,
+                eventsSinceConfirm = listOf(lift("e2"), place("e4")),
+            )
+        val result = reduce(state, PhysicalMsg.ConfirmPressed(BoardButton.WHITE))
+        assertTrue(playingAfter(result).reconnectReconciling, "still gated — no move committed")
+        assertEquals(listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)), result.effects)
+        assertTrue(result.effects.none { it is PhysicalEffect.CommitMove })
+    }
+
+    @Test
+    fun liftAndPlaceWhileReconnectReconcilingDoNotBuildAMove() {
+        // Restoration lift/place during a reconnect are not a new move (mirrors resume/recovery): accumulation
+        // is short-circuited so the snapshot occupancy — not these deltas — is what clears the gate.
+        val state = playing(reconnectReconciling = true)
+        assertEquals(state, reduce(state, PhysicalMsg.SquareLifted(sq("e2"))).state)
+        assertEquals(state, reduce(state, PhysicalMsg.SquarePlaced(sq("e4"))).state)
+    }
+
+    @Test
+    fun aCommittedMoveClearsTheReconnectGate() {
+        // Defensive: the gate blocks confirm/commit, but a committed move still resets it alongside the other
+        // gates, so a stale reconnectReconciling can never survive an accepted move.
+        val state =
+            playing(
+                eventsSinceConfirm = listOf(lift("e2"), place("e4")),
+                reconnectReconciling = true,
+            )
+        val playing = playingAfter(reduce(state, PhysicalMsg.MoveCommitted(positionAfter("1. e4"), "e4")))
+        assertTrue(!playing.reconnectReconciling)
+        assertEquals(2, playing.positions.size)
+    }
+
+    // --- S-09 Phase 7: live sensed-occupancy mirror (display-only overlay, never gates) ---
+
+    @Test
+    fun snapshotResetsTheSensedOccupancyMirrorToTheGroundTruth() {
+        // Every snapshot is the matrix's absolute truth, so the live mirror resets to it — kept alongside
+        // (but distinct from) latestOccupancy, which the at-rest gates compare.
+        val state = playing(sensedOccupancy = 0L)
+        val playing = playingAfter(reduce(state, PhysicalMsg.SnapshotReceived(occupancy = startOccupancy())))
+        assertEquals(startOccupancy(), playing.sensedOccupancy)
+        assertEquals(startOccupancy(), playing.latestOccupancy, "the gate's occupancy still tracks too")
+    }
+
+    @Test
+    fun liftClearsAndPlaceSetsTheSensedOccupancyBit() {
+        // The mirror folds the live deltas between snapshots: a lift clears the square's bit, a place sets it.
+        val seeded = playing(sensedOccupancy = startOccupancy())
+        val afterLift = playingAfter(reduce(seeded, PhysicalMsg.SquareLifted(sq("e2"))))
+        assertEquals(startOccupancy() and (1L shl sq("e2")).inv(), afterLift.sensedOccupancy, "a lift clears the bit")
+        val afterPlace = playingAfter(reduce(afterLift, PhysicalMsg.SquarePlaced(sq("e2"))))
+        assertEquals(startOccupancy(), afterPlace.sensedOccupancy, "a place sets it back")
+    }
+
+    @Test
+    fun theSensedMirrorIsH8SignBitSafe() {
+        // h8 is square 63 (the sign bit; 1L shl 63 == Long.MIN_VALUE) — a signed bit op misreads exactly it.
+        val afterPlace = playingAfter(reduce(playing(sensedOccupancy = 0L), PhysicalMsg.SquarePlaced(sq("h8"))))
+        assertEquals(1L shl 63, afterPlace.sensedOccupancy, "placing on h8 sets the sign bit")
+        val afterLift = playingAfter(reduce(afterPlace, PhysicalMsg.SquareLifted(sq("h8"))))
+        assertEquals(0L, afterLift.sensedOccupancy, "lifting from h8 clears the sign bit")
+    }
+
+    @Test
+    fun theSensedMirrorStaysNullUntilTheFirstSnapshotSeedsIt() {
+        // No baseline yet → a stray pre-snapshot lift/place mirrors nothing (and never trips on the null field).
+        assertNull(playingAfter(reduce(playing(), PhysicalMsg.SquareLifted(sq("e2")))).sensedOccupancy)
+        assertNull(playingAfter(reduce(playing(), PhysicalMsg.SquarePlaced(sq("e4")))).sensedOccupancy)
+    }
+
+    @Test
+    fun theSensedMirrorNeverBlocksAcceptance() {
+        // Display-only: neither an empty nor a fully-sensed mirror gates a connected, otherwise-ungated game.
+        assertTrue(!playing(sensedOccupancy = 0L).acceptanceBlocked)
+        assertTrue(!playing(sensedOccupancy = -1L).acceptanceBlocked)
+        assertTrue(!playing(sensedOccupancy = startOccupancy()).acceptanceBlocked)
+    }
+
+    @Test
+    fun theSensedMirrorTracksTheBoardEvenWhileAGateHolds() {
+        // During a reconnect/resume/recovery restore the overlay must still mirror the board, even though the
+        // same lift builds no move while the gate holds — the mirror is display-only, independent of the gate.
+        val seeded = playing(reconnectReconciling = true, sensedOccupancy = startOccupancy())
+        val afterLift = playingAfter(reduce(seeded, PhysicalMsg.SquareLifted(sq("e2"))))
+        assertEquals(startOccupancy() and (1L shl sq("e2")).inv(), afterLift.sensedOccupancy, "the mirror tracks")
+        assertTrue(afterLift.eventsSinceConfirm.isEmpty(), "but the gate still builds no move")
+        assertTrue(afterLift.reconnectReconciling, "and the gate still holds")
     }
 }

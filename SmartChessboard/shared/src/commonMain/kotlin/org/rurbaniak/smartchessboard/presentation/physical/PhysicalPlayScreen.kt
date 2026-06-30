@@ -23,11 +23,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -173,6 +177,9 @@ private fun PlayingContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
+        // The live reed-matrix overlay is on by default; this screen-local toggle hides it. Display-only,
+        // so flipping it never touches game state (S-09 Phase 7).
+        var showSensorDots by rememberSaveable { mutableStateOf(true) }
         StatusBanner(state = state, modifier = sectionModifier)
         Spacer(Modifier.height(8.dp))
         BoardMessage(state = state, onShowDiagnostics = onShowDiagnostics, modifier = sectionModifier)
@@ -185,8 +192,16 @@ private fun PlayingContent(
                 // Display-only — moves come from the physical board, never taps. Lifted pieces are highlighted.
                 interaction = null,
                 highlightedSquares = state.liftedSquares,
+                // Live reed-matrix overlay: mirror what the board senses right now (null while toggled off).
+                occupancyDots = if (showSensorDots) state.sensedOccupancy else null,
             )
         }
+        Spacer(Modifier.height(8.dp))
+        SensorDotsToggle(
+            checked = showSensorDots,
+            onCheckedChange = { showSensorDots = it },
+            modifier = sectionModifier,
+        )
         if (state.diagnosticsVisible) {
             Spacer(Modifier.height(12.dp))
             ReedDiagnosticsSection(
@@ -419,6 +434,27 @@ private fun SyncIndicator(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/**
+ * Toggles the live reed-matrix overlay (S-09 Phase 7): the corner dots on the board that mirror what
+ * the physical board senses right now, before the player confirms. On by default; display-only, so
+ * flipping it never touches game state.
+ */
+@Composable
+private fun SensorDotsToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Sensor dots", style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

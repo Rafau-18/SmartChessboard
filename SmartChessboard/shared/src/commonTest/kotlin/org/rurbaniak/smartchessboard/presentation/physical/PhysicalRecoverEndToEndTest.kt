@@ -156,29 +156,28 @@ class PhysicalRecoverEndToEndTest {
     @Test
     fun `inconsistent board pauses then recovers on restore and a legal retry saves exactly one move`() =
         runTest {
+            // Post-FR-012 a disconnect→reconnect to a diverged board arms the reconnect-reconcile gate, which
+            // pre-empts the confirm→INCONSISTENT path — so the INCONSISTENT *reject category* is now exercised
+            // end-to-end while the board stays continuously connected: open the live grid (so the ~10 Hz stream
+            // delivers a fresh occupancy), then misplace a pawn (e2→e5 is both an illegal delta AND a board that
+            // no longer matches the start position). The reconnect-reconcile path has its own E2E in
+            // PhysicalReconnectEndToEndTest; the pure INCONSISTENT fork is pinned in PhysicalPlayReducerTest.
             val h = connectedGame()
-            // The expected occupancy the reducer verifies against is the start position — the board's own
-            // occupancy before any move (== positions.last().toOccupancy()).
-            val expected = h.board.occupancy
-            val phantom = expected or (1L shl sq('a', 5)) // start + an extra piece no legal move can produce
+            val expected = h.board.occupancy // the start-position occupancy the reducer verifies against
 
-            // Fabricate an inconsistent board. setOccupancy is disconnected-only; the reconnect snapshot
-            // reveals the divergence.
-            h.board.disconnect()
-            advanceUntilIdle() // no stream yet — safe
-            h.board.setOccupancy(phantom)
-            h.board.connect()
-            runCurrent() // reconnect snapshot diverges ⇒ setupMismatch auto-opens DIAGNOSTIC (stream armed here)
+            // Open the live reed grid so DIAGNOSTIC snapshots stream — without a fresh snapshot a GAME-mode
+            // confirm only ever sees the stale on-connect occupancy and forks to plain ILLEGAL, not INCONSISTENT.
+            h.viewModel.showDiagnostics()
+            runCurrent()
+            assertTrue(
+                h.recording.sent.contains(BoardCommand.SetMode(BoardMode.DIAGNOSTIC)),
+                "opening the grid enters diagnostic mode",
+            )
 
-            val diverged = playing(h.viewModel)
-            assertTrue(diverged.setupMismatch, "the reconnect snapshot reveals the phantom piece")
-            assertFalse(diverged.recovering, "a setup mismatch is not yet a rejection")
-            assertTrue(diverged.journalHasNoAcceptedMove(h), "a setup mismatch alone accepts nothing")
-            assertTrue(h.recording.sent.contains(BoardCommand.SetMode(BoardMode.DIAGNOSTIC)))
-
-            // Drive an illegal delta while the board is inconsistent.
+            // Misplace a pawn (e2→e5): an illegal delta whose occupancy also diverges from the start position.
             h.board.quietMove(sq('e', 2), sq('e', 5))
             runCurrent()
+            tick() // one ~10 Hz snapshot of the diverged board reaches the reducer mid-sequence
             // Pin the fork input: a fresh snapshot of the diverged board is present, so latestOccupancy
             // differs from the expected position ⇒ the fork must take the INCONSISTENT arm.
             assertTrue(
@@ -198,12 +197,12 @@ class PhysicalRecoverEndToEndTest {
             // The category — distinct from a plain ILLEGAL.
             assertEquals(RejectionReason.INCONSISTENT, rejected.rejection)
 
-            // Restore: undo the delta and remove the phantom so occupancy == expected.
+            // Restore: undo the misplacement so occupancy == expected. Lift/place are restoration moves
+            // (accumulate is short-circuited while recovering); the snapshot, not the deltas, clears the gate.
             h.board.lift(sq('e', 5))
             h.board.place(sq('e', 2))
-            h.board.lift(sq('a', 5))
             runCurrent()
-            assertTrue(playing(h.viewModel).recovering)
+            assertTrue(playing(h.viewModel).recovering, "lift/place alone don't clear the gate — the snapshot does")
 
             tick()
 

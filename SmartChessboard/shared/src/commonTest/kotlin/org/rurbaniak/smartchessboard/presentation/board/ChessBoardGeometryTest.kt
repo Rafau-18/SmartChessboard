@@ -94,4 +94,17 @@ class ChessBoardGeometryTest {
         assertEquals(Res.drawable.piece_wk, pieceDrawable(Piece(Color.WHITE, PieceType.KING)))
         assertEquals(Res.drawable.piece_bp, pieceDrawable(Piece(Color.BLACK, PieceType.PAWN)))
     }
+
+    @Test
+    fun `live occupancy overlay draws a dot only on set bits and never without a bitfield`() {
+        // The default (null) bitfield — every non-physical call site (Replay / Play / web) — draws nothing.
+        for (square in 0..63) assertFalse(hasOccupancyDot(null, square))
+        // a1 (bit 0) and the h8 sign bit (bit 63) are the occupancy footguns; both must read correctly.
+        assertTrue(hasOccupancyDot(1L shl 0, square = 0))
+        assertFalse(hasOccupancyDot(1L shl 0, square = 1))
+        assertTrue(hasOccupancyDot(1L shl 63, square = 63))
+        assertFalse(hasOccupancyDot(1L shl 63, square = 62))
+        assertTrue(hasOccupancyDot(-1L, square = 63)) // an all-occupied board includes h8
+        assertFalse(hasOccupancyDot(0L, square = 0))
+    }
 }

@@ -631,10 +631,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [ ] 6.1 Reducer unit tests pass (set/clear/hold + idempotent duplicate snapshot) (`testAndroidHostTest`)
-- [ ] 6.2 Native parity for reducer/E2E (`iosSimulatorArm64Test`)
-- [ ] 6.3 Reconnect E2E passes (`runCurrent` discipline + injected occupancy + offline-change pattern)
-- [ ] 6.4 ktlint clean
+- [x] 6.1 Reducer unit tests pass (set/clear/hold + idempotent duplicate snapshot) (`testAndroidHostTest`) — 0e604ca
+- [x] 6.2 Native parity for reducer/E2E (`iosSimulatorArm64Test`) — 0e604ca
+- [x] 6.3 Reconnect E2E passes (`runCurrent` discipline + injected occupancy + offline-change pattern) — 0e604ca
+- [x] 6.4 ktlint clean — 0e604ca
 
 #### Manual
 
@@ -644,10 +644,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [ ] 7.1 Reducer tests: `sensedOccupancy` reset/clear/set + excluded from `acceptanceBlocked` (`testAndroidHostTest`, `iosSimulatorArm64Test`)
-- [ ] 7.2 `ChessBoardView` overlay renders from a bitfield; Replay/Play unchanged with default (`testAndroidHostTest`)
-- [ ] 7.3 wasm build unaffected (`wasmJsTest`)
-- [ ] 7.4 ktlint clean
+- [x] 7.1 Reducer tests: `sensedOccupancy` reset/clear/set + excluded from `acceptanceBlocked` (`testAndroidHostTest`, `iosSimulatorArm64Test`) — c7d6132
+- [x] 7.2 `ChessBoardView` overlay renders from a bitfield; Replay/Play unchanged with default (`testAndroidHostTest`) — c7d6132
+- [x] 7.3 wasm build unaffected (`wasmJsTest`) — c7d6132
+- [x] 7.4 ktlint clean — c7d6132
 
 #### Manual
 

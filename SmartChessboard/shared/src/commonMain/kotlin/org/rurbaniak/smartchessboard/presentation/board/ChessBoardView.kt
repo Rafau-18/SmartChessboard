@@ -16,15 +16,19 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -35,6 +39,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -117,7 +122,9 @@ private fun squareOrNull(
  * [bestMoveArrow] is a render-only overlay (analysis); existing call sites are unaffected by its
  * default. [highlightedSquares] are tinted display-only (physical mode highlights lifted pieces) —
  * independent of [interaction], so a board can highlight without becoming tappable; empty by default,
- * so Replay/Play render exactly as before.
+ * so Replay/Play render exactly as before. [occupancyDots] is an optional live reed-matrix bitfield
+ * (physical mode, S-09): a small neutral corner dot marks each sensed-occupied square, read h8-safe;
+ * null by default, so every non-physical call site (Replay / Play / web) renders exactly as before.
  */
 @Composable
 fun ChessBoardView(
@@ -127,6 +134,7 @@ fun ChessBoardView(
     interaction: BoardInteraction? = null,
     bestMoveArrow: BoardArrow? = null,
     highlightedSquares: Set<Int> = emptySet(),
+    occupancyDots: Long? = null,
 ) {
     val chess = LocalChessColors.current
 
@@ -225,6 +233,19 @@ fun ChessBoardView(
                                 Canvas(modifier = Modifier.matchParentSize().alpha(targetAlpha)) {
                                     drawTargetMark(occupied = piece != null, color = chess.targetMark)
                                 }
+                            }
+                            // Live reed-matrix overlay (S-09): a small neutral corner dot on each
+                            // sensed-occupied square, drawn on top so it reads even over a piece. Absent
+                            // for every call site that leaves [occupancyDots] null (Replay / Play / web).
+                            if (hasOccupancyDot(occupancyDots, square)) {
+                                Box(
+                                    Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(3.dp)
+                                        .fillMaxSize(0.16f)
+                                        .clip(CircleShape)
+                                        .background(chess.occupancyDot),
+                                )
                             }
                         }
                     }
@@ -406,6 +427,17 @@ internal fun squareAt(
 
 /** a1-dark convention: squares whose file+rank parity is even are dark. */
 internal fun isDarkSquare(square: Int): Boolean = (fileOf(square) + rankOf(square)) % 2 == 0
+
+/**
+ * Whether the live reed-matrix overlay (S-09) draws a sensed dot on [square]: only when [occupancyDots]
+ * is non-null (the play-board overlay is wired) and the square's bit is set, read h8-safe via the shared
+ * [isOccupied] (square 63 is the sign bit). A null bitfield — every non-physical call site's default —
+ * yields no dots, so Replay / Play / web render exactly as before.
+ */
+internal fun hasOccupancyDot(
+    occupancyDots: Long?,
+    square: Int,
+): Boolean = occupancyDots != null && isOccupied(occupancyDots, square)
 
 internal fun pieceDrawable(piece: Piece): DrawableResource =
     when (piece.color) {
