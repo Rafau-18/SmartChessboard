@@ -30,8 +30,19 @@ data class PlayKey(
 ) : NavKey
 
 /**
- * An in-progress physical game played against the (emulated) reed-switch board. Reached only on
- * platforms where `supportsPhysicalBoard` is true; a physical game on web routes to [ReplayKey].
+ * The BLE connect / pair gate guarding an in-progress physical game ([gameId]). Reached only on
+ * platforms where `supportsPhysicalBoard` is true; on a successful connect it is replaced by
+ * [PhysicalPlayKey] (so Back returns to History, not the connect screen). Web never links here.
+ */
+@Serializable
+data class ConnectionKey(
+    val gameId: String,
+) : NavKey
+
+/**
+ * An in-progress physical game played against the reed-switch board over BLE. Reached only on
+ * platforms where `supportsPhysicalBoard` is true (via [ConnectionKey] first); a physical game on web
+ * routes to [ReplayKey].
  */
 @Serializable
 data class PhysicalPlayKey(
@@ -54,6 +65,7 @@ val navSavedStateConfiguration: SavedStateConfiguration =
                     subclass(NewGameKey::class, NewGameKey.serializer())
                     subclass(ReplayKey::class, ReplayKey.serializer())
                     subclass(PlayKey::class, PlayKey.serializer())
+                    subclass(ConnectionKey::class, ConnectionKey.serializer())
                     subclass(PhysicalPlayKey::class, PhysicalPlayKey.serializer())
                 }
             }

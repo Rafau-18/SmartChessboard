@@ -1,6 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- BLE physical board (S-09). API 31+ runtime split: SCAN is declared neverForLocation (we never
+         derive location from BLE), plus CONNECT to talk to the bonded board. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Legacy (API <= 30): BLUETOOTH/BLUETOOTH_ADMIN are install-time; a BLE scan needs FINE_LOCATION
+         at runtime. Capped at maxSdkVersion 30 so they don't apply on API 31+ (minSdk is 24). -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+    <!-- The device must have BLE hardware to drive a physical board, but the app is still usable
+         (digital mode) without it, so required="false". -->
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+
     <application
         android:name=".SmartChessboardApplication"
         android:allowBackup="true"

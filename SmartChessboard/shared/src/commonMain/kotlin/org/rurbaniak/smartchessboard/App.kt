@@ -28,7 +28,9 @@ import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
 import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.auth.SignInScreen
+import org.rurbaniak.smartchessboard.presentation.connection.ConnectionScreen
 import org.rurbaniak.smartchessboard.presentation.history.HistoryScreen
+import org.rurbaniak.smartchessboard.presentation.navigation.ConnectionKey
 import org.rurbaniak.smartchessboard.presentation.navigation.HistoryKey
 import org.rurbaniak.smartchessboard.presentation.navigation.NewGameKey
 import org.rurbaniak.smartchessboard.presentation.navigation.PhysicalPlayKey
@@ -117,7 +119,9 @@ fun App() {
                                                 game.status == GameStatus.IN_PROGRESS &&
                                                     game.mode == GameMode.PHYSICAL &&
                                                     supportsPhysicalBoard -> {
-                                                    backStack.add(PhysicalPlayKey(game.id))
+                                                    // Connect/pair the board first; the connect screen
+                                                    // replaces itself with the physical board on success.
+                                                    backStack.add(ConnectionKey(game.id))
                                                 }
 
                                                 game.status == GameStatus.IN_PROGRESS &&
@@ -140,7 +144,8 @@ fun App() {
                                         onGameCreated = { gameId, mode ->
                                             backStack.removeLastOrNull()
                                             if (mode == GameMode.PHYSICAL) {
-                                                backStack.add(PhysicalPlayKey(gameId))
+                                                // Gate physical play behind the connect/pair screen.
+                                                backStack.add(ConnectionKey(gameId))
                                             } else {
                                                 backStack.add(PlayKey(gameId))
                                             }
@@ -169,6 +174,17 @@ fun App() {
                                             while (backStack.size > 1) {
                                                 backStack.removeLastOrNull()
                                             }
+                                        },
+                                    )
+                                }
+                                entry<ConnectionKey> { key ->
+                                    ConnectionScreen(
+                                        onBack = { backStack.removeLastOrNull() },
+                                        // Replace the connect screen with the board so Back returns to
+                                        // History (whatever pushed the connect screen), not here.
+                                        onConnected = {
+                                            backStack.removeLastOrNull()
+                                            backStack.add(PhysicalPlayKey(key.gameId))
                                         },
                                     )
                                 }

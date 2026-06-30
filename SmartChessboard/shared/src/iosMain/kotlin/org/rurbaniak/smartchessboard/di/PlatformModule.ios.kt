@@ -11,8 +11,11 @@ import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.koin.dsl.onClose
 import org.rurbaniak.smartchessboard.data.board.ble.KableBoardAdapter
+import org.rurbaniak.smartchessboard.data.board.ble.SettingsRememberedBoardStore
 import org.rurbaniak.smartchessboard.domain.board.BoardConnection
 import org.rurbaniak.smartchessboard.domain.board.BoardTransport
+import org.rurbaniak.smartchessboard.domain.board.RememberedBoardStore
+import org.rurbaniak.smartchessboard.presentation.connection.ConnectionViewModel
 import org.rurbaniak.smartchessboard.presentation.physical.PhysicalPlayViewModel
 
 // Android/iOS are the only targets that can drive a physical board (supportsPhysicalBoard), so the
@@ -34,4 +37,8 @@ actual val platformModule: Module =
                 boardConnection = get(),
             )
         }
+        // The connection screen (Phase 5) drives BoardTransport and remembers the last paired board.
+        // Same Settings store as the journal (ble.-prefixed key); mobile-only, like PhysicalPlayViewModel.
+        single<RememberedBoardStore> { SettingsRememberedBoardStore(get()) }
+        viewModel { ConnectionViewModel(transport = get(), rememberedBoards = get()) }
     }

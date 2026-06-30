@@ -42,7 +42,9 @@ actual fun bindBrowserNavigation(backStack: NavBackStack<NavKey>) {
 
             is PlayKey -> buildBrowserHistoryFragment("play", mapOf("id" to key.gameId))
 
-            // Web never routes to a physical game (it opens in Replay), but the mapping keeps the when total.
+            // Web never routes to a physical game (it opens in Replay), but the mappings keep the when total.
+            is ConnectionKey -> buildBrowserHistoryFragment("connect", mapOf("id" to key.gameId))
+
             is PhysicalPlayKey -> buildBrowserHistoryFragment("physical", mapOf("id" to key.gameId))
 
             NewGameKey -> buildBrowserHistoryFragment("new")

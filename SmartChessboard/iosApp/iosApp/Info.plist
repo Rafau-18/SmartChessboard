@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- BLE physical board (S-09). Required or the app crashes on first CBCentralManager use; the
+	     system Bluetooth prompt shows this string. Foreground-first — no UIBackgroundModes. -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Smart Chessboard connects over Bluetooth to play on your physical reed-switch board.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -92,6 +92,8 @@ kotlin {
             // Kable BLE — the real BoardConnection transport (S-09). Android + iOS only;
             // never commonMain/wasmJs (web is digital-only, no physical board).
             implementation(libs.kable.core)
+            // Activity-result launcher for the runtime BLE permission request (S-09 connection screen).
+            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

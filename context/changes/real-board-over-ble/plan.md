@@ -604,10 +604,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 4.1 App graph resolves on all targets (`:shared:assemble`)
-- [x] 4.2 Existing physical-flow tests still green (`testAndroidHostTest`, `iosSimulatorArm64Test`)
-- [x] 4.3 wasm suite green (`wasmJsTest`)
-- [x] 4.4 ktlint clean
+- [x] 4.1 App graph resolves on all targets (`:shared:assemble`) — b450c13
+- [x] 4.2 Existing physical-flow tests still green (`testAndroidHostTest`, `iosSimulatorArm64Test`) — b450c13
+- [x] 4.3 wasm suite green (`wasmJsTest`) — b450c13
+- [x] 4.4 ktlint clean — b450c13
 
 #### Manual
 
@@ -617,9 +617,9 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [ ] 5.1 Connection reducer unit tests pass on JVM + Native (`testAndroidHostTest`, `iosSimulatorArm64Test`)
-- [ ] 5.2 wasm build excludes the connection route (`wasmJsTest` + `:webApp` assembles)
-- [ ] 5.3 ktlint clean
+- [x] 5.1 Connection reducer unit tests pass on JVM + Native (`testAndroidHostTest`, `iosSimulatorArm64Test`)
+- [x] 5.2 wasm build excludes the connection route (`wasmJsTest` + `:webApp` assembles)
+- [x] 5.3 ktlint clean
 
 #### Manual
 
