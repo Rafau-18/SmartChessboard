@@ -1,6 +1,7 @@
 package org.rurbaniak.smartchessboard.data.board.ble
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import org.rurbaniak.smartchessboard.data.board.protocol.BoardWireCodec
 import org.rurbaniak.smartchessboard.domain.board.BoardCommand
 import org.rurbaniak.smartchessboard.domain.board.BoardConnection
@@ -78,4 +80,23 @@ abstract class BleBoardAdapterCore(
 
     /** Platform write of an already-encoded §1.4 frame to the encryption-gated `mobile_command` characteristic. */
     protected abstract suspend fun writeCommandFrame(frame: ByteArray)
+
+    /**
+     * Non-suspend DI teardown hook (Koin `onClose`, Phase 4) — the prescribed `TODO(S-09)` leak fix.
+     * Unlike the emulator (a connect-on-bind, process-lifetime singleton whose scope was never
+     * cancelled), the BLE adapter must drop the link, release the radio, and stop every collector when
+     * the Koin graph closes. `onClose` cannot suspend, so the suspend [disconnect] is launched on the
+     * adapter's own [scope], which is then cancelled in a `finally` so no scan/observe/state collector
+     * (including the eager [connectionState] `stateIn`) outlives the graph.
+     */
+    fun close() {
+        scope.launch {
+            try {
+                stopScan()
+                disconnect()
+            } finally {
+                scope.cancel()
+            }
+        }
+    }
 }

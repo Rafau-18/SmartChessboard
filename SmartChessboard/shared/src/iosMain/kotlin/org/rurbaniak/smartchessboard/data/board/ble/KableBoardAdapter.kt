@@ -114,12 +114,6 @@ class KableBoardAdapter(
         // response confirms the board accepted the §1.4 command.
         target.write(mobileCommand, frame, WriteType.WithResponse)
     }
-
-    /** DI teardown hook (Phase 4 onClose): stop scanning and drop the link so the radio is released. */
-    suspend fun teardown() {
-        stopScan()
-        disconnect()
-    }
 }
 
 private fun Advertisement.toDiscoveredBoard(): DiscoveredBoard =

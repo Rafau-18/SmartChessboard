@@ -591,10 +591,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 3.1 Mapping/state seam tests pass on Native (`iosSimulatorArm64Test`)
-- [x] 3.2 Mapping/state + emulator-parity tests pass on JVM (`testAndroidHostTest`)
-- [x] 3.3 wasm suite unaffected (`wasmJsTest`)
-- [x] 3.4 ktlint clean
+- [x] 3.1 Mapping/state seam tests pass on Native (`iosSimulatorArm64Test`) — 4c71d70
+- [x] 3.2 Mapping/state + emulator-parity tests pass on JVM (`testAndroidHostTest`) — 4c71d70
+- [x] 3.3 wasm suite unaffected (`wasmJsTest`) — 4c71d70
+- [x] 3.4 ktlint clean — 4c71d70
 
 #### Manual
 
@@ -604,10 +604,10 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [ ] 4.1 App graph resolves on all targets (`:shared:assemble`)
-- [ ] 4.2 Existing physical-flow tests still green (`testAndroidHostTest`, `iosSimulatorArm64Test`)
-- [ ] 4.3 wasm suite green (`wasmJsTest`)
-- [ ] 4.4 ktlint clean
+- [x] 4.1 App graph resolves on all targets (`:shared:assemble`)
+- [x] 4.2 Existing physical-flow tests still green (`testAndroidHostTest`, `iosSimulatorArm64Test`)
+- [x] 4.3 wasm suite green (`wasmJsTest`)
+- [x] 4.4 ktlint clean
 
 #### Manual
 
