@@ -617,9 +617,9 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 5.1 Connection reducer unit tests pass on JVM + Native (`testAndroidHostTest`, `iosSimulatorArm64Test`)
-- [x] 5.2 wasm build excludes the connection route (`wasmJsTest` + `:webApp` assembles)
-- [x] 5.3 ktlint clean
+- [x] 5.1 Connection reducer unit tests pass on JVM + Native (`testAndroidHostTest`, `iosSimulatorArm64Test`) — 62b5a7d
+- [x] 5.2 wasm build excludes the connection route (`wasmJsTest` + `:webApp` assembles) — 62b5a7d
+- [x] 5.3 ktlint clean — 62b5a7d
 
 #### Manual
 
