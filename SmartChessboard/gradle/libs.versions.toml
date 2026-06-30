@@ -24,6 +24,7 @@ androidx-credentials = "1.6.0"
 googleid = "1.1.1"
 navigation3 = "1.1.1"
 navigation3Browser = "1.1.0"
+kable = "0.43.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -66,6 +67,7 @@ ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "kto
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

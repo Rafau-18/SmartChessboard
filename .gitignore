@@ -1,6 +1,7 @@
 # IDE / Editor — lokalne ustawienia
 .idea/
 .vscode/
+.obsidian/
 *.iml
 
 # macOS

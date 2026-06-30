@@ -2,13 +2,13 @@
 
 Module-scoped guidance for the ESP32 reed-matrix firmware. **Monorepo-wide rules live in the root [`../AGENTS.md`](../AGENTS.md)** (imported by `../CLAUDE.md`) — commit conventions, the sub-project map, and the gitignored-files list. This file adds only firmware-specific depth.
 
-## Status: game firmware implemented (F-03); hardware repair still parked
+## Status: game firmware implemented (F-03); board repaired & on-hardware verified
 
 The **firmware software is greenlit and implemented.** F-03 (`firmware-ble-gatt-service`, 2026-06-19) turned the original diagnostic bringup into the full BLE **game firmware**: a NimBLE peripheral speaking the `../docs/reference/contract-surfaces.md` §1 protocol byte-for-byte. The diagnostic bringup it grew from was verified on real hardware (2026-05-28).
 
-**Only the physical reed-matrix repair stays parked** — that is a hardware task (it gates the mobile S-09 end-to-end slice), not a firmware-software one. Resume and modify firmware-software normally when asked.
+**The physical reed matrix was repaired (2026-06-28)** and the firmware adapted to the real wiring (matrix-scan inversion + DGT-clock ADC buttons on GPIO34/35). It **no longer gates** the mobile S-09 slice — that slice is now in implementation. Resume and modify firmware-software normally when asked.
 
-On-hardware verification of F-03 (advertising, bonding, the on-subscribe burst, live square/button events, the diagnostic stream, reconnect, malformed-write ignore) is best-effort against the partially-working board and is tracked in [`../context/changes/firmware-ble-gatt-service/manual-verification.md`](../context/changes/firmware-ble-gatt-service/manual-verification.md).
+On-hardware verification of F-03 (advertising, bonding, the on-subscribe burst, live square/button events, the diagnostic stream, reconnect, malformed-write ignore) — gates 2.4–3.10 — was **confirmed 2026-06-29** (nRF Connect, board `SmartChessboard-DA3A`); tracked in [`../context/changes/firmware-ble-gatt-service/manual-verification.md`](../context/changes/firmware-ble-gatt-service/manual-verification.md). S-09 Phase 2 additionally verified the encrypted-bond delta on the same board (2026-06-30).
 
 ## What this is
 
@@ -69,7 +69,7 @@ Scan cadence ~50 Hz (`kScanIntervalMs`=20), so debounce latency is ~80 ms; the q
 
 ### Confirmation buttons
 
-Two momentary buttons (FR-FW-007) on **GPIO22 (white)** / **GPIO23 (black)**, additive to the matrix — inputs with internal pull-ups (idle HIGH, pressed = LOW), edge-debounced, emitting `BUTTON_EVENT` `0x00` (white) / `0x01` (black), one per press edge. They are bare events: the firmware does no turn validation (the mobile re-derives whose turn it is). GPIO22/23 are bonded out on the WROOM-32, are **not** matrix pins in the current prototype `pins.h`, and are not strapping pins. See the button note in `PINOUT.md` / `HARDWARE.md` about the hazard-free *target* map's column overlap on these two pins.
+Two momentary confirmation buttons (FR-FW-007), **additive to the matrix** — the original **DGT chess-clock** buttons brought out via diode isolation and read on **ADC1: GPIO34 (white)** / **GPIO35 (black)**. Terminal C idles near 0 V and rises to ~1.5 V when pressed — below the ESP32 digital-HIGH threshold — so the firmware thresholds the ADC value (Schmitt hysteresis) rather than reading a digital pin, emitting `BUTTON_EVENT` `0x00` (white) / `0x01` (black), one per press edge. They are bare events: the firmware does no turn validation (the mobile re-derives whose turn it is). **Common ground (clock battery-minus ↔ ESP32 GND) is mandatory and the DGT clock must be powered on**, or the buttons read nothing. GPIO34/35 are input-only ADC1 pins, unused by the matrix; the earlier GPIO22/23 digital pins are now free. ADC-direct is the MVP-target read (an NPN transistor buffer is an optional post-MVP refinement). Full wiring + electrical detail: `HARDWARE.md` ("Confirmation buttons (F-03)").
 
 ## Critical gotcha: two different pin maps
 

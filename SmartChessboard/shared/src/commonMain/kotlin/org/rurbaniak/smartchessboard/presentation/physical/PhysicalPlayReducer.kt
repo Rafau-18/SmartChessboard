@@ -104,10 +104,14 @@ private fun reducePlaying(
             // Re-request occupancy on (re)connect: the hot, no-replay stream means a burst can be
             // missed, and a snapshot re-verifies the board against the live position. The board resets
             // to GAME mode on every reconnect (contract §1.7), so re-arm DIAGNOSTIC if the grid is open.
-            // S-08 leaves this arm unchanged; S-09/FR-012 routes BLE reconnect-reconcile through the
-            // shared SnapshotReceived board-match seam below — set its gate flag here, clear it there.
+            // S-09/FR-012: arm the reconnect-reconcile gate here — acceptance holds from CONNECTED until
+            // the post-reconnect snapshot confirms the board still matches (it may have changed out of
+            // range). The gate clears through the shared SnapshotReceived board-match seam below.
             ReduceResult(
-                state.copy(connectionState = BoardConnectionState.CONNECTED),
+                state.copy(
+                    connectionState = BoardConnectionState.CONNECTED,
+                    reconnectReconciling = true,
+                ),
                 buildList {
                     add(PhysicalEffect.Send(BoardCommand.RequestSnapshot))
                     if (state.diagnosticsVisible) {
@@ -135,12 +139,19 @@ private fun reducePlaying(
             // left GAME). On a mismatch the gate holds, setupMismatch auto-opens the grid, and each later
             // snapshot re-runs this check until it matches. No explicit SetMode here — it would double-fire.
             val resumeVerified = state.awaitingResumeConfirm && matchesExpected
+            // FR-012 reconnect-reconcile clears through the SAME at-rest board-match seam (parallel to the
+            // resume gate): once a post-reconnect snapshot matches the live position, acceptance re-enables.
+            val reconnectVerified = state.reconnectReconciling && matchesExpected
             val next =
                 state.copy(
                     latestOccupancy = msg.occupancy,
+                    // The live overlay's matrix mirror resets to the snapshot's ground truth on every
+                    // snapshot (display-only; kept separate from latestOccupancy, never gates acceptance).
+                    sensedOccupancy = msg.occupancy,
                     setupMismatch = if (atRest) !matchesExpected else state.setupMismatch,
                     recovering = if (restoreVerified) false else state.recovering,
                     awaitingResumeConfirm = if (resumeVerified) false else state.awaitingResumeConfirm,
+                    reconnectReconciling = if (reconnectVerified) false else state.reconnectReconciling,
                     rejection = if (restoreVerified) null else state.rejection,
                     manualDiagnostics = if (restoreVerified) false else state.manualDiagnostics,
                 )
@@ -152,11 +163,20 @@ private fun reducePlaying(
         }
 
         is PhysicalMsg.SquareLifted -> {
-            accumulate(state, BoardEvent.SquareEvent(msg.square, SquareEventType.LIFT))
+            // Fold the lift into the display-only live matrix mirror first (clear the bit), then run the
+            // normal move accumulation. Threading it through state.copy means the overlay tracks the board
+            // even while a gate short-circuits the move build (the mirror is display-only — see accumulate).
+            accumulate(
+                state.copy(sensedOccupancy = sensedAfter(state.sensedOccupancy, msg.square, occupied = false)),
+                BoardEvent.SquareEvent(msg.square, SquareEventType.LIFT),
+            )
         }
 
         is PhysicalMsg.SquarePlaced -> {
-            accumulate(state, BoardEvent.SquareEvent(msg.square, SquareEventType.PLACE))
+            accumulate(
+                state.copy(sensedOccupancy = sensedAfter(state.sensedOccupancy, msg.square, occupied = true)),
+                BoardEvent.SquareEvent(msg.square, SquareEventType.PLACE),
+            )
         }
 
         is PhysicalMsg.ConfirmPressed -> {
@@ -283,11 +303,13 @@ private fun accumulate(
     state: PhysicalPlayState.Playing,
     event: BoardEvent.SquareEvent,
 ): ReduceResult {
-    // A frozen board accepts no input; during recovery OR an unconfirmed resume the lift/place are
-    // restoration moves, not a new move — the snapshot occupancy (not these deltas) drives the at-rest
-    // board-match that clears the gate, so don't build a sequence (it would also leave stale events that
-    // corrupt the next real move and, by making the board no longer at-rest, suppress the mismatch recompute).
-    if (state.result != null || state.recovering || state.awaitingResumeConfirm) return ReduceResult(state)
+    // A frozen board accepts no input; during recovery, an unconfirmed resume, OR an unconfirmed reconnect
+    // the lift/place are restoration moves, not a new move — the snapshot occupancy (not these deltas) drives
+    // the at-rest board-match that clears the gate, so don't build a sequence (it would also leave stale events
+    // that corrupt the next real move and, by making the board no longer at-rest, suppress the mismatch recompute).
+    if (state.result != null || state.recovering || state.awaitingResumeConfirm || state.reconnectReconciling) {
+        return ReduceResult(state)
+    }
     val events = state.eventsSinceConfirm + event
     val pendingPromotion =
         when (val resolution = resolvePhysicalMove(state.position, events)) {
@@ -320,9 +342,10 @@ private fun confirm(
 ): ReduceResult {
     if (state.result != null || state.paused) return ReduceResult(state)
     // The acceptance gate (acceptanceBlocked): a confirm can't advance the game while a reject awaits
-    // restore ([recovering]) or a resume awaits board confirmation ([awaitingResumeConfirm]) — but it
-    // *does* re-pull a snapshot so the at-rest board-match can clear the gate without the grid.
-    if (state.recovering || state.awaitingResumeConfirm) {
+    // restore ([recovering]), a resume awaits board confirmation ([awaitingResumeConfirm]), or a BLE
+    // reconnect awaits its post-reconnect snapshot ([reconnectReconciling]) — but it *does* re-pull a
+    // snapshot so the at-rest board-match can clear the gate without the grid.
+    if (state.recovering || state.awaitingResumeConfirm || state.reconnectReconciling) {
         return ReduceResult(state, listOf(PhysicalEffect.Send(BoardCommand.RequestSnapshot)))
     }
     if (button.toColor() != state.position.sideToMove) return ReduceResult(state)
@@ -405,6 +428,7 @@ private fun commit(
             recovering = false,
             manualDiagnostics = false,
             awaitingResumeConfirm = false,
+            reconnectReconciling = false,
             syncPending = true,
         )
     val autoResult = gameResultFor(nextStatus, msg.nextPosition.sideToMove)
@@ -438,6 +462,18 @@ private fun effectsForModeChange(
             emptyList()
         }
     }
+
+/**
+ * Fold one physical lift/place into the display-only live sensed-occupancy mirror (the play-board
+ * overlay, S-09 Phase 7): a PLACE sets the square's bit, a LIFT clears it, with the h8-safe
+ * `(1L shl square)` mask (square 63 is the sign bit — a signed op would misread exactly h8). Null
+ * stays null until the first snapshot seeds a baseline, so a stray pre-snapshot event mirrors nothing.
+ */
+private fun sensedAfter(
+    current: Long?,
+    square: Int,
+    occupied: Boolean,
+): Long? = current?.let { if (occupied) it or (1L shl square) else it and (1L shl square).inv() }
 
 /** Squares with a piece currently lifted: a LIFT adds, a PLACE back onto the same square removes. */
 private fun liftedSquaresOf(events: List<BoardEvent.SquareEvent>): Set<Int> {

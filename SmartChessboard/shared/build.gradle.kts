@@ -89,6 +89,11 @@ kotlin {
             implementation(libs.googleid)
             // androidContext() for the journal's SharedPreferences provisioning.
             implementation(libs.koin.android)
+            // Kable BLE — the real BoardConnection transport (S-09). Android + iOS only;
+            // never commonMain/wasmJs (web is digital-only, no physical board).
+            implementation(libs.kable.core)
+            // Activity-result launcher for the runtime BLE permission request (S-09 connection screen).
+            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -122,6 +127,9 @@ kotlin {
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            // Kable BLE — the real BoardConnection transport (S-09). iOS half of the
+            // Android+iOS pairing; never wasmJs.
+            implementation(libs.kable.core)
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)

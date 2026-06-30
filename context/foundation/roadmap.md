@@ -243,7 +243,7 @@ Context note (outside the app codebase): firmware status has since advanced well
 | S-06       | physical-capture-emulated     | Physical-mode capture via emulator (sequence → move)               | no                    | After F-01, F-02, S-04                  |
 | S-07       | reject-recover-diagnostics    | Sequence rejection + live reed diagnostics recovery                | no                    | After S-06                              |
 | S-08       | physical-resume-after-restart | Resume physical game after app restart                             | no                    | After S-07                              |
-| S-09       | real-board-over-ble           | Real-board BLE integration                                         | no                    | Blocked: needs `F-03` (firmware) + hardware-matrix repair |
+| S-09       | real-board-over-ble           | Real-board BLE integration                                         | no                    | In implementation — `F-03` done, reed matrix repaired 2026-06-28 |
 
 ## Open Roadmap Questions
 

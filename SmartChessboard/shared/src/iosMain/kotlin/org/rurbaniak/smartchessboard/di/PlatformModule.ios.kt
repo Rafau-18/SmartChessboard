@@ -5,12 +5,17 @@ import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.binds
 import org.koin.dsl.module
-import org.rurbaniak.smartchessboard.data.board.emulator.EmulatedBoard
+import org.koin.dsl.onClose
+import org.rurbaniak.smartchessboard.data.board.ble.KableBoardAdapter
+import org.rurbaniak.smartchessboard.data.board.ble.SettingsRememberedBoardStore
 import org.rurbaniak.smartchessboard.domain.board.BoardConnection
+import org.rurbaniak.smartchessboard.domain.board.BoardTransport
+import org.rurbaniak.smartchessboard.domain.board.RememberedBoardStore
+import org.rurbaniak.smartchessboard.presentation.connection.ConnectionViewModel
 import org.rurbaniak.smartchessboard.presentation.physical.PhysicalPlayViewModel
 
 // Android/iOS are the only targets that can drive a physical board (supportsPhysicalBoard), so the
@@ -18,16 +23,12 @@ import org.rurbaniak.smartchessboard.presentation.physical.PhysicalPlayViewModel
 actual val platformModule: Module =
     module {
         single<Settings> { NSUserDefaultsSettings(platform.Foundation.NSUserDefaults.standardUserDefaults) }
-        // S-06: the emulated board is the only BoardConnection until the S-09 BLE adapter ships (see the
-        // Android module for the connect-on-bind / snapshot-recovery rationale).
-        // TODO(S-09): this scope is never cancelled and disconnect() is never called — harmless for the
-        // emulator, but a real BLE adapter bound on this shape would leak the connection. Cancel the scope
-        // on teardown (e.g. Koin onClose { (it as? EmulatedBoard)?.disconnect() }) when the BLE adapter
-        // lands. Keep in sync with the Android module's BoardConnection binding.
-        single<BoardConnection> {
-            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-            EmulatedBoard(scope = scope).also { board -> scope.launch { board.connect() } }
-        }
+        // S-09: the real Kable BLE adapter replaces the emulator (now test-only). See the Android module
+        // for the constructed-idle / one-instance-two-faces (BoardConnection + BoardTransport) /
+        // onClose-leak-fix rationale; kept in sync.
+        single {
+            KableBoardAdapter(scope = CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        } onClose { it?.close() } binds arrayOf(BoardConnection::class, BoardTransport::class)
         viewModel { (gameId: String) ->
             PhysicalPlayViewModel(
                 gameId = gameId,
@@ -36,4 +37,8 @@ actual val platformModule: Module =
                 boardConnection = get(),
             )
         }
+        // The connection screen (Phase 5) drives BoardTransport and remembers the last paired board.
+        // Same Settings store as the journal (ble.-prefixed key); mobile-only, like PhysicalPlayViewModel.
+        single<RememberedBoardStore> { SettingsRememberedBoardStore(get()) }
+        viewModel { ConnectionViewModel(transport = get(), rememberedBoards = get()) }
     }

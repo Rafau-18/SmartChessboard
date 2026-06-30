@@ -7,7 +7,7 @@ Guidance for AI coding agents working in this repository. This file is the sourc
 Smart Chessboard — a docs-and-context layer over three sibling sub-projects:
 
 - `SmartChessboard/` — Kotlin Multiplatform app (Android + iOS + WasmJS). Package `org.rurbaniak.smartchessboard`.
-- `firmware/` — ESP32 reed-matrix firmware (C++, PlatformIO + ESP-IDF). **Parked** — don't resume unless asked.
+- `firmware/` — ESP32 reed-matrix firmware (C++, PlatformIO + ESP-IDF). Software implemented & on-hardware-verified (F-03); board repaired 2026-06-28. **Don't resume unless the task asks for firmware work** — details in [`firmware/AGENTS.md`](firmware/AGENTS.md).
 - `supabase/` — Supabase project defined as code: `config.toml` + (incoming) `migrations/*.sql` + one Edge Function `lichess-eval`. **Supabase Cloud is the backend** — this dir is *not* a separate server. Canon & conventions: [`supabase/AGENTS.md`](supabase/AGENTS.md).
 
 Canonical context: `context/foundation/` (`prd.md`, `prd-firmware.md`, `tech-stack.md`) and `docs/` (`bootstrap-verification.md`, `reference/contract-surfaces.md`). Recurring rules live in `context/foundation/lessons.md` — consult it before research, planning, or implementation.
