@@ -34,6 +34,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -82,6 +83,11 @@ fun PhysicalPlayScreen(
     val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
     val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
     Scaffold(
+        // The board screen is watched, not tapped, for minutes — keep it awake so a dim/auto-lock can't
+        // background the app and drop the foreground-first BLE link. Compose's own iOS idle-timer manager
+        // owns UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what actually holds
+        // it (S-09 Phase 8).
+        modifier = Modifier.keepScreenOn(),
         topBar = {
             TopAppBar(
                 title = { Text(titleFor(state)) },
@@ -137,6 +143,7 @@ fun PhysicalPlayScreen(
                         onPromotionDismiss = viewModel::dismissPromotion,
                         onShowDiagnostics = viewModel::showDiagnostics,
                         onHideDiagnostics = viewModel::hideDiagnostics,
+                        onReconnect = viewModel::reconnect,
                         onEndGameRequest = viewModel::requestEndGame,
                         onResultPick = viewModel::pickResult,
                         onConfirmEndGame = viewModel::confirmEndGame,
@@ -161,6 +168,7 @@ private fun PlayingContent(
     onPromotionDismiss: () -> Unit,
     onShowDiagnostics: () -> Unit,
     onHideDiagnostics: () -> Unit,
+    onReconnect: () -> Unit,
     onEndGameRequest: () -> Unit,
     onResultPick: (GameResult) -> Unit,
     onConfirmEndGame: () -> Unit,
@@ -182,7 +190,12 @@ private fun PlayingContent(
         var showSensorDots by rememberSaveable { mutableStateOf(true) }
         StatusBanner(state = state, modifier = sectionModifier)
         Spacer(Modifier.height(8.dp))
-        BoardMessage(state = state, onShowDiagnostics = onShowDiagnostics, modifier = sectionModifier)
+        BoardMessage(
+            state = state,
+            onShowDiagnostics = onShowDiagnostics,
+            onReconnect = onReconnect,
+            modifier = sectionModifier,
+        )
         Spacer(Modifier.height(12.dp))
         ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
             ChessBoardView(
@@ -258,14 +271,21 @@ private fun PlayingContent(
 private fun BoardMessage(
     state: PhysicalPlayState.Playing,
     onShowDiagnostics: () -> Unit,
+    onReconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.result != null) return
     val message =
         when {
             state.paused -> "Board disconnected — moves are paused until it reconnects."
-            state.setupMismatch -> "Set up the board to match the position on screen."
+
+            // A rejected move outranks the generic setup-mismatch text: the reason (illegal / inconsistent /
+            // promotion) is what the player needs, even though placing the wrong piece also trips
+            // setupMismatch. The reed grid still opens — diagnosticsVisible includes setupMismatch (S-09 P8).
             state.rejection != null -> rejectionText(state.rejection)
+
+            state.setupMismatch -> "Set up the board to match the position on screen."
+
             else -> null
         } ?: return
     Surface(
@@ -283,9 +303,23 @@ private fun BoardMessage(
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 textAlign = TextAlign.Center,
             )
-            // While recovering, the reed grid is the assistance (raw diagnostics, no step-by-step). The
-            // CTA shows only when the grid is hidden; a setup-mismatch already auto-opens it.
-            if (state.recovering && !state.diagnosticsVisible) {
+            if (state.paused) {
+                // A dropped link auto-retries in the background (the adapter); this is the manual escape
+                // hatch for when that backed off without reaching the board (S-09 Phase 8).
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onReconnect,
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                ) {
+                    Text("Reconnect")
+                }
+            } else if (state.recovering && !state.diagnosticsVisible) {
+                // While recovering, the reed grid is the assistance (raw diagnostics, no step-by-step). The
+                // CTA shows only when the grid is hidden; a setup-mismatch already auto-opens it.
                 Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = onShowDiagnostics,

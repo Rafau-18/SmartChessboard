@@ -34,6 +34,14 @@ interface BoardTransport {
      */
     suspend fun connect(id: String)
 
+    /**
+     * Re-establish the link to the most recently connected board without a fresh scan (S-09 Phase 8):
+     * the manual "Reconnect" affordance on the physical screen and the immediate retry the adapter's
+     * foreground auto-reconnect rides on. No-op if no board has been connected this session. Idempotent
+     * — calling it while already connected or mid-attempt does nothing harmful.
+     */
+    suspend fun reconnect()
+
     /** Drop the link and release the radio. Idempotent. */
     suspend fun disconnect()
 }

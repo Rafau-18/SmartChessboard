@@ -29,20 +29,21 @@ The author and a small circle of friends play chess on a physical wooden board, 
 
 ## At a glance
 
-| ID   | Change ID                     | Outcome (user can …)                                             | Prerequisites    | PRD refs                                              | Status          |
-| ---- | ----------------------------- | ---------------------------------------------------------------- | ---------------- | ----------------------------------------------------- | --------------- |
-| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection | —                | FR-005, FR-007, Guardrails                            | awaiting review |
-| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware | —                | PRD OQ-1 (resolved), US-02                            | implemented     |
-| F-03 | firmware-ble-gatt-service     | (foundation) ESP32 firmware speaks the §1 BLE board contract     | —                | FR-FW-002–013                                         | implemented     |
-| S-01 | google-signin-own-history     | sign in with Google and see own private game list                | —                | FR-001, FR-002, FR-015, US-03                         | awaiting review |
-| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)  | S-01             | FR-016, US-03                                         | awaiting review |
-| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                 | S-02             | FR-017, US-01, US-03                                  | awaiting review |
-| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save       | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | awaiting review |
-| S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)               | S-04             | FR-007, FR-018, US-01                                 | implemented     |
-| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator               | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
-| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics      | S-06             | FR-010, FR-011, US-02                                 | in progress     |
-| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart            | S-07             | FR-013, US-02                                         | in progress     |
-| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, US-02                 | ready           |
+| ID   | Change ID                     | Outcome (user can …)                                              | Prerequisites    | PRD refs                                              | Status          |
+| ---- | ----------------------------- | ----------------------------------------------------------------- | ---------------- | ----------------------------------------------------- | --------------- |
+| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection  | —                | FR-005, FR-007, Guardrails                            | awaiting review |
+| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware  | —                | PRD OQ-1 (resolved), US-02                            | implemented     |
+| F-03 | firmware-ble-gatt-service     | (foundation) ESP32 firmware speaks the §1 BLE board contract      | —                | FR-FW-002–013                                         | implemented     |
+| S-01 | google-signin-own-history     | sign in with Google and see own private game list                 | —                | FR-001, FR-002, FR-015, US-03                         | awaiting review |
+| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)   | S-01             | FR-016, US-03                                         | awaiting review |
+| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                  | S-02             | FR-017, US-01, US-03                                  | awaiting review |
+| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save        | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | awaiting review |
+| S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                | S-04             | FR-007, FR-018, US-01                                 | implemented     |
+| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator                | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
+| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics       | S-06             | FR-010, FR-011, US-02                                 | in progress     |
+| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart             | S-07             | FR-013, US-02                                         | in progress     |
+| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                 | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, FR-012, US-02         | implemented     |
+| S-10 | ble-connectivity-robustness   | (hardening) reliable BLE connect/reconnect + settle pairing model | S-09             | FR-012, NFR reliability                               | proposed        |
 
 ## Streams
 
@@ -226,7 +227,17 @@ Context note (outside the app codebase): firmware status has since advanced well
 - **Unknowns:**
   - The physical reed matrix was **repaired** (2026-06-28) and the firmware bring-up reworked to the real wiring. The **on-hardware F-03 verification pass is COMPLETE** — gates 2.4–3.10 confirmed 2026-06-29 via nRF Connect (advertising, bonding, on-subscribe burst, live square/button events, diagnostic stream, REQUEST_*, periodic status, offline-change reconnect snapshot, malformed-ignore). — Owner: user (hardware). Block: **resolved** — S-09 is ready to plan.
 - **Risk:** The only slice touching real hardware; everything upstream is de-risked on the emulator, so residual risk concentrates in BLE fidelity and real reed-switch noise.
-- **Status:** ready for `/10x-plan` — all prerequisites met: S-06 / S-07 / F-03 code-complete and merged, reed matrix repaired (2026-06-28), and F-03 on-hardware gates 2.4–3.10 confirmed 2026-06-29 (nRF Connect, board `SmartChessboard-DA3A`). Next: `/10x-plan real-board-over-ble`.
+- **Status:** **implemented** — the full slice runs on the real board (`SmartChessboard-DA3A`, Phase 8 gate 2026-06-30): connect → live board events → side-button confirms → capture / promotion / castling / en passant → durable save, plus the live reed-matrix overlay, diagnostic mode, and resume, all verified on hardware. **Two course-corrections the on-hardware gate forced:** (1) the Phase-2 link **encryption/bonding was reverted to plaintext** — iOS bonding desynced (stale LTK → `reason=531` drops needing a manual system-Bluetooth "Forget"); plaintext (the original §1.8 posture, F-03-proven with nRF Connect) restored reliable connect. **Provisional — the pairing model must be re-tested across several devices before it's final (see S-10, `lessons.md`).** (2) foreground auto-reconnect + a manual Reconnect button + connect-timeout + scan-timeout + keep-awake + an "already-connected → don't re-scan" connection-gate guard, all added so the flow never hangs. **Residual concern:** raw BLE connect/reconnect stability was flaky on the test Android tablet (possibly device-specific) — spun off to **S-10**. Manual gate ticks in `manual-verification.md`; `change.md` status `implemented`; awaiting `/10x-impl-review` then `/10x-archive`.
+
+### S-10: BLE connectivity robustness & pairing-model re-evaluation
+
+- **Outcome:** Reliable BLE connect / disconnect / reconnect for physical play across multiple real devices, and a settled decision on the board's pairing/security model (confirm or replace the S-09 plaintext revert).
+- **Change ID:** ble-connectivity-robustness (proposed)
+- **PRD refs:** FR-012 (implemented as reconnect-reconcile in S-09), NFR reliability
+- **Prerequisites:** S-09
+- **Why:** The S-09 on-hardware gate surfaced BLE connect/reconnect flakiness that was hard to localise (possibly the specific Android tablet's Bluetooth). Separately, S-09 **reverted the Phase-2 link encryption/bonding to plaintext** because iOS bonding desynced (stale-LTK `reason=531` drops needing a manual "Forget"). That revert made the link reliable in single-device testing but is **provisional** — it needs validation across several Android + iOS devices to decide whether plaintext-no-bond is the final MVP model, or whether a bonded/encrypted approach hardened against iOS's stale-LTK behaviour (or a different reconnection / scan-fallback strategy) is warranted.
+- **Scope (proposed):** reproduce the connectivity/reconnect issues on ≥2 Android + ≥2 iOS devices; capture the drop `reason=` codes; decide the final pairing model; if device-independent problems remain, harden the reconnect/scan flow (e.g. a scan-by-name fallback should the service-UUID filter miss on some Android stacks). The single-central board stays a constraint (PRD non-goal).
+- **Status:** proposed — a post-S-09 hardening slice; not MVP-blocking (S-09 is accepted with the plaintext link working on the tested devices).
 
 ## Backlog Handoff
 
@@ -252,7 +263,8 @@ Context note (outside the app codebase): firmware status has since advanced well
 ## Parked
 
 - **Web target for the digital subset (FR-020, nice-to-have)** — Why parked: `main_goal: speed` keeps the strict must-have sequence first, and the user confirmed (2026-06-10) mobile is the primary target; the deployed web shell stays live, and the shared codebase keeps this cheap to pick up post-MVP. Exception: S-01 pulls a small sliver forward (Google sign-in + empty history surface on web) per its plan decision of 2026-06-10, and S-04 likewise pulls the FR-020 digital-play sliver forward (interactive pass-and-play + durable record verified on web) per its plan decision of 2026-06-12, mirroring the S-01 precedent; the rest of FR-020 stays parked.
-- **BLE disconnect auto-recovery (FR-012, nice-to-have)** — Why parked: does not block MVP acceptance; its semantics are already specified in the contract document and it becomes relevant only together with S-09.
+- **BLE disconnect auto-recovery (FR-012)** — **Implemented in S-09** (the `reconnectReconciling` reducer gate + foreground auto-reconnect + manual Reconnect, 2026-06-30). Remaining raw-BLE-stack connect/reconnect robustness + the final pairing-model decision are tracked as **S-10**, not here.
+- **Deferred UI polish (physical / connection screens, S-09)** — minor UI tweaks the user noted during the S-09 on-hardware gate, to be done opportunistically. Specifics TBD by the user (jot concrete items here or in the `real-board-over-ble` change folder); not MVP-blocking.
 - **Store/TestFlight mobile distribution** — Why parked: user decision (2026-06-10): iOS/Android are installed locally during MVP; distribution is a post-MVP decision per `infrastructure.md`.
 - **CI pipeline (build/test/deploy workflows)** — Why parked: not PRD scope; manual local builds and manual web deploy suffice for MVP; a plan already exists in `docs/vacation-workflow-todo.md` for when it earns its keep.
 - **Local Stockfish per platform (offline / high-depth analysis)** — Why parked: the Chess-API.com fallback (decided 2026-06-10) closes the eval-coverage gap for MVP; a bundled engine (per-platform `expect`/`actual`: ready-made WASM engine build on web, natively compiled Stockfish C++ on iOS/Android) becomes worthwhile only for offline analysis, stricter privacy, or higher depth — PRD OQ-3.

@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,6 +70,10 @@ fun ConnectionScreen(
     }
 
     Scaffold(
+        // Scanning/pairing can take seconds with no interaction — keep the screen awake so a dim doesn't
+        // background the app mid-handshake. Compose's own iOS idle-timer manager owns
+        // UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what holds it (S-09 P8).
+        modifier = Modifier.keepScreenOn(),
         topBar = {
             TopAppBar(
                 title = { Text("Connect board") },
@@ -230,6 +235,15 @@ private fun FailedBlock(
         messageFor(reason),
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.error,
+        textAlign = TextAlign.Center,
+    )
+    // The in-app "Forget & scan" only clears the remembered id, not the OS-level bond. A stale bond is
+    // the usual cause of a connect that keeps failing/dropping, and only a system-settings unpair fixes
+    // it — point the user there explicitly (S-09 Phase 8, surfaced by the on-hardware gate).
+    Text(
+        "Still failing? Open your phone's Bluetooth settings, \"Forget\" the board, then Retry.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
     Button(onClick = onRetry, modifier = Modifier.fillMaxWidth()) { Text("Retry") }

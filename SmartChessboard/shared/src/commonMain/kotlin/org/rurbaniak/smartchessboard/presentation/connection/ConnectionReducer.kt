@@ -33,6 +33,20 @@ fun reduceConnection(
             onScanResults(state, msg.devices)
         }
 
+        ConnectionMsg.ScanTimedOut -> {
+            // The board never appeared within the scan window (powered off / out of range / busy with
+            // another central — the board is single-central). Surface a Retry-able failure instead of an
+            // endless "Scanning…/Looking for your saved board…" spinner. Ignored if we already moved on.
+            if (state.phase is ConnectionPhase.Scanning) {
+                ConnectionReduceResult(
+                    state.copy(phase = ConnectionPhase.Failed(ConnectionFailure.OUT_OF_RANGE)),
+                    listOf(ConnectionEffect.StopScan),
+                )
+            } else {
+                ConnectionReduceResult(state)
+            }
+        }
+
         is ConnectionMsg.DeviceSelected -> {
             ConnectionReduceResult(
                 state.copy(phase = ConnectionPhase.Connecting(pairing = false), connectingTo = msg.id),
@@ -62,15 +76,23 @@ fun reduceConnection(
         }
     }
 
-// Permission just granted: always scan first — even an auto-connect needs the adapter to (re)discover
-// the board's advertisement before it can build a peripheral (KableBoardAdapter.connect resolves the id
-// against the live scan cache). If a board is remembered, onScanResults auto-selects it the moment it
-// reappears; otherwise the user picks from the list.
+// Permission just granted. If the singleton adapter is **already connected** — the link deliberately
+// persists across screens, so re-entering this gate to resume a game finds it live — do NOT scan: a
+// connected board isn't advertising, so a scan would hang forever on "Looking for your saved board…".
+// The transport-driven phase is already Connected/Connecting (transportState replays its current value
+// to this fresh VM), so stay there and let the screen navigate on through. (Previously the encrypted-bond
+// drops kept re-advertising the board, masking this; the now-stable plaintext link exposed it — S-09 P8.)
+// Otherwise scan first — even an auto-connect needs the adapter to (re)discover the advertisement before
+// it can build a peripheral; onScanResults then auto-selects a remembered board the moment it reappears.
 private fun onPermissionGranted(state: ConnectionUiState): ConnectionReduceResult =
-    ConnectionReduceResult(
-        state.copy(phase = ConnectionPhase.Scanning, devices = emptyList()),
-        listOf(ConnectionEffect.StartScan),
-    )
+    if (state.phase is ConnectionPhase.Connected || state.phase is ConnectionPhase.Connecting) {
+        ConnectionReduceResult(state)
+    } else {
+        ConnectionReduceResult(
+            state.copy(phase = ConnectionPhase.Scanning, devices = emptyList()),
+            listOf(ConnectionEffect.StartScan),
+        )
+    }
 
 // New scan results: refresh the list, and — when scanning for a remembered board — auto-connect the
 // moment it reappears, with no tap (the "remembered-device auto-connect on entry" path).

@@ -35,10 +35,11 @@ actual val platformModule: Module =
                 gamesRepository = get(),
                 autoSaver = get(),
                 boardConnection = get(),
+                boardTransport = get(),
             )
         }
         // The connection screen (Phase 5) drives BoardTransport and remembers the last paired board.
         // Same Settings store as the journal (ble.-prefixed key); mobile-only, like PhysicalPlayViewModel.
         single<RememberedBoardStore> { SettingsRememberedBoardStore(get()) }
-        viewModel { ConnectionViewModel(transport = get(), rememberedBoards = get()) }
+        viewModel { ConnectionViewModel(transport = get(), rememberedBoards = get(), scanTimeoutMs = 20_000L) }
     }

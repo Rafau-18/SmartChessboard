@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import org.rurbaniak.smartchessboard.domain.board.BoardConnection
 import org.rurbaniak.smartchessboard.domain.board.BoardConnectionState
 import org.rurbaniak.smartchessboard.domain.board.BoardEvent
+import org.rurbaniak.smartchessboard.domain.board.BoardTransport
 import org.rurbaniak.smartchessboard.domain.board.SquareEventType
 import org.rurbaniak.smartchessboard.domain.chess.MoveOutcome
 import org.rurbaniak.smartchessboard.domain.chess.PieceType
@@ -47,6 +48,10 @@ class PhysicalPlayViewModel(
     private val gamesRepository: GamesRepository,
     private val autoSaver: GameAutoSaver,
     private val boardConnection: BoardConnection,
+    // The transport face of the same adapter (S-09): used only to re-drive a dropped link from the
+    // play screen's "Reconnect" affordance. Null in unit/E2E tests (they drive an EmulatedBoard, which
+    // is the port only); production DI passes the Kable adapter, which is both faces of one instance.
+    private val boardTransport: BoardTransport? = null,
     // Injected so tests pin the resume parse to a shared TestDispatcher; in production the default
     // keeps the one-shot parsePgn off the main thread (same pattern as the digital PlayViewModel).
     private val parseDispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -102,6 +107,25 @@ class PhysicalPlayViewModel(
     fun dismissEndGame() = dispatch(PhysicalMsg.EndGameDismissed)
 
     fun retry() = dispatch(PhysicalMsg.Retry)
+
+    /**
+     * Re-drive a dropped BLE link from the disconnected banner (S-09 Phase 8). Delegates to the
+     * transport (the adapter's other face) — the reconnect lives below the port, so success arrives back
+     * through the collected `connectionState` as the usual CONNECTED → reconnect-reconcile snapshot. The
+     * adapter also auto-retries on a drop; this is the manual escape hatch when that backed off.
+     */
+    fun reconnect() {
+        val transport = boardTransport ?: return
+        viewModelScope.launch {
+            try {
+                transport.reconnect()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                // Best-effort: a failed attempt leaves the banner up; the user can press Reconnect again.
+            }
+        }
+    }
 
     /** The single funnel: reduce, publish the next state, then run whatever effects it requested. */
     private fun dispatch(msg: PhysicalMsg) {

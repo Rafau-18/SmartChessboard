@@ -79,15 +79,13 @@ Out of scope (covered elsewhere):
 - **FR-FW-004**: Firmware exposes the GATT structure defined in
   `contract-surfaces.md` §1.2: one service, `board_event` characteristic
   (notify) and `mobile_command` characteristic (write). Priority: must-have.
-  - 2026-06-30 (S-09): both characteristics now **require an encrypted link**
-    (`contract-surfaces.md` §1.1/§1.2). `mobile_command` write is gated by
-    `BLE_GATT_CHR_F_WRITE_ENC`; `board_event` subscribe is gated by
-    `BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC` (this NimBLE build propagates it to the
-    auto-CCCD's write permission). A central must bond — Just-Works
-    (`NO_INPUT_OUTPUT`) → encrypted-but-unauthenticated — before subscribing or
-    writing. The message catalog and GATT shape are unchanged; only the access
-    permission tightens. The write path is the load-bearing bond trigger (the
-    app writes `REQUEST_SNAPSHOT` on every (re)connect).
+  - 2026-06-30 (S-09): characteristics are **plaintext** — no encryption
+    requirement (`contract-surfaces.md` §1.1/§1.2). Phase 2 briefly forced an
+    encrypted Just-Works bond (`_ENC` flags), but the Phase 8 on-hardware gate
+    found iOS bonding unreliable — a stale/desynced LTK made iOS drop the link on
+    reconnect (HCI 0x13) and demand a manual "Forget device" — so the MVP reverted
+    to plaintext trust-on-first-pair for reliable (re)connect. The message catalog
+    and GATT shape are unchanged.
 
 - **FR-FW-005**: On a new connection, firmware emits a `BOARD_SNAPSHOT`
   describing the current state of all 64 squares (so mobile can reconcile
@@ -161,11 +159,13 @@ Out of scope (covered elsewhere):
 - Multi-board scenarios (one board, one paired mobile in MVP).
 - Battery management features (low-battery warning UI, deep sleep, etc.) —
   may be added if battery power is selected.
-- **Authenticated** pairing (MITM protection) of the board to the mobile.
-  The MVP link is encrypted (Just-Works, encrypted-but-unauthenticated; S-09
-  forced encryption on both characteristics, 2026-06-30) — a step up from the
-  original plaintext trust-on-first-pair. Authenticated pairing needs a
-  display/keypad the board lacks and stays post-MVP.
+- **Link encryption and authenticated pairing** (MITM protection) of the board
+  to the mobile. The MVP link is **plaintext** trust-on-first-pair. S-09 Phase 2
+  forced an encrypted Just-Works bond (2026-06-30), but the Phase 8 on-hardware
+  gate found iOS bonding unreliable (stale-LTK desync dropped the link on
+  reconnect, HCI 0x13), so the MVP reverted to plaintext for reliable (re)connect.
+  Both encryption and authenticated pairing (the latter needs a display/keypad the
+  board lacks) stay post-MVP.
 
 ## Open Questions
 

@@ -81,6 +81,27 @@ abstract class BleBoardAdapterCore(
     /** Platform write of an already-encoded §1.4 frame to the encryption-gated `mobile_command` characteristic. */
     protected abstract suspend fun writeCommandFrame(frame: ByteArray)
 
+    companion object {
+        /** Foreground auto-reconnect backoff (S-09 Phase 8): first retry delay, doubling up to the cap. */
+        const val RECONNECT_INITIAL_DELAY_MS = 1_000L
+
+        /** Backoff ceiling so a long absence settles into a steady ~10 s retry cadence, not minutes. */
+        const val RECONNECT_MAX_DELAY_MS = 10_000L
+
+        /** Bounded attempts per drop; when exhausted the manual "Reconnect" button restarts the loop. */
+        const val RECONNECT_MAX_ATTEMPTS = 6
+
+        /** Initial-connect attempts before surfacing failure — rides over the first-pair bonding drop. */
+        const val CONNECT_MAX_ATTEMPTS = 3
+
+        /**
+         * Overall ceiling on a single connect() so a stuck or bond-desynced link (the central keeps
+         * connecting then dropping with HCI 0x13) can't hang the screen on "Connecting…" forever — it
+         * falls through to a Retry-able failure instead. Generous enough to cover the OS pairing dialog.
+         */
+        const val CONNECT_TIMEOUT_MS = 30_000L
+    }
+
     /**
      * Non-suspend DI teardown hook (Koin `onClose`, Phase 4) — the prescribed `TODO(S-09)` leak fix.
      * Unlike the emulator (a connect-on-bind, process-lifetime singleton whose scope was never

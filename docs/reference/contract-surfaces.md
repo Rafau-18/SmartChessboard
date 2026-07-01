@@ -61,7 +61,7 @@ Any change to an interface in this document requires:
 
 - **Roles**: ESP32 is BLE peripheral; mobile app is BLE central.
 - **Advertising**: board advertises with a fixed local name (e.g., `SmartChessboard-XXXX` where `XXXX` is the last 4 hex chars of MAC) and a chess-board service UUID.
-- **Pairing / bonding**: bonded after first connection; the link is **encrypted** (Just-Works, `NO_INPUT_OUTPUT` → encrypted-but-unauthenticated). Both characteristics require encryption, so the first access (subscribe or write) triggers OS pairing/bonding. Mobile remembers the board across sessions (no re-pairing on relaunch). Hardening pairing against MITM (authenticated pairing) is post-MVP — see §1.8.
+- **Pairing / bonding**: the link is **plaintext** — no encryption requirement, so no OS pairing/bonding is needed to connect, subscribe, or write (trust-on-first-pair, §1.8). S-09 Phase 2 briefly forced an encrypted bond, but the Phase 8 on-hardware gate found iOS bonding unreliable here — a stale/desynced LTK made iOS drop the link on reconnect (HCI 0x13) and demand a manual "Forget device" — so the MVP reverted to plaintext (2026-06-30). Mobile remembers the board across sessions by its advertised id (not a bond). Encryption / authenticated pairing is post-MVP — see §1.8.
 - **Single-central**: only one mobile may be connected at a time (consistent with PRD non-goal "No multi-client realtime physical play").
 
 ### 1.2 GATT structure
@@ -71,8 +71,8 @@ One custom GATT service exposing two characteristics:
 | Characteristic | Direction | Properties | Purpose | UUID |
 | --- | --- | --- | --- | --- |
 | (service) | — | primary | Chess-board service | `787e0001-15a4-4fc9-a469-05096dbad1a1` |
-| `board_event` | board → mobile | notify (encryption-required) | Board pushes events to mobile | `787e0002-15a4-4fc9-a469-05096dbad1a1` |
-| `mobile_command` | mobile → board | write (encryption-required) | Mobile sends commands to board | `787e0003-15a4-4fc9-a469-05096dbad1a1` |
+| `board_event` | board → mobile | notify | Board pushes events to mobile | `787e0002-15a4-4fc9-a469-05096dbad1a1` |
+| `mobile_command` | mobile → board | write | Mobile sends commands to board | `787e0003-15a4-4fc9-a469-05096dbad1a1` |
 
 UUIDs assigned during firmware implementation (F-03, 2026-06-19): one custom
 128-bit base `787e000X-15a4-4fc9-a469-05096dbad1a1`, where `X` = 1 service /
@@ -80,14 +80,14 @@ UUIDs assigned during firmware implementation (F-03, 2026-06-19): one custom
 exact bytes. The `board_event` notify characteristic carries a standard CCCD
 (`0x2902`) that the central writes to subscribe.
 
-Encryption (S-09, 2026-06-30): both characteristics require an encrypted link.
-The `mobile_command` write is gated by `BLE_GATT_CHR_F_WRITE_ENC`; the
-`board_event` subscribe is gated by `BLE_GATT_CHR_F_NOTIFY_INDICATE_ENC`, which
-the firmware's NimBLE build propagates to the auto-CCCD's write permission. A
-central must bond before it can subscribe or write, so the link is
-encrypted-but-unauthenticated (Just-Works, `NO_INPUT_OUTPUT`). The load-bearing
-bond trigger is the write — the app sends `REQUEST_SNAPSHOT` on every
-(re)connect, forcing pairing/bonding before the on-subscribe burst is usable.
+Encryption (S-09, 2026-06-30): **none** — both characteristics are plaintext
+(`BLE_GATT_CHR_F_NOTIFY` / `BLE_GATT_CHR_F_WRITE`, no `_ENC`). Phase 2 briefly
+required an encrypted link (forcing a Just-Works bond), but the Phase 8
+on-hardware gate found iOS bonding unreliable here: a stale/desynced LTK made iOS
+terminate the link on reconnect (HCI 0x13 "remote terminated"), needing a manual
+"Forget device" every time. For a dumb-sensor board with a minimal threat model
+the MVP reverted to the plaintext trust-on-first-pair posture — reliable
+(re)connect with no bonding dependency. See §1.8.
 
 ### 1.3 Message catalog — board → mobile (via `board_event` notifications)
 
@@ -189,12 +189,14 @@ before the disconnect remain persisted.
 - LED-based visual feedback on the board (board does not need to render hints).
 - OTA firmware updates over BLE (firmware updated via cable in MVP).
 - Multi-board support (one paired board per mobile install).
-- **Authenticated** pairing of the board to the mobile (MITM protection). The
-  MVP link is **encrypted** — S-09 forced encryption on both characteristics
-  (2026-06-30), so pairing is Just-Works (`NO_INPUT_OUTPUT`) →
-  encrypted-but-unauthenticated, a step up from the original plaintext
-  trust-on-first-pair. Authenticated pairing needs a display/keypad the board
-  lacks, so MITM hardening stays post-MVP.
+- **Link encryption and authenticated pairing.** The MVP link is **plaintext**
+  (trust-on-first-pair). S-09 Phase 2 forced an encrypted Just-Works bond
+  (2026-06-30), but the Phase 8 on-hardware gate found iOS bonding unreliable —
+  a stale-LTK desync dropped the link on reconnect (HCI 0x13) and forced a manual
+  "Forget device" — so the MVP reverted to plaintext for reliable (re)connect on a
+  dumb-sensor board with a minimal threat model. Both link encryption (Just-Works
+  → encrypted-but-unauthenticated) and authenticated pairing (MITM protection,
+  which needs a display/keypad the board lacks) stay post-MVP.
 
 ---
 

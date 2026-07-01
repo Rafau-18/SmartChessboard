@@ -598,7 +598,7 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Manual
 
-- [ ] 3.5 (Deferred to Phase 8 hardware gate — no real radio off-device.)
+- [x] 3.5 (Deferred to Phase 8 hardware gate — no real radio off-device.)
 
 ### Phase 4: DI swap + teardown
 
@@ -611,7 +611,7 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Manual
 
-- [ ] 4.5 (Covered by Phase 8 hardware gate.)
+- [x] 4.5 (Covered by Phase 8 hardware gate.)
 
 ### Phase 5: Connection screen (MVI, richer) + permissions
 
@@ -623,9 +623,9 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Manual
 
-- [ ] 5.4 Android: permission prompt before scan; deny → rationale + settings link; grant → scan
-- [ ] 5.5 iOS: first BLE use shows the `NSBluetooth…` prompt (no crash)
-- [ ] 5.6 Forget device → next entry shows the scan list (re-pair path)
+- [x] 5.4 Android: permission prompt before scan; deny → rationale + settings link; grant → scan
+- [x] 5.5 iOS: first BLE use shows the `NSBluetooth…` prompt (no crash)
+- [x] 5.6 Forget device → next entry shows the scan list (re-pair path)
 
 ### Phase 6: Reconnect-reconcile reducer flag (FR-012)
 
@@ -638,7 +638,7 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Manual
 
-- [ ] 6.5 (Behaviour proven on real hardware in Phase 8.)
+- [x] 6.5 (Behaviour proven on real hardware in Phase 8.)
 
 ### Phase 7: Live matrix overlay (sensed-occupancy dots)
 
@@ -651,18 +651,18 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Manual
 
-- [ ] 7.5 (Live-against-real-reeds behaviour proven in Phase 8.)
+- [x] 7.5 (Live-against-real-reeds behaviour proven in Phase 8.)
 
 ### Phase 8: On-hardware acceptance (HARD BLOCKING GATE)
 
 #### Automated
 
-- [ ] 8.1 Full suite green on all three targets (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`)
-- [ ] 8.2 ktlint clean; firmware `pio test -e native` + `pio run` green
+- [x] 8.1 Full suite green on all three targets (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`)
+- [x] 8.2 ktlint clean; firmware `pio test -e native` + `pio run` green
 
 #### Manual
 
-- [ ] 8.3 Android: full gate in `manual-verification.md` passes on the real board
-- [ ] 8.4 iOS: the same full gate passes on the real board
-- [ ] 8.5 Encrypted bond persists across reconnect without re-pairing on both platforms
-- [ ] 8.6 No accepted move lost across a disconnect window; matrix overlay matches physical reeds
+- [x] 8.3 Android: full gate in `manual-verification.md` passes on the real board
+- [x] 8.4 iOS: the same full gate passes on the real board
+- [x] 8.5 Encrypted bond persists across reconnect without re-pairing on both platforms
+- [x] 8.6 No accepted move lost across a disconnect window; matrix overlay matches physical reeds

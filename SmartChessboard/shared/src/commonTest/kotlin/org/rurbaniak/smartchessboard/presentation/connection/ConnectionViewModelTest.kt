@@ -19,6 +19,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 // Integration of the pure reducer with the impure shell: drives a fake BoardTransport + RememberedBoardStore
@@ -49,6 +50,7 @@ class ConnectionViewModelTest {
         var stopScanCount = 0
         val connectCalls = mutableListOf<String>()
         var disconnectCount = 0
+        var reconnectCount = 0
 
         override fun startScan() {
             startScanCount++
@@ -60,6 +62,10 @@ class ConnectionViewModelTest {
 
         override suspend fun connect(id: String) {
             connectCalls += id
+        }
+
+        override suspend fun reconnect() {
+            reconnectCount++
         }
 
         override suspend fun disconnect() {
@@ -176,5 +182,21 @@ class ConnectionViewModelTest {
 
             assertEquals(ConnectionPhase.PermissionDenied, vm.state.value.phase)
             assertEquals(0, transport.startScanCount)
+        }
+
+    @Test
+    fun scanThatNeverFindsTheBoardTimesOutToAFailure() =
+        runTest {
+            // A bounded scan window: if the board never appears (single-central / out of range / off), fail
+            // to a Retry-able state instead of spinning forever. Prod passes the window via DI; here 5 s.
+            val transport = FakeBoardTransport()
+            val vm = ConnectionViewModel(transport, FakeRememberedBoardStore(), scanTimeoutMs = 5_000L)
+            advanceUntilIdle()
+
+            vm.onPermissionGranted()
+            advanceUntilIdle() // scan starts, then the 5 s window elapses with no board found
+
+            assertIs<ConnectionPhase.Failed>(vm.state.value.phase)
+            assertTrue(transport.stopScanCount >= 1)
         }
 }

@@ -2,6 +2,9 @@ package org.rurbaniak.smartchessboard.presentation.physical
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -11,6 +14,9 @@ import kotlinx.coroutines.test.setMain
 import org.rurbaniak.smartchessboard.data.board.emulator.EmulatedBoard
 import org.rurbaniak.smartchessboard.data.board.emulator.quietMove
 import org.rurbaniak.smartchessboard.domain.board.BoardButton
+import org.rurbaniak.smartchessboard.domain.board.BoardTransport
+import org.rurbaniak.smartchessboard.domain.board.BoardTransportState
+import org.rurbaniak.smartchessboard.domain.board.DiscoveredBoard
 import org.rurbaniak.smartchessboard.domain.chess.squareOf
 import org.rurbaniak.smartchessboard.domain.games.GameAutoSaver
 import org.rurbaniak.smartchessboard.domain.games.GameJournal
@@ -156,6 +162,31 @@ class PhysicalPlayViewModelTest {
             // Only the reconcile seed (dirty = false) was written; no accepted-move (dirty = true) save.
             assertTrue(journal.saveLog.none { (_, _, dirty) -> dirty }, "no move was journaled")
         }
+
+    @Test
+    fun reconnectDelegatesToTheBoardTransport() =
+        runTest {
+            // The disconnected-banner "Reconnect" affordance drives the transport's reconnect (S-09 Phase 8);
+            // the reconnect itself lives below the port, so the VM only delegates.
+            val saver = GameAutoSaver(gamesRepository = repository, journal = FakeGameJournal())
+            val board = EmulatedBoard(scope = backgroundScope, statusInterval = kotlin.time.Duration.INFINITE)
+            val transport = RecordingBoardTransport()
+            val viewModel =
+                PhysicalPlayViewModel(
+                    gameId,
+                    repository,
+                    saver,
+                    board,
+                    boardTransport = transport,
+                    parseDispatcher = dispatcher,
+                )
+
+            advanceUntilIdle()
+            viewModel.reconnect()
+            advanceUntilIdle()
+
+            assertEquals(1, transport.reconnectCount, "Reconnect must drive BoardTransport.reconnect()")
+        }
 }
 
 /** A journal that fails the durable accepted-move write (dirty = true) but allows the reconcile seed. */
@@ -181,4 +212,23 @@ private class FailOnDirtySaveJournal : GameJournal {
     override fun clear(gameId: String) {
         entry = null
     }
+}
+
+/** Records reconnect() calls; the rest of the transport surface is unused by the physical-play VM. */
+private class RecordingBoardTransport : BoardTransport {
+    var reconnectCount = 0
+    override val transportState: StateFlow<BoardTransportState> = MutableStateFlow(BoardTransportState.Idle)
+    override val scanResults: Flow<List<DiscoveredBoard>> = MutableStateFlow(emptyList())
+
+    override fun startScan() = Unit
+
+    override fun stopScan() = Unit
+
+    override suspend fun connect(id: String) = Unit
+
+    override suspend fun reconnect() {
+        reconnectCount++
+    }
+
+    override suspend fun disconnect() = Unit
 }

@@ -2,6 +2,8 @@ package org.rurbaniak.smartchessboard.presentation.connection
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +29,10 @@ import kotlin.coroutines.cancellation.CancellationException
 class ConnectionViewModel(
     private val transport: BoardTransport,
     private val rememberedBoards: RememberedBoardStore,
+    // Scan window before a "couldn't find the board" failure; production passes a value via DI. Null
+    // disables it — the default for unit tests, which advance virtual time and would otherwise always
+    // trip a fixed delay.
+    private val scanTimeoutMs: Long? = null,
 ) : ViewModel() {
     private val _state =
         MutableStateFlow(
@@ -37,6 +43,11 @@ class ConnectionViewModel(
             ),
         )
     val state: StateFlow<ConnectionUiState> = _state.asStateFlow()
+
+    // Bounds an in-flight scan so it can't spin forever when the board never appears (powered off / out
+    // of range / busy with another central — the board is single-central). Armed on StartScan, cancelled
+    // the moment a connect starts or the scan stops.
+    private var scanTimeoutJob: Job? = null
 
     init {
         // Subscribe to both inbound streams before the screen drives anything, so neither a transport
@@ -73,13 +84,52 @@ class ConnectionViewModel(
 
     private fun runEffect(effect: ConnectionEffect) {
         when (effect) {
-            ConnectionEffect.StartScan -> transport.startScan()
-            ConnectionEffect.StopScan -> transport.stopScan()
-            is ConnectionEffect.Connect -> connect(effect.id)
-            ConnectionEffect.Disconnect -> disconnect()
-            is ConnectionEffect.RememberBoard -> rememberedBoards.remember(effect.id)
-            ConnectionEffect.ForgetBoard -> rememberedBoards.forget()
+            ConnectionEffect.StartScan -> {
+                startScanning()
+            }
+
+            ConnectionEffect.StopScan -> {
+                stopScanning()
+            }
+
+            is ConnectionEffect.Connect -> {
+                // A connect attempt started — the scan window no longer applies (connect has its own timeout).
+                scanTimeoutJob?.cancel()
+                scanTimeoutJob = null
+                connect(effect.id)
+            }
+
+            ConnectionEffect.Disconnect -> {
+                disconnect()
+            }
+
+            is ConnectionEffect.RememberBoard -> {
+                rememberedBoards.remember(effect.id)
+            }
+
+            ConnectionEffect.ForgetBoard -> {
+                rememberedBoards.forget()
+            }
         }
+    }
+
+    // Start scanning and arm the bounded window; if it elapses with no connect, ScanTimedOut fails out.
+    private fun startScanning() {
+        transport.startScan()
+        scanTimeoutJob?.cancel()
+        scanTimeoutJob =
+            scanTimeoutMs?.let { timeout ->
+                viewModelScope.launch {
+                    delay(timeout)
+                    dispatch(ConnectionMsg.ScanTimedOut)
+                }
+            }
+    }
+
+    private fun stopScanning() {
+        scanTimeoutJob?.cancel()
+        scanTimeoutJob = null
+        transport.stopScan()
     }
 
     private fun connect(id: String) {
@@ -115,6 +165,7 @@ class ConnectionViewModel(
      * user leaves before a board is chosen. A live link is dropped on graph teardown (Koin `onClose`).
      */
     override fun onCleared() {
+        scanTimeoutJob?.cancel()
         transport.stopScan()
         super.onCleared()
     }

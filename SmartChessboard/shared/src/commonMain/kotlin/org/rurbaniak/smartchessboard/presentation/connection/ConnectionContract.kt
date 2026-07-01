@@ -88,6 +88,9 @@ sealed interface ConnectionMsg {
         val devices: List<DiscoveredBoard>,
     ) : ConnectionMsg
 
+    /** The scan ran its full window without connecting (the board never appeared) — fail out, don't hang. */
+    data object ScanTimedOut : ConnectionMsg
+
     // --- user-origin ---
 
     /** The user tapped a board in the scan list. */

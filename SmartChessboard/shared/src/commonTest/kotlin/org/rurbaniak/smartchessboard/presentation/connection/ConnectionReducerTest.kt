@@ -45,6 +45,32 @@ class ConnectionReducerTest {
     }
 
     @Test
+    fun permissionGrantedWhileAlreadyConnectedDoesNotReScan() {
+        // The singleton adapter keeps the link across screens, so re-entering this gate to resume a game
+        // finds it already Connected (transportState replays Connected to the fresh VM). Granting
+        // permission must NOT start a scan — a connected board isn't advertising, so a scan would hang on
+        // "Looking for your saved board…" forever. (S-09 Phase 8 — the now-stable plaintext link exposed this.)
+        val result =
+            reduceConnection(
+                state(ConnectionPhase.Connected, rememberedBoardId = "board-1"),
+                ConnectionMsg.PermissionGranted,
+            )
+        assertEquals(ConnectionPhase.Connected, result.state.phase)
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
+    fun permissionGrantedWhileConnectingDoesNotReScan() {
+        val result =
+            reduceConnection(
+                state(ConnectionPhase.Connecting(pairing = false)),
+                ConnectionMsg.PermissionGranted,
+            )
+        assertIs<ConnectionPhase.Connecting>(result.state.phase)
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
     fun permissionDeniedShowsDeniedPhase() {
         val result = reduceConnection(state(), ConnectionMsg.PermissionDenied)
         assertEquals(ConnectionPhase.PermissionDenied, result.state.phase)
@@ -59,6 +85,25 @@ class ConnectionReducerTest {
         val result = reduceConnection(state(ConnectionPhase.Scanning), ConnectionMsg.ScanResultsChanged(devices))
         assertEquals(devices, result.state.devices)
         assertEquals(ConnectionPhase.Scanning, result.state.phase)
+        assertTrue(result.effects.isEmpty())
+    }
+
+    @Test
+    fun scanTimedOutWhileScanningFailsOutWithStopScan() {
+        // The board never appeared in the scan window — fail to a Retry-able state, not an endless spinner.
+        val result =
+            reduceConnection(state(ConnectionPhase.Scanning, rememberedBoardId = "board-1"), ConnectionMsg.ScanTimedOut)
+        val phase = assertIs<ConnectionPhase.Failed>(result.state.phase)
+        assertEquals(ConnectionFailure.OUT_OF_RANGE, phase.reason)
+        assertEquals(listOf(ConnectionEffect.StopScan), result.effects)
+    }
+
+    @Test
+    fun scanTimedOutAfterWeAlreadyMovedOnIsIgnored() {
+        // A late timeout (a connect already started) must not clobber the Connecting phase.
+        val result =
+            reduceConnection(state(ConnectionPhase.Connecting(pairing = false)), ConnectionMsg.ScanTimedOut)
+        assertIs<ConnectionPhase.Connecting>(result.state.phase)
         assertTrue(result.effects.isEmpty())
     }
 
