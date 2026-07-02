@@ -28,6 +28,7 @@ class FakeGamesRepository : GamesRepository {
     var onUpdatePgn: ((String, String) -> Unit)? = null
     val finishGameCalls = mutableListOf<Triple<String, GameResult, String>>()
     var finishGameFailures = 0
+    val deleteGameCalls = mutableListOf<String>()
 
     private val _changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     override val changes: SharedFlow<Unit> = _changes.asSharedFlow()
@@ -86,6 +87,14 @@ class FakeGamesRepository : GamesRepository {
             finishGameFailures--
             throw IllegalStateException("finish failed")
         }
+        _changes.tryEmit(Unit)
+    }
+
+    // Records the attempt before failing (so ordering tests can assert the cloud call was made),
+    // then emits changes on success — the observable behavior of the real implementation.
+    override suspend fun deleteGame(id: String) {
+        deleteGameCalls += id
+        if (shouldFail) throw failure
         _changes.tryEmit(Unit)
     }
 }

@@ -5,10 +5,11 @@ import kotlinx.coroutines.flow.SharedFlow
 interface GamesRepository {
     /**
      * Emits once after any mutation that changes what the games **list** shows — a new game
-     * ([createGame]) or a game closing ([finishGame]). A retained list screen (History) collects
-     * this to re-fetch, instead of depending on UI composition re-entry or a lifecycle resume —
-     * both diverge across Android / iOS / web. Deliberately NOT emitted for [updatePgn]: that is
-     * movetext-only (the list shows none of it) and fires on every move.
+     * ([createGame]), a game closing ([finishGame]), or a game being removed ([deleteGame]). A
+     * retained list screen (History) collects this to re-fetch, instead of depending on UI
+     * composition re-entry or a lifecycle resume — both diverge across Android / iOS / web.
+     * Deliberately NOT emitted for [updatePgn]: that is movetext-only (the list shows none of it)
+     * and fires on every move.
      */
     val changes: SharedFlow<Unit>
 
@@ -46,4 +47,13 @@ interface GamesRepository {
         result: GameResult,
         pgn: String,
     )
+
+    /**
+     * Permanently deletes one own game — `DELETE FROM games WHERE id = $1` (contract §3.2). The
+     * caller never passes a user id; RLS scopes ownership. Deleting an already-gone row (e.g. raced
+     * from another device) matches zero rows and is an idempotent success. Emits [changes] on
+     * success so the History list re-fetches. Requires connectivity; failures propagate to the
+     * caller.
+     */
+    suspend fun deleteGame(id: String)
 }

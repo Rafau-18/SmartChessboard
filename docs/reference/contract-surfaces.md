@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-06-30
+updated: 2026-07-02
 ---
 
 ## Purpose
@@ -335,10 +335,16 @@ Listed as conceptual operations; SDK call shapes vary by language.
 | Get one game | `SELECT ... FROM games WHERE id = $1` | FR-015, FR-016 |
 | Auto-save move | `UPDATE games SET pgn = $1, status = $2, result = $3 WHERE id = $4` | FR-014 |
 | Mark finished | `UPDATE games SET status = 'finished', result = $1, pgn = $2 WHERE id = $3` | FR-007 (auto mate/stalemate), FR-018 (manual end) — one atomic update of status + result + pgn so the row never half-finishes (widened 2026-06-17, S-05) |
-| Delete game | `DELETE FROM games WHERE id = $1` | User cleanup (not a numbered FR) |
+| Delete game | `DELETE FROM games WHERE id = $1` | FR-021, US-04 — permanent delete of one own game from history, any status, all surfaces incl. web; owner-scoped by RLS `games_delete_own`; hard delete, no trash/undo (promoted to must-have 2026-07-02, S-11) |
 
 Mobile does **not** pass `user_id` explicitly on any write — Postgres reads it
 from the JWT via `auth.uid()` and RLS enforces ownership on every row.
+
+Deleting a game removes only the `games` row; it never deletes from
+`position_evals`, which is a global cache keyed by normalized FEN (§2.3) and
+shared across users. A game may be deleted in any status (`in_progress` or
+`finished`). The `on delete cascade` on `games.user_id` (§2.2) is the
+account-deletion path, not this per-game delete.
 
 ### 3.3 Edge Function: `lichess-eval`
 
@@ -433,6 +439,14 @@ device-local storage. Cloud is the backup/sync layer, not the live source.
   Supabase.
 - If the device is offline, gameplay continues without interruption; queued
   updates flush on reconnect.
+- Deleting a game is **online-only** in the MVP (amended 2026-07-02, S-11): the
+  cloud `DELETE` runs first, and only on success is the game's local
+  write-ahead-journal entry dropped, so a not-yet-synced game cannot reappear on
+  the next reconcile. Offline the action **fails visibly** and nothing is removed
+  locally — unlike accepted moves, delete is not queued. Rationale: the history
+  list is itself cloud-only (there is no local games list), so delete is
+  unreachable offline; a queued-delete/tombstone design (local-first, flush on
+  reconnect, last-write-wins) is deferred as a post-MVP option.
 - For MVP: last-write-wins conflict policy is sufficient because:
   - Physical-mode games are bound to a single device (PRD FR-013).
   - Digital pass-and-play games are inherently single-device.

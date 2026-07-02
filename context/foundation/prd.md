@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-19
+updated: 2026-07-02
 context_type: greenfield
 product_type: mobile
 target_scale:
@@ -52,6 +52,7 @@ Each player wants their own account, their own game history, and the ability to 
 - The product does not silently corrupt physical-board input. Every confirmed physical-board state results in either a specific legal move being saved or a visible error path that asks the player to correct the board state.
 - A crash must not erase moves that were already accepted and saved before the crash.
 - The core digital pass-and-play, save, replay, and post-game analysis flow works without connected physical hardware.
+- The product never deletes a game without an explicit player confirmation, and a delete removes only the one selected game belonging to the signed-in owner. Deletion is irreversible; no other game is ever affected.
 
 ## User Stories
 
@@ -100,6 +101,22 @@ Each player wants their own account, their own game history, and the ability to 
 - The chosen game opens at a reproducible board state.
 - Replay controls let the player jump to the start, step backward, step forward, and jump to the end.
 - Post-game position evaluation is available from the replay/review flow.
+
+### US-04: Player removes an unwanted game from history
+
+- **Given** a signed-in player is viewing their own game history
+- **When** they choose to delete a game and confirm the irreversible action
+- **Then** the game is permanently removed from their history on every signed-in device and no longer appears in the list, replay, or analysis.
+
+#### Acceptance Criteria
+
+- Any of the player's own games can be deleted from the history list, regardless of status (in-progress or finished).
+- Deletion is offered from the game history surface, not from the active play screen.
+- Before anything is removed, the player must confirm the action in an explicit confirmation step; cancelling leaves the game untouched.
+- Deletion is permanent — no trash, undo, or restore — and removes only the selected game.
+- A player can only delete their own games; another player's games are never affected.
+- Once deleted, the game disappears from the list and is removed from local storage and cloud backup, reflected across the player's signed-in devices.
+- The same delete path is available on iOS, Android, and the web target.
 
 ## Functional Requirements
 
@@ -165,12 +182,15 @@ Each player wants their own account, their own game history, and the ability to 
 - FR-018: Player can manually mark the end of a game and record its result (win/loss/draw). Priority: must-have
   > Socrates: Counter-argument considered: "A completed PGN move record can exist without explicit result handling." Resolution: promoted to must-have; with no automatic detection of draw-by-rule (threefold repetition, 50-move, insufficient material) in MVP, manual end-of-game is the only way to close such games and produce a complete PGN result tag.
 
+- FR-021: Player can permanently delete one of their own games from their history — on iOS, Android, and the web target. Deletion is offered from the history surface for games in any status (in-progress or finished), requires an explicit confirmation step because it is irreversible, removes only the selected game, and propagates to both local storage and cloud backup across the player's signed-in devices. Priority: must-have
+  > Socrates: Counter-argument considered: "Delete is user cleanup the backend already permits (RLS `games_delete_own`), so it need not be a numbered product requirement." Resolution: promoted to must-have; completing CRUD for the durable game record is a stated product goal, and a destructive, irreversible action needs an explicit confirmation guardrail and owner-scoping that only a first-class requirement pins down. Hard delete (no trash/undo) keeps MVP scope tight and matches the already-shipped `DELETE` contract surface (`contract-surfaces.md` §3.2).
+
 ### Platform Surfaces
 
 - FR-019: Player can use the core play, save, history, replay, and post-game analysis flow on iOS and Android. Priority: must-have
   > Socrates: Counter-argument considered: "A single mobile platform could reduce MVP scope." Resolution: kept as must-have; the chosen product surface is mobile across iOS and Android.
 
-- FR-020: Player can use a web target for the digital subset of the MVP — digital pass-and-play game creation (FR-003, FR-004), game history list (FR-015), replay (FR-016), post-game analysis (FR-017), and end-of-game marking (FR-018) — without the physical-board flow (FR-008–FR-013) and without BLE diagnostics (FR-011). Priority: nice-to-have
+- FR-020: Player can use a web target for the digital subset of the MVP — digital pass-and-play game creation (FR-003, FR-004), game history list (FR-015), replay (FR-016), post-game analysis (FR-017), end-of-game marking (FR-018), and game deletion (FR-021) — without the physical-board flow (FR-008–FR-013) and without BLE diagnostics (FR-011). Priority: nice-to-have
   > Socrates: Counter-argument considered: "Web should be equal to mobile if the project target can produce it." Resolution: kept as nice-to-have; partial parity for digital flows is acceptable. Reworded 2026-05-27 to narrow scope: physical-board mode and BLE are mobile-only because Web Bluetooth has inconsistent cross-browser support (no Safari on iOS, mobile browsers limited) and the small-circle MVP use case does not justify the integration cost.
 
 ## Non-Functional Requirements
@@ -180,6 +200,7 @@ Each player wants their own account, their own game history, and the ability to 
 - The core mobile product is available and usable on the latest two major versions of iOS and Android at MVP release time.
 - The physical board uses Bluetooth Low Energy (BLE) as its sole wireless transport in MVP; it does not initialize Wi-Fi peripherals, store Wi-Fi credentials, or depend on a local router for physical-mode play.
 - Saved games are persisted locally on the player's device and backed up to cloud storage scoped to the signed-in account; the same game history is available across the player's signed-in devices.
+- Deleting a game removes it from both local storage and cloud backup, and the removal is reflected across the player's signed-in devices.
 
 ## Business Logic
 
@@ -188,6 +209,8 @@ The product records each game as an analysis-ready canonical chess record made o
 The rule consumes played chess moves from two user-facing channels: interactive digital-board moves and physical-board move sequences confirmed by side-specific buttons. It accepts only move attempts that can be resolved into the legal continuation of the current game.
 
 Every submitted move attempt ends in one of two user-visible outcomes: a specific legal move is accepted and persisted into the game record, or the attempt is rejected and the player receives a correction path. The user encounters this rule during play, while recovering from physical-board detection errors, when reopening the saved game, and when reviewing evaluated positions.
+
+Beyond recording and reviewing games, the owner may permanently remove one of their own games from history. Deletion is owner-scoped, requires explicit confirmation, is irreversible, and affects only the selected game; it never touches the shared position-evaluation cache.
 
 ## Access Control
 
@@ -217,6 +240,8 @@ The following stack-shape decisions were settled on 2026-05-27, after the origin
 - **`createGame` carries an explicit mode (2026-06-19, S-06)**: game creation now passes `mode` (`'digital'`/`'physical'`) as an explicit client argument instead of hardcoding `'digital'`, so physical-mode games (FR-008) are created through the same path as digital play. No DB migration — `games.mode` already accepts `'physical'` (CHECK constraint since the schema's creation); RLS and the `user_id` default are unchanged. See `contract-surfaces.md` §3.2.
 - **Firmware BLE GATT UUIDs assigned (2026-06-19, F-03)**: the smart-board GATT family is minted and recorded in `contract-surfaces.md` §1.2 — 128-bit base `787e000X-15a4-4fc9-a469-05096dbad1a1`, where `X` = 1 (primary service) / 2 (`board_event`, notify) / 3 (`mobile_command`, write). The firmware (F-03) and the mobile BLE adapter (S-09) must use these exact bytes. Mirrored here per the contract's §1 change-control rule (Section 1 BLE changes land in both `prd-firmware.md` and `prd.md`); no product-FR change — this is an internal firmware↔mobile wire detail. The firmware toolchain is settled as **ESP-IDF + NimBLE** and power as **USB-only** (`battery_pct` constant 100); see `prd-firmware.md` Open Questions 2/4/5.
 
+- **CRUD completion — delete a game (2026-07-02, S-11)**: game history gains a delete capability (FR-021, US-04), promoted to must-have to complete CRUD for the durable game record. **Hard delete** (permanent `DELETE`, no trash/undo), **owner-scoped** by the already-shipped RLS policy `games_delete_own`, offered from the history surface for games in **any status** (in-progress or finished), gated behind an **explicit user confirmation** because it is irreversible, and wired **identically on iOS, Android, and the web target** (one shared path, no per-surface branching). No schema or migration change — the `games_delete_own` policy and the `DELETE` API surface have existed since S-01; this decision only makes them a first-class product requirement. Delete never removes rows from the global `position_evals` cache. Delete is **online-only** in the MVP (cloud `DELETE` first; on success the local write-ahead-journal entry is dropped; offline it fails visibly and removes nothing) — the history list is itself cloud-only so delete is unreachable offline, and a queued-delete/tombstone design is deferred as a post-MVP option. See `contract-surfaces.md` §2.4/§3.2/§3.4.
+
 These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that those questions' resolutions already anticipated — see the Open Questions section below for the full reasoning trail.
 
 ## Non-Goals
@@ -231,6 +256,8 @@ These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that t
 - No multi-client realtime physical play. The MVP assumes one active device next to the physical board, not separate synchronized phones for both players.
 - No guided physical-board recovery UX in MVP. When a sequence is rejected, the player uses the raw live reed-switch diagnostics (FR-011) to manually restore the previous legal position. A step-by-step guided restoration flow is post-MVP; MVP only commits to the happy path plus a visible error message and raw diagnostics.
 - No physical-board mode on the web target. The BLE connection to the smart chessboard is mobile-only (iOS + Android). The web target supports digital play, history, replay, and post-game analysis exclusively.
+- No bulk or multi-select game deletion. Delete acts on one selected game at a time in the MVP (FR-021).
+- No trash, undo, restore, or archive for deleted games. Deletion is a permanent hard delete; recovering a deleted game is out of MVP scope.
 
 ## Open Questions
 

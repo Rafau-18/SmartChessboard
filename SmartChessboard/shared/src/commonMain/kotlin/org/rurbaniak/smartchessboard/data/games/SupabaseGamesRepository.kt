@@ -133,6 +133,18 @@ class SupabaseGamesRepository(
             }
         _changes.tryEmit(Unit)
     }
+
+    // DELETE FROM games WHERE id = $1 (contract §3.2). No user_id from the client — RLS scopes
+    // ownership. A missing/foreign id matches zero rows and succeeds silently (idempotent
+    // double-delete). Emit only after the call returns without throwing (mirrors finishGame).
+    override suspend fun deleteGame(id: String) {
+        client
+            .from("games")
+            .delete {
+                filter { eq("id", id) }
+            }
+        _changes.tryEmit(Unit)
+    }
 }
 
 private fun GameRowDto.toDomain(): GameSummary =

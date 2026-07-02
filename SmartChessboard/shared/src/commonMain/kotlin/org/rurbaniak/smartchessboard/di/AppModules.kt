@@ -14,6 +14,7 @@ import org.rurbaniak.smartchessboard.data.supabase.createAppSupabaseClient
 import org.rurbaniak.smartchessboard.domain.auth.AuthRepository
 import org.rurbaniak.smartchessboard.domain.eval.EvalRepository
 import org.rurbaniak.smartchessboard.domain.games.GameAutoSaver
+import org.rurbaniak.smartchessboard.domain.games.GameDeleter
 import org.rurbaniak.smartchessboard.domain.games.GameJournal
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import org.rurbaniak.smartchessboard.domain.preferences.UiPreferences
@@ -37,6 +38,8 @@ val dataModule =
         single<UiPreferences> { SettingsUiPreferences(get()) }
         // Per-screen instance: syncPending tracks the one game a Play screen drives.
         factory { GameAutoSaver(gamesRepository = get(), journal = get()) }
+        // Stateless orchestrator (cloud delete then journal.clear) — HistoryViewModel takes it.
+        factory { GameDeleter(gamesRepository = get(), journal = get()) }
     }
 
 val presentationModule =
