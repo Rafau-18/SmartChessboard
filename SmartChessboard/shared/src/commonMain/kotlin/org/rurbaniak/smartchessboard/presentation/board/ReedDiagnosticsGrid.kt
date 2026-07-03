@@ -2,6 +2,7 @@ package org.rurbaniak.smartchessboard.presentation.board
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -9,15 +10,27 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import org.rurbaniak.smartchessboard.presentation.components.BOARD_CHROME_COLUMN
 import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import org.rurbaniak.smartchessboard.domain.chess.Color as PieceColor
+
+/**
+ * The grid never shrinks below this, so the 8×8 readout stays legible (~15 dp cells) even when the
+ * height budget collapses — smaller than the board's floor because the grid is a sensor readout, not
+ * an interaction surface.
+ */
+private val GRID_MIN_SIDE = 120.dp
 
 /**
  * A live 8×8 reed-switch readout (S-07, FR-011) that highlights which squares disagree with the
@@ -32,6 +45,11 @@ import org.rurbaniak.smartchessboard.domain.chess.Color as PieceColor
  * Geometry is shared with the main board via [squareAt]/[isDarkSquare], so the grid sits under
  * [ChessBoardView] in the same orientation and the player maps physical squares 1:1. Occupancy and
  * diff are read with the h8-safe bit test (square 63 is the sign bit — see [isOccupied]). Display-only.
+ *
+ * Like the board, the grid is height-bound so it never overflows a short window: in a bounded slot
+ * the incoming max height is the budget; in a vertically scrolling column it falls back to the
+ * viewport height less [verticalChrome] (the `ResizableBoardBox` pattern — the caller passes the
+ * reservation matching where the grid renders). The side is resolved by [diagnosticsGridSide].
  */
 @Composable
 fun ReedDiagnosticsGrid(
@@ -39,25 +57,56 @@ fun ReedDiagnosticsGrid(
     expected: Long?,
     modifier: Modifier = Modifier,
     orientation: PieceColor = PieceColor.WHITE,
+    verticalChrome: Dp = BOARD_CHROME_COLUMN,
 ) {
-    Box(modifier = modifier.aspectRatio(1f)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            for (rowFromTop in 0..7) {
-                Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    for (column in 0..7) {
-                        val square = squareAt(column, rowFromTop, orientation)
-                        DiagnosticsCell(
-                            occupied = isOccupied(observed, square),
-                            differs = occupancyDiffers(observed, expected, square),
-                            dark = isDarkSquare(square),
-                            modifier = Modifier.weight(1f).fillMaxHeight(),
-                        )
+    BoxWithConstraints(modifier = modifier) {
+        val heightBudget =
+            if (constraints.hasBoundedHeight) {
+                maxHeight
+            } else {
+                val viewportHeightPx = LocalWindowInfo.current.containerSize.height
+                if (viewportHeightPx > 0) {
+                    with(LocalDensity.current) { viewportHeightPx.toDp() } - verticalChrome
+                } else {
+                    Dp.Unspecified
+                }
+            }
+        val side = diagnosticsGridSide(availableWidth = maxWidth, heightBudget = heightBudget)
+        Box(modifier = Modifier.width(side).aspectRatio(1f).align(Alignment.TopCenter)) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                for (rowFromTop in 0..7) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                        for (column in 0..7) {
+                            val square = squareAt(column, rowFromTop, orientation)
+                            DiagnosticsCell(
+                                occupied = isOccupied(observed, square),
+                                differs = occupancyDiffers(observed, expected, square),
+                                dark = isDarkSquare(square),
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
+
+/**
+ * The square grid side: the available width bounded by the [heightBudget], floored at [GRID_MIN_SIDE]
+ * (but never above the width — a degenerate slot yields the width, not an overflow). An unknown
+ * budget ([Dp.Unspecified] — window size not yet measured) leaves the grid width-bound, matching
+ * `boardSide()`'s early-frame behavior. Pure, so it is unit-testable on every target.
+ */
+internal fun diagnosticsGridSide(
+    availableWidth: Dp,
+    heightBudget: Dp,
+): Dp =
+    if (heightBudget == Dp.Unspecified) {
+        availableWidth
+    } else {
+        minOf(availableWidth, heightBudget).coerceAtLeast(minOf(availableWidth, GRID_MIN_SIDE))
+    }
 
 /**
  * One reed cell: a neutral checker background, tinted to the error container when it disagrees with

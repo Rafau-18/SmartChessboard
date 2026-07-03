@@ -459,7 +459,7 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 4.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean
+- [x] 4.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean — 0c62e2b
 
 #### Manual
 
@@ -472,7 +472,7 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [ ] 5.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean
+- [x] 5.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean
 
 #### Manual
 

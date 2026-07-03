@@ -107,3 +107,34 @@ Manual checks (deferred to the end-of-slice pass):
       portrait auto-fit unchanged
 - [ ] 4.5 Move-list defaults per container (INLINE portrait / TABLE panel); override wins both
       ways
+
+## Phase 5: PhysicalPlay adoption (recovery side-by-side)
+
+Automated gate: **passed** (all four Gradle targets green — `ReedDiagnosticsGridTest` extended
+with `diagnosticsGridSide` bounds, runs on host + iOS simulator + wasm; ktlint clean).
+
+Implementation notes for the pass:
+- PhysicalPlay renders through `BoardScreenScaffold` with a screen-specific banner slot
+  (112 dp): **BoardMessage when present, else StatusBanner** — one fixed slot, one occupant, so
+  neither appearing nor disappearing ever moves the board. The recovery message outranks the
+  turn indicator (during a pause/rejection the instruction is what the player needs); message
+  text above ~2 lines scrolls internally (40 dp cap) instead of growing the slot.
+- The diagnostics grid is height-bound everywhere (`diagnosticsGridSide`: bounded slot →
+  its height; scrolling column → viewport less chrome; 120 dp readability floor). In the side
+  panel the diagnostics section renders **first** (above the sensor-dots toggle) with a
+  pane-specific 180 dp chrome so the whole grid sits above the fold beside the board; portrait
+  keeps today's order (toggle, then grid) with the board's 140 dp column chrome.
+- The grid caption ("Reed diagnostics — …" + Hide) moved **below** the grid in both
+  arrangements — it no longer pushes the grid down at compact height.
+- `keepScreenOn` (AdaptiveScaffold modifier), the live sensor-dots overlay, and the at-rest
+  mismatch tinting are untouched; only where the sections render changed.
+
+Manual checks (deferred to the end-of-slice pass):
+
+- [ ] 5.2 Landscape recovery: diagnostics grid beside the live board, both fully visible
+      without scrolling
+- [ ] 5.3 Portrait: grid height-bound (no overflow at low heights)
+- [ ] 5.4 BoardMessage no-jump; long messages stay inside the bounded slot; keepScreenOn +
+      sensor dots intact
+- [ ] 5.5 Mid-game rotation (physical/BLE or emulator): link + state survive, layout
+      re-arranges cleanly
