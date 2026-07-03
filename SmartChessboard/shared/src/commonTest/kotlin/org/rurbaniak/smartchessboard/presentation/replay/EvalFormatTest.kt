@@ -32,9 +32,10 @@ class EvalFormatTest {
     }
 
     @Test
-    fun formatsBestMoveAsArrowText() {
-        assertEquals("e2→e4", formatBestMove("e2e4"))
-        assertEquals("e7→e8", formatBestMove("e7e8q"))
+    fun formatsBestMoveAsHyphenatedLongAlgebraic() {
+        // A hyphen, not an arrow — the WasmJS font has no `→` glyph (renders as tofu on web).
+        assertEquals("e2-e4", formatBestMove("e2e4"))
+        assertEquals("e7-e8", formatBestMove("e7e8q"))
         assertNull(formatBestMove("e2"))
     }
 
