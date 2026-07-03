@@ -419,8 +419,8 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 1.1 All targets compile and existing tests stay green (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`, `assembleDebug`)
-- [x] 1.2 ktlint clean
+- [x] 1.1 All targets compile and existing tests stay green (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`, `assembleDebug`) — 0c9e1cc
+- [x] 1.2 ktlint clean — 0c9e1cc
 
 #### Manual
 
@@ -433,11 +433,11 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [ ] 2.1 Dependency spike: chosen ladder rung compiles on all three targets; outcome recorded
-- [ ] 2.2 Policy-function unit tests green on host + iOS simulator (479/480, 839/840, 600/900)
-- [ ] 2.3 Updated `MoveListModeTest` green on host + iOS simulator
-- [ ] 2.4 Token grep: one 480 declaration site; `VERTICAL_CHROME` symbol gone
-- [ ] 2.5 All targets compile; wasm tests green; ktlint clean
+- [x] 2.1 Dependency spike: chosen ladder rung compiles on all three targets; outcome recorded
+- [x] 2.2 Policy-function unit tests green on host + iOS simulator (479/480, 839/840, 600/900)
+- [x] 2.3 Updated `MoveListModeTest` green on host + iOS simulator
+- [x] 2.4 Token grep: one 480 declaration site; `VERTICAL_CHROME` symbol gone
+- [x] 2.5 All targets compile; wasm tests green; ktlint clean
 
 #### Manual
 

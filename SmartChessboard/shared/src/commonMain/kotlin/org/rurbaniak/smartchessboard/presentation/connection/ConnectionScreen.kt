@@ -33,9 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.board.DiscoveredBoard
-
-/** Caps the content width so the list/status don't stretch edge-to-edge on wide screens. */
-private val CONNECTION_MAX_WIDTH = 480.dp
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
 /**
  * The BLE connection / pairing screen (S-09 Phase 5) — a gate the physical-play flow passes through:
@@ -89,7 +87,7 @@ fun ConnectionScreen(
                 modifier =
                     Modifier
                         .align(Alignment.TopCenter)
-                        .widthIn(max = CONNECTION_MAX_WIDTH)
+                        .widthIn(max = SECTION_MAX_WIDTH)
                         // Fill the height so the device list can take a weighted share and the trailing
                         // "Forget saved board" action stays pinned on screen at any list length / height.
                         .fillMaxSize()

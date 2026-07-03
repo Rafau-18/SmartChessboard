@@ -22,12 +22,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.rurbaniak.smartchessboard.domain.preferences.clampBoardSize
-
-/** At and above this window width a board screen counts as "wide" — it auto-fits and gets a resize handle. */
-val WIDE_SCREEN_MIN_WIDTH = 840.dp
-
-/** Vertical room reserved for chrome above/below the board (top bar, status line, controls) when height-bounding. */
-private val VERTICAL_CHROME = 140.dp
+import org.rurbaniak.smartchessboard.presentation.components.BOARD_CHROME_COLUMN
+import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
+import org.rurbaniak.smartchessboard.presentation.layout.isWidthExpanded
 
 /** The board never shrinks below this, even on a very short window, so it stays usable. */
 private val MIN_BOARD_SIDE = 200.dp
@@ -40,16 +37,14 @@ private val BOARD_MAX_SIDE = 1000.dp
 private val HANDLE_SIZE = 28.dp
 
 /**
- * True when the current window is wide enough to auto-fit + resize the board. Reads the window size
- * directly (not the local layout constraints) so Play/PhysicalPlay — which have no breakpoint
- * `BoxWithConstraints` of their own — share Replay's two-pane threshold.
+ * True when the current window is width-expanded (>= 840 dp) — the historical "wide screen" flag,
+ * now a one-line derivation of [LocalWindowSizeClass] so every screen shares the root's
+ * classification. Deprecated in spirit: new code should use the policy functions in
+ * `presentation/layout/AdaptiveLayout.kt` (`screenChrome` / `boardArrangement` /
+ * `boardResizeEnabled`); this remains only for existing call sites and retires with them.
  */
 @Composable
-fun rememberIsWideScreen(): Boolean {
-    val widthPx = LocalWindowInfo.current.containerSize.width
-    val width = with(LocalDensity.current) { widthPx.toDp() }
-    return width >= WIDE_SCREEN_MIN_WIDTH
-}
+fun rememberIsWideScreen(): Boolean = LocalWindowSizeClass.current.isWidthExpanded
 
 /**
  * Sizes a chessboard consistently across the board screens. On a phone ([isWide] = false) the board
@@ -68,6 +63,7 @@ fun ResizableBoardBox(
     onSizeChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     reservedWidth: Dp = 0.dp,
+    verticalChrome: Dp = BOARD_CHROME_COLUMN,
     content: @Composable (Modifier) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -80,6 +76,7 @@ fun ResizableBoardBox(
                 availableWidth = maxWidth,
                 reservedWidth = reservedWidth,
                 viewportHeight = viewportHeight,
+                verticalChrome = verticalChrome,
                 size = size,
             )
         // Drag maps to the board's own width budget (pane minus the reserved adjacent element), so the
@@ -106,15 +103,17 @@ fun ResizableBoardBox(
 /**
  * The square board side: bounded by the usable width (the pane less [reservedWidth] for an adjacent
  * element such as the eval bar, scaled by [size] only on a wide screen), by an absolute [BOARD_MAX_SIDE]
- * cap, and by the viewport height (less [VERTICAL_CHROME]); floored at [MIN_BOARD_SIDE] (but never above
- * the usable width). [viewportHeight] is [Dp.Unspecified] when the window size isn't known yet (early
- * frame / preview), in which case only the width/cap bounds apply.
+ * cap, and by the viewport height less [verticalChrome] — the per-arrangement chrome reservation
+ * (`BOARD_CHROME_COLUMN` / `BOARD_CHROME_SIDE_PANE`, `components/Layout.kt`); floored at
+ * [MIN_BOARD_SIDE] (but never above the usable width). [viewportHeight] is [Dp.Unspecified] when the
+ * window size isn't known yet (early frame / preview), in which case only the width/cap bounds apply.
  */
 private fun boardSide(
     isWide: Boolean,
     availableWidth: Dp,
     reservedWidth: Dp,
     viewportHeight: Dp,
+    verticalChrome: Dp,
     size: Float,
 ): Dp {
     val usableWidth = (availableWidth - reservedWidth).coerceAtLeast(0.dp)
@@ -122,7 +121,7 @@ private fun boardSide(
     val capped = minOf(widthBound, BOARD_MAX_SIDE)
     val bounded =
         if (viewportHeight != Dp.Unspecified) {
-            minOf(capped, (viewportHeight - VERTICAL_CHROME).coerceAtLeast(MIN_BOARD_SIDE))
+            minOf(capped, (viewportHeight - verticalChrome).coerceAtLeast(MIN_BOARD_SIDE))
         } else {
             capped
         }

@@ -55,10 +55,8 @@ import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
 import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.play.EndGamePicker
-
-/** Caps the non-board sections (status, diagnostics, controls, move list) so they don't stretch edge-to-edge on wide screens. */
-private val SECTION_MAX_WIDTH = 480.dp
 
 /**
  * The physical-mode game screen (S-06). Renders the same components as the digital flow but driven by

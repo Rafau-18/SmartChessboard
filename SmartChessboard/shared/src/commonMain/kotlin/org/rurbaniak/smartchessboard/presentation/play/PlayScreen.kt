@@ -48,9 +48,7 @@ import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
 import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
-
-/** Caps the non-board sections (status, controls, move list) so they don't stretch edge-to-edge on wide screens. */
-private val SECTION_MAX_WIDTH = 480.dp
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -49,10 +49,8 @@ import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
 import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.SIDE_PANEL_MAX_WIDTH
-
-/** Caps the non-board sections (player line, panel, controls, move list) so they don't stretch edge-to-edge. */
-private val SECTION_MAX_WIDTH = 480.dp
 
 /** Material "expanded" breakpoint — at and above this width ReplayScreen lays out as two panes. */
 private val TWO_PANE_MIN_WIDTH = 840.dp

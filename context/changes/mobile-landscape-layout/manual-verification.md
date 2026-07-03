@@ -31,3 +31,26 @@ Manual checks (deferred to the end-of-slice pass):
 - [ ] 1.4 Connection with a long device list at phone height: "Forget saved board" reachable
 - [ ] 1.5 EndGamePicker at ~360 dp height: all result options + confirm reachable
 - [ ] 1.6 Cutout device, both landscape rotations: nothing under the cutout; portrait unregressed
+
+## Phase 2: Window classification foundation + token consolidation
+
+Automated gate: **passed** (all four Gradle targets green + ktlint clean; `AdaptiveLayoutTest`
+11/11 and `MoveListModeTest` 3/3 on host **and** iOS simulator; token greps clean).
+
+Dependency-spike outcome (plan Phase 2 item #1, decision ladder):
+- **Rung 1 FAILED**: `org.jetbrains.compose.material3.adaptive:adaptive:1.3.0-beta02` — its
+  Android variant requires **AGP >= 9.1.0** (project pins 9.0.1) and flags compileSdk 37
+  (project pins 36). Bumping AGP is out of this change's scope.
+- **Rung 2 WON**: `org.jetbrains.androidx.window:window-core:1.5.1` — type-only dependency;
+  resolves and compiles on all three targets. API surface verified from the artifact's sources:
+  public `WindowSizeClass(minWidthDp, minHeightDp)` constructor,
+  `isWidthAtLeastBreakpoint`/`isHeightAtLeastBreakpoint`, official constants
+  (`WIDTH_DP_EXPANDED_LOWER_BOUND=840`, `HEIGHT_DP_MEDIUM_LOWER_BOUND=480`), and
+  `BREAKPOINTS_V1.computeWindowSizeClass(...)` selectors.
+- The class is computed at the App root from `LocalWindowInfo.containerSize` (bucketed via
+  `BREAKPOINTS_V1`) and exposed through `LocalWindowSizeClass` — exactly the rung-2 shape the
+  plan anticipated.
+
+Manual checks (deferred to the end-of-slice pass):
+
+- [ ] 2.6 Spot-check (Android): visuals unchanged — phase is behavior-neutral

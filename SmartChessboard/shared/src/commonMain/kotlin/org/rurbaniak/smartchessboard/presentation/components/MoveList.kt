@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
  * (`onJump(plyIndex + 1)`); when null (Play) the list is display-only — Play always sits at the live
  * position and has no scrubbing. [tableMode] picks the lichess-style two-column grid (white | black,
  * one full move per row) over the compact inline flow; the caller derives it from the persisted
- * preference + screen width (see `effectiveMoveListMode`).
+ * preference + the list's container (see `effectiveMoveListMode`).
  */
 @Composable
 internal fun MoveList(

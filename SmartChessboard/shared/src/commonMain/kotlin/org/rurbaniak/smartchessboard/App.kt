@@ -12,6 +12,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,8 @@ import org.rurbaniak.smartchessboard.presentation.auth.AuthViewModel
 import org.rurbaniak.smartchessboard.presentation.auth.SignInScreen
 import org.rurbaniak.smartchessboard.presentation.connection.ConnectionScreen
 import org.rurbaniak.smartchessboard.presentation.history.HistoryScreen
+import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
+import org.rurbaniak.smartchessboard.presentation.layout.currentWindowSizeClass
 import org.rurbaniak.smartchessboard.presentation.navigation.ConnectionKey
 import org.rurbaniak.smartchessboard.presentation.navigation.HistoryKey
 import org.rurbaniak.smartchessboard.presentation.navigation.NewGameKey
@@ -47,6 +50,16 @@ import org.rurbaniak.smartchessboard.presentation.theme.ThemeViewModel
 
 @Composable
 fun App() {
+    // One classification source for the whole app: the window size class is computed once here and
+    // every screen reads the same value via LocalWindowSizeClass — one measurement base (the window's
+    // containerSize), never local layout constraints.
+    CompositionLocalProvider(LocalWindowSizeClass provides currentWindowSizeClass()) {
+        AppContent()
+    }
+}
+
+@Composable
+private fun AppContent() {
     // Resolved at the composition root so the theme wraps every session state (Restoring / SignIn /
     // SignedIn) and the History control can drive it. mode persists via UiPreferences.
     val themeViewModel = koinViewModel<ThemeViewModel>()

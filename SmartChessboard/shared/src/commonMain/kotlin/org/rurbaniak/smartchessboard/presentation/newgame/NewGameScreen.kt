@@ -36,9 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
-
-/** Caps the form width on wide screens so the fields don't stretch edge-to-edge. */
-private val FORM_MAX_WIDTH = 480.dp
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +89,7 @@ fun NewGameScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val fieldModifier = Modifier.widthIn(max = FORM_MAX_WIDTH).fillMaxWidth()
+            val fieldModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
             // Digital / Physical picker — only on platforms that can drive a physical board. Web never
             // shows it and defaults to digital, so a web-created game is never a physical one.
             if (supportsPhysicalBoard) {
