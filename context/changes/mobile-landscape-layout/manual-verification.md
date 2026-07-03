@@ -77,3 +77,33 @@ Manual checks (deferred to the end-of-slice pass):
 - [ ] 3.3 Rail cutout-safe in both landscape rotations (Android cutout device + iPhone)
 - [ ] 3.4 Rail targets tappable (>= 48 dp); web short window shows rail, tall window restores
       the top bar (continuous resize)
+
+## Phase 4: BoardScreenScaffold + Play adoption
+
+Automated gate: **passed** (all four Gradle targets green — new `BoardScreenScaffoldTest` 6/6
+runs on host + iOS simulator + wasm; ktlint clean on `src/`, generated files excepted as before).
+
+Implementation notes for the pass:
+- `BoardScreenScaffold` (new, `presentation/components/`) is the arrangement authority:
+  side-pane (board beside a scrolling panel) at compact height or expanded width, the portrait
+  column otherwise. The banner renders in a **fixed-height reserved slot** (`BANNER_SLOT_HEIGHT`,
+  56 dp) — laid out even when empty, pinned to the top of the panel in side-pane — so a banner
+  appearing/disappearing never moves the board. Note for portrait: Play's board sits ~30 dp
+  lower than before (the slot reserves the emphasized banner's height permanently); that is the
+  intended no-jump trade-off.
+- Panel width is the pure `sidePanelWidth` function: the board is primary (fills its height
+  budget), the panel takes the leftover clamped to 340..480 dp, never crushing the board below
+  200 dp.
+- Board height budget in side-pane is now **exact**: the pane's bounded constraint (insets and
+  chrome consumed upstream) instead of the window-minus-estimate path, which remains only for
+  scrollable columns. Play gates the resize handle on `boardResizeEnabled()` and derives the
+  move-list default from the container (`boardArrangement == SidePane`).
+
+Manual checks (deferred to the end-of-slice pass):
+
+- [ ] 4.2 Play landscape phone: rail + height-filling board + panel; no below-fold primaries
+- [ ] 4.3 Banner appear/disappear never moves the board (portrait + landscape)
+- [ ] 4.4 Resize handle: absent at compact height; present + persisted on wide web/desktop;
+      portrait auto-fit unchanged
+- [ ] 4.5 Move-list defaults per container (INLINE portrait / TABLE panel); override wins both
+      ways

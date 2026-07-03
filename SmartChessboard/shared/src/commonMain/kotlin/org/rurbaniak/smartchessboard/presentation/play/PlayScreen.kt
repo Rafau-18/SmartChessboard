@@ -5,16 +5,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -42,11 +39,14 @@ import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewMode
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
-import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
-import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
+import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.boardResizeEnabled
 
 @Composable
 fun PlayScreen(
@@ -61,9 +61,13 @@ fun PlayScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
     val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
-    val isWide = rememberIsWideScreen()
+    // Window-shape policies: the resize handle only on a true wide screen (never a landscape phone),
+    // and the move-list default follows the container it renders in (side panel → TABLE).
+    val windowSizeClass = LocalWindowSizeClass.current
+    val boardResize = boardResizeEnabled(windowSizeClass)
+    val inSidePanel = boardArrangement(windowSizeClass) == BoardArrangement.SidePane
     val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
-    val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
+    val tableMoveList = effectiveMoveListMode(moveListOverride, inSidePanel) == MoveListMode.TABLE
     AdaptiveScaffold(
         title = { Text(titleFor(uiState)) },
         navigationIcon = {
@@ -104,13 +108,8 @@ fun PlayScreen(
 
                 is PlayUiState.Playing -> {
                     PlayingContent(
-                        modifier =
-                            Modifier
-                                .widthIn(max = CONTENT_MAX_WIDTH)
-                                .fillMaxHeight()
-                                .align(Alignment.TopCenter),
                         state = state,
-                        isWide = isWide,
+                        boardResize = boardResize,
                         tableMoveList = tableMoveList,
                         boardSize = boardSize,
                         onBoardSizeChange = boardPrefs::setBoardSize,
@@ -133,7 +132,7 @@ fun PlayScreen(
 @Composable
 private fun PlayingContent(
     state: PlayUiState.Playing,
-    isWide: Boolean,
+    boardResize: Boolean,
     tableMoveList: Boolean,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
@@ -148,35 +147,36 @@ private fun PlayingContent(
     onBackToHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier =
-            modifier
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    BoardScreenScaffold(
+        banner = { StatusBanner(state = state, modifier = Modifier.fillMaxWidth()) },
+        board = {
+            ResizableBoardBox(
+                isWide = boardResize,
+                size = boardSize,
+                onSizeChange = onBoardSizeChange,
+            ) { boardModifier ->
+                ChessBoardView(
+                    position = state.position,
+                    modifier = boardModifier,
+                    orientation = state.orientation,
+                    // A terminal position or a finished game freezes input — display-only, no highlights.
+                    // A manual end (FR-018) on a non-terminal position is frozen via result, not terminal.
+                    interaction =
+                        if (state.terminal || state.result != null) {
+                            null
+                        } else {
+                            BoardInteraction(
+                                selectedSquare = state.selectedSquare,
+                                targetSquares = state.targetSquares,
+                                onSquareTap = onSquareTap,
+                            )
+                        },
+                )
+            }
+        },
+        modifier = modifier,
     ) {
         val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
-        StatusBanner(state = state, modifier = sectionModifier)
-        Spacer(Modifier.height(12.dp))
-        ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
-            ChessBoardView(
-                position = state.position,
-                modifier = boardModifier,
-                orientation = state.orientation,
-                // A terminal position or a finished game freezes input — display-only, no highlights.
-                // A manual end (FR-018) on a non-terminal position is frozen via result, not terminal.
-                interaction =
-                    if (state.terminal || state.result != null) {
-                        null
-                    } else {
-                        BoardInteraction(
-                            selectedSquare = state.selectedSquare,
-                            targetSquares = state.targetSquares,
-                            onSquareTap = onSquareTap,
-                        )
-                    },
-            )
-        }
         Spacer(Modifier.height(8.dp))
         SyncIndicator(syncPending = state.syncPending, modifier = sectionModifier)
         Spacer(Modifier.height(12.dp))
