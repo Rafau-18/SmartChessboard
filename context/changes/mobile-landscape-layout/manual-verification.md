@@ -213,6 +213,24 @@ fixed on top of `d390c91`:
    CMP 1.7; pure ImageVector builders — compiles and tests green on all three targets).
    Re-check under 3.2 / 3.4.
 
+### Round-2 findings from the fleet pass (2026-07-03) — fixed
+
+1. **Enabling Analysis shrank the board at compact height** — the pane split didn't know the
+   board slot renders the eval bar (40 dp: bar + gap) beside the square, so the panel claimed
+   that width and the square lost it in height. `BoardScreenScaffold` gained `boardExtraWidth`
+   (Replay passes its eval reserve there and to `BoardWithEvalBar`); the crush guard grows by
+   the same extra (`sidePanelWidth` `boardPaneMin` param, +1 boundary test). The board now
+   keeps its full-height square with and without the bar. Re-check under 6.4.
+2. **iOS landscape: unused space on the left** — mostly the OS safe area (~59 pt, reported
+   symmetrically on both sides in landscape because the Dynamic Island side is not exposed;
+   the rail must respect it in both rotations). Our share tightened: horizontal content
+   padding at compact height is now 8 dp (was 16), matching the earlier vertical-density fix.
+   The remaining inset is system-mandated. Re-check under 3.3 / 6.4.
+
+Also merged `main` in (delete-game-from-history + web best-move hyphen fix): History rows
+now carry a kebab (⋮) menu with a delete confirmation dialog — during the History checks,
+also confirm the kebab is tappable and the dialog fully fits at compact height (landscape).
+
 ## End-of-slice acceptance pass (6.6) — fleet matrix
 
 One pass over the owner fleet confirms every deferred row above (1.3–1.6, 2.6, 3.2–3.4,

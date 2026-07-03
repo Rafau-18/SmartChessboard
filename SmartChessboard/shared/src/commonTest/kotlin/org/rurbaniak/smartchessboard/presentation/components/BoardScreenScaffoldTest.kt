@@ -57,4 +57,14 @@ class BoardScreenScaffoldTest {
         // minimum, and the board (rowWidth − 260 − gap = 428) stays above MIN_BOARD_SIDE.
         assertEquals(260.dp, sidePanelWidth(rowWidth = 700.dp, boardTarget = 600.dp, panelMin = 260.dp))
     }
+
+    @Test
+    fun boardPaneMinGrowsWithSideExtra() {
+        // Tight window with a 40 dp eval bar beside the square: the crush guard protects
+        // square + bar (240), so the square itself keeps MIN_BOARD_SIDE (368 − 116 − 12 = 240).
+        assertEquals(
+            116.dp,
+            sidePanelWidth(rowWidth = 368.dp, boardTarget = 340.dp, panelMin = 260.dp, boardPaneMin = 240.dp),
+        )
+    }
 }

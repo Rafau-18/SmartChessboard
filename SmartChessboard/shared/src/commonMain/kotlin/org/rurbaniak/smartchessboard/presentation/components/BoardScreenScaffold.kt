@@ -39,6 +39,12 @@ private val SCREEN_PADDING = 16.dp
 private val SCREEN_PADDING_V_COMPACT = 4.dp
 
 /**
+ * Horizontal outer padding at compact height — the rail (or the window edge) already separates the
+ * content, so the regular 16 dp would only push the board right and squeeze the panel.
+ */
+private val SCREEN_PADDING_H_COMPACT = 8.dp
+
+/**
  * One arrangement authority for the board screens (Play / PhysicalPlay / Replay), driven by
  * [boardArrangement]: at compact height or expanded width the [board] fills the height beside a
  * scrolling side panel; otherwise the classic portrait column. Generalizes Replay's two-pane layout.
@@ -60,6 +66,10 @@ private val SCREEN_PADDING_V_COMPACT = 4.dp
  * [CONTENT_MAX_WIDTH] toward the full window width. Replay maps its board-enlargement fraction here
  * so dragging the board past its default size spills past the default margins; screens without that
  * behavior keep the default 0 (hard cap).
+ *
+ * [boardExtraWidth] is the width the board slot renders beside the board's square (Replay's eval
+ * bar + its gap). The side-pane split reserves it, so enabling the extra never shrinks the square —
+ * without the reservation the panel would claim that width and the board would lose it in height.
  */
 @Composable
 fun BoardScreenScaffold(
@@ -68,6 +78,7 @@ fun BoardScreenScaffold(
     modifier: Modifier = Modifier,
     bannerSlotHeight: Dp = BANNER_SLOT_HEIGHT,
     contentWidthExpansion: Float = 0f,
+    boardExtraWidth: Dp = 0.dp,
     panelContent: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -104,17 +115,20 @@ fun BoardScreenScaffold(
                     } else {
                         CONTENT_MAX_WIDTH + (maxWidth - CONTENT_MAX_WIDTH) * contentWidthExpansion.coerceIn(0f, 1f)
                     }
-                // Compact height trades margins and panel width for board size: hairline vertical
-                // padding and a tighter panel floor, so the board's square is as tall as the window
-                // allows. Non-compact (wide) keeps the regular paddings and the roomier panel.
+                // Compact height trades margins and panel width for board size: hairline paddings
+                // and a tighter panel floor, so the board's square is as tall as the window allows.
+                // Non-compact (wide) keeps the regular paddings and the roomier panel.
                 val heightCompact = LocalWindowSizeClass.current.isHeightCompact
                 val verticalPadding = if (heightCompact) SCREEN_PADDING_V_COMPACT else SCREEN_PADDING
-                val rowWidth = containerMax - SCREEN_PADDING * 2
+                val horizontalPadding = if (heightCompact) SCREEN_PADDING_H_COMPACT else SCREEN_PADDING
+                val rowWidth = containerMax - horizontalPadding * 2
                 val panelWidth =
                     sidePanelWidth(
                         rowWidth = rowWidth,
-                        boardTarget = maxHeight - verticalPadding * 2,
+                        // The pane must fit the height-filling square plus whatever renders beside it.
+                        boardTarget = maxHeight - verticalPadding * 2 + boardExtraWidth,
                         panelMin = if (heightCompact) SIDE_PANEL_MIN_WIDTH_COMPACT else SIDE_PANEL_MIN_WIDTH,
+                        boardPaneMin = MIN_BOARD_SIDE + boardExtraWidth,
                     )
                 Row(
                     modifier =
@@ -122,7 +136,7 @@ fun BoardScreenScaffold(
                             .widthIn(max = containerMax)
                             .fillMaxSize()
                             .align(Alignment.TopCenter)
-                            .padding(horizontal = SCREEN_PADDING, vertical = verticalPadding),
+                            .padding(horizontal = horizontalPadding, vertical = verticalPadding),
                     horizontalArrangement = Arrangement.spacedBy(PANE_GAP),
                 ) {
                     // Top-aligned like the panel beside it — a board smaller than the pane (wide
@@ -172,18 +186,21 @@ private fun BannerSlot(
 
 /**
  * Width of the side panel in the side-pane arrangement. The board is the primary: the panel gets
- * what remains of [rowWidth] after a height-filling board ([boardTarget] — the pane's height budget)
- * and the pane gap, clamped to [panelMin]..[SECTION_MAX_WIDTH] ([SIDE_PANEL_MIN_WIDTH] normally,
- * the tighter [SIDE_PANEL_MIN_WIDTH_COMPACT] at compact height so a narrow-landscape phone keeps a
- * full-height board). The floor never crushes the board below [MIN_BOARD_SIDE], and a degenerate
- * window resolves to zero rather than a negative width. Pure, so it is unit-testable on every target.
+ * what remains of [rowWidth] after the board pane's need ([boardTarget] — the height-filling square
+ * plus any extra width the slot renders beside it, e.g. Replay's eval bar) and the pane gap,
+ * clamped to [panelMin]..[SECTION_MAX_WIDTH] ([SIDE_PANEL_MIN_WIDTH] normally, the tighter
+ * [SIDE_PANEL_MIN_WIDTH_COMPACT] at compact height so a narrow-landscape phone keeps a full-height
+ * board). The floor never crushes the board pane below [boardPaneMin] ([MIN_BOARD_SIDE] plus the
+ * same extra, so the square itself keeps the minimum), and a degenerate window resolves to zero
+ * rather than a negative width. Pure, so it is unit-testable on every target.
  */
 internal fun sidePanelWidth(
     rowWidth: Dp,
     boardTarget: Dp,
     panelMin: Dp = SIDE_PANEL_MIN_WIDTH,
+    boardPaneMin: Dp = MIN_BOARD_SIDE,
 ): Dp =
     (rowWidth - boardTarget - PANE_GAP)
         .coerceIn(panelMin, SECTION_MAX_WIDTH)
-        .coerceAtMost(rowWidth - MIN_BOARD_SIDE - PANE_GAP)
+        .coerceAtMost(rowWidth - boardPaneMin - PANE_GAP)
         .coerceAtLeast(0.dp)

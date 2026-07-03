@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
@@ -171,6 +172,9 @@ internal fun LoadedReplay(
         } else {
             0f
         }
+    // When the eval bar is shown, its width (+ the Row gap) is reserved in both places that size
+    // the square — the pane split and the board box — so enabling analysis never shrinks the board.
+    val evalReserve = if (state.analysisEnabled) EvalBarWidth + 8.dp else 0.dp
     BoardScreenScaffold(
         banner = { PlayerLine(state.game.headers) },
         board = {
@@ -179,9 +183,11 @@ internal fun LoadedReplay(
                 boardResize = boardResize,
                 boardSize = boardSize,
                 onBoardSizeChange = onBoardSizeChange,
+                reservedWidth = evalReserve,
             )
         },
         contentWidthExpansion = enlargement,
+        boardExtraWidth = evalReserve,
     ) {
         val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
         if (inSidePanel) {
@@ -245,7 +251,8 @@ internal fun LoadedReplay(
 
 /**
  * The board, sized by [ResizableBoardBox] (auto-fit; corner drag handle where [boardResize] holds),
- * with the vertical eval bar on its right. The board's modifier is a concrete square, so the inner
+ * with the vertical eval bar on its right — [reservedWidth] is the bar's room (the caller reserves
+ * the same amount in the pane split). The board's modifier is a concrete square, so the inner
  * `IntrinsicSize.Min` Row gives the eval bar the board's exact height — without querying the
  * surrounding `BoxWithConstraints` for intrinsics (which a SubcomposeLayout can't answer). The bar
  * appears only while analysis is enabled.
@@ -256,15 +263,13 @@ private fun BoardWithEvalBar(
     boardResize: Boolean,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
+    reservedWidth: Dp,
 ) {
-    // When the eval bar is shown, reserve its width (+ the Row gap) so the board leaves room for it —
-    // otherwise a full-width board pushes the bar off-screen.
-    val reserved = if (state.analysisEnabled) EvalBarWidth + 8.dp else 0.dp
     ResizableBoardBox(
         isWide = boardResize,
         size = boardSize,
         onSizeChange = onBoardSizeChange,
-        reservedWidth = reserved,
+        reservedWidth = reservedWidth,
     ) { boardModifier ->
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
