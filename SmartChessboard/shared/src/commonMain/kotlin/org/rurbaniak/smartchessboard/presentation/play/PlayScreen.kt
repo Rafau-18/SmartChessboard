@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,6 +45,7 @@ import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.SyncIndicator
 import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
 import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
 import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
@@ -297,27 +297,6 @@ private fun StatusBanner(
             modifier = modifier,
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
-        )
-    }
-}
-
-/** Non-blocking "sync pending" hint (contract §3.4: cloud sync is best-effort, off the move path). */
-@Composable
-private fun SyncIndicator(
-    syncPending: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    if (!syncPending) return
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-        Text(
-            "Saving…",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

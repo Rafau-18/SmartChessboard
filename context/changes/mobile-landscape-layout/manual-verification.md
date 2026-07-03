@@ -231,6 +231,19 @@ Also merged `main` in (delete-game-from-history + web best-move hyphen fix): His
 now carry a kebab (⋮) menu with a delete confirmation dialog — during the History checks,
 also confirm the kebab is tappable and the dialog fully fits at compact height (landscape).
 
+### Round-3 findings from the fleet pass (2026-07-04) — fixed
+
+1. **Per-move "Saving…" flash displaced the panel** (digital play): the sync hint rendered
+   conditionally between the panel sections, so every move inserted ~20 dp for a fraction of
+   a second and pushed everything below it down — a no-jump violation. The hint is now the
+   shared `components/SyncIndicator`: a **fixed-height slot** (laid out while idle, nothing
+   moves) that shows the spinner only after **600 ms of continuous pending** with a fade —
+   a healthy per-move save lands well under that, so the happy path shows nothing at all. A
+   slow network or the terminal finish flush still surfaces it until the save lands. Both
+   Play and PhysicalPlay use the shared component (private copies deleted). Re-check under
+   4.3: make several quick moves — no flash, no movement; throttle the network (or watch a
+   finish on a slow link) — the hint fades in after ~0.6 s without moving the sections.
+
 ## End-of-slice acceptance pass (6.6) — fleet matrix
 
 One pass over the owner fleet confirms every deferred row above (1.3–1.6, 2.6, 3.2–3.4,

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +58,7 @@ import org.rurbaniak.smartchessboard.presentation.components.BOARD_CHROME_COLUMN
 import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.SyncIndicator
 import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
 import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
 import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
@@ -530,26 +530,6 @@ private fun StatusBanner(
         }
     } else {
         Text(text, modifier = modifier, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-    }
-}
-
-@Composable
-private fun SyncIndicator(
-    syncPending: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    if (!syncPending) return
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-        Text(
-            "Saving…",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
