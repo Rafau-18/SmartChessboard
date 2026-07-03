@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -68,7 +70,14 @@ internal fun EndGamePickerSurface(
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier.padding(24.dp).widthIn(max = 360.dp),
+            // Internal scroll so every option + the confirm action stay reachable at ~360 dp-high
+            // windows (landscape phone); the Dialog window bounds the height, verticalScroll absorbs
+            // any overflow rather than clipping it.
+            modifier =
+                Modifier
+                    .widthIn(max = 360.dp)
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             when (prompt) {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -89,7 +90,9 @@ fun ConnectionScreen(
                     Modifier
                         .align(Alignment.TopCenter)
                         .widthIn(max = CONNECTION_MAX_WIDTH)
-                        .fillMaxWidth()
+                        // Fill the height so the device list can take a weighted share and the trailing
+                        // "Forget saved board" action stays pinned on screen at any list length / height.
+                        .fillMaxSize()
                         .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -148,7 +151,7 @@ private fun StatusBlock(
 }
 
 @Composable
-private fun ScanningBlock(
+private fun ColumnScope.ScanningBlock(
     state: ConnectionUiState,
     onSelect: (String) -> Unit,
     onForget: () -> Unit,
@@ -169,7 +172,10 @@ private fun ScanningBlock(
             textAlign = TextAlign.Center,
         )
     } else {
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        // weight(fill = false): a short list keeps its natural height (trailing action sits right below);
+        // a long list caps at its weighted share and scrolls internally, so "Forget saved board" below
+        // never gets pushed off-window.
+        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
             items(state.devices, key = { it.id }) { board ->
                 BoardRow(board = board, onClick = { onSelect(board.id) })
                 HorizontalDivider()
