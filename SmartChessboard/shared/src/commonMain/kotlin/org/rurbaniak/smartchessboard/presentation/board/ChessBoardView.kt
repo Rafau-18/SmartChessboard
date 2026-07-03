@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -173,7 +174,9 @@ fun ChessBoardView(
     // piece (incl. a promotion) when [slide] clears.
     val suppressed: Set<Int> = slide?.moves?.mapTo(HashSet()) { it.to } ?: emptySet()
 
-    Box(modifier = modifier.aspectRatio(1f).onSizeChanged { boardSizePx = it.width }) {
+    // testTag: the squares are anonymous clickable cells (no per-square semantics), so UI tests
+    // address the board as one node and tap square centers via computed offsets (AppTestHarness).
+    Box(modifier = modifier.aspectRatio(1f).testTag("chess-board").onSizeChanged { boardSizePx = it.width }) {
         Column(modifier = Modifier.fillMaxSize()) {
             for (rowFromTop in 0..7) {
                 Row(modifier = Modifier.fillMaxWidth().weight(1f)) {

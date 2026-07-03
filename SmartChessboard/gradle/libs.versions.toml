@@ -54,6 +54,9 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version = "1.7.3" }
 androidx-window-core = { module = "org.jetbrains.androidx.window:window-core", version.ref = "androidxWindow" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+# Multiplatform compose.uiTest (v2 API) for the commonTest smoke flows — same artifact the
+# `compose.uiTest` plugin DSL accessor resolves; catalog entry for consistency with the rest.
+compose-uiTest = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }

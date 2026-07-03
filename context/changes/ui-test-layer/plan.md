@@ -674,11 +674,11 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke
-- [ ] 3.2 `:shared:wasmJsTest` green incl. smoke
-- [ ] 3.3 Android host smoke runs green OR documented exclusion committed
-- [ ] 3.4 No-secrets run green (blank/absent Supabase creds)
-- [ ] 3.5 Full `:shared:testAndroidHostTest` green
+- [x] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke
+- [x] 3.2 `:shared:wasmJsTest` green incl. smoke
+- [x] 3.3 Android host smoke runs green OR documented exclusion committed
+- [x] 3.4 No-secrets run green (blank/absent Supabase creds)
+- [x] 3.5 Full `:shared:testAndroidHostTest` green
 
 #### Manual
 
