@@ -12,10 +12,12 @@ enum class MoveListMode {
 
 /**
  * The move-list layout to actually render: an explicit user [override] always wins; with no override
- * the default follows the screen ([isWide] → [MoveListMode.TABLE], else [MoveListMode.INLINE]). Pure
- * so it can be unit-tested on every target (Native engine differs from JVM — `lessons.md`).
+ * the default follows the container the list renders in ([inSidePanel] → [MoveListMode.TABLE], a
+ * portrait column → [MoveListMode.INLINE]) — uniform for the whole fleet, so the default no longer
+ * flips on rotation for wide phones. Pure so it can be unit-tested on every target (Native engine
+ * differs from JVM — `lessons.md`).
  */
 fun effectiveMoveListMode(
     override: MoveListMode?,
-    isWide: Boolean,
-): MoveListMode = override ?: if (isWide) MoveListMode.TABLE else MoveListMode.INLINE
+    inSidePanel: Boolean,
+): MoveListMode = override ?: if (inSidePanel) MoveListMode.TABLE else MoveListMode.INLINE

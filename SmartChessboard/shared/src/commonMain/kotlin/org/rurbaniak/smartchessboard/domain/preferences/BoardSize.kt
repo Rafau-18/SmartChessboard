@@ -1,9 +1,11 @@
 package org.rurbaniak.smartchessboard.domain.preferences
 
 /**
- * The wide-screen board size, expressed as a **fraction of the available pane width** (lichess-style
- * resize). It only takes effect on wide screens; phones always render the board full-width auto-fit
- * and ignore the stored value. The fraction lives in [BOARD_SIZE_MIN]..[BOARD_SIZE_MAX]; an unset or
+ * The resizable-board size, expressed as a **fraction of the available pane width** (lichess-style
+ * resize). It only takes effect where `boardResizeEnabled(windowSizeClass)` holds — width-expanded
+ * windows that are not height-compact (tablet / desktop / wide web). Everywhere else — portrait
+ * phones and any height-compact window such as a landscape phone — the board renders auto-fit and
+ * ignores the stored value. The fraction lives in [BOARD_SIZE_MIN]..[BOARD_SIZE_MAX]; an unset or
  * out-of-range stored value resolves to [BOARD_SIZE_DEFAULT].
  *
  * These constants and [clampBoardSize] live in `domain/` (not in the presentation `ResizableBoardBox`)

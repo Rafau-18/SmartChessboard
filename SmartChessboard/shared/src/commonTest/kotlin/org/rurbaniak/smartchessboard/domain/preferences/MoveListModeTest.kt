@@ -5,18 +5,18 @@ import kotlin.test.assertEquals
 
 class MoveListModeTest {
     @Test
-    fun nullOverrideDefaultsToTableOnWide() {
-        assertEquals(MoveListMode.TABLE, effectiveMoveListMode(override = null, isWide = true))
+    fun nullOverrideDefaultsToTableInSidePanel() {
+        assertEquals(MoveListMode.TABLE, effectiveMoveListMode(override = null, inSidePanel = true))
     }
 
     @Test
-    fun nullOverrideDefaultsToInlineOnNarrow() {
-        assertEquals(MoveListMode.INLINE, effectiveMoveListMode(override = null, isWide = false))
+    fun nullOverrideDefaultsToInlineInColumn() {
+        assertEquals(MoveListMode.INLINE, effectiveMoveListMode(override = null, inSidePanel = false))
     }
 
     @Test
-    fun explicitOverrideWinsOverScreenWidth() {
-        assertEquals(MoveListMode.INLINE, effectiveMoveListMode(override = MoveListMode.INLINE, isWide = true))
-        assertEquals(MoveListMode.TABLE, effectiveMoveListMode(override = MoveListMode.TABLE, isWide = false))
+    fun explicitOverrideWinsInBothContainers() {
+        assertEquals(MoveListMode.INLINE, effectiveMoveListMode(override = MoveListMode.INLINE, inSidePanel = true))
+        assertEquals(MoveListMode.TABLE, effectiveMoveListMode(override = MoveListMode.TABLE, inSidePanel = false))
     }
 }

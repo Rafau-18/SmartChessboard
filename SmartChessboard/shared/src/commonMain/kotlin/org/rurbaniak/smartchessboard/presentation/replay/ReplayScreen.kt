@@ -3,9 +3,9 @@ package org.rurbaniak.smartchessboard.presentation.replay
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,24 +14,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.TableRows
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
@@ -46,18 +45,18 @@ import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewMode
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
-import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
-import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveActionButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
+import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
-import org.rurbaniak.smartchessboard.presentation.components.SIDE_PANEL_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
+import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.boardResizeEnabled
+import org.rurbaniak.smartchessboard.presentation.layout.isHeightCompact
 
-/** Caps the non-board sections (player line, panel, controls, move list) so they don't stretch edge-to-edge. */
-private val SECTION_MAX_WIDTH = 480.dp
-
-/** Material "expanded" breakpoint — at and above this width ReplayScreen lays out as two panes. */
-private val TWO_PANE_MIN_WIDTH = 840.dp
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReplayScreen(
     gameId: String,
@@ -70,50 +69,32 @@ fun ReplayScreen(
     val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
     val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
     val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
-    // The move list defaults to the lichess-style table on wide screens and the compact inline flow on
-    // phones; an explicit toggle (persisted) overrides that. One effective value drives the top-bar
-    // control and the lists below.
-    val effectiveMoveListMode = effectiveMoveListMode(moveListOverride, rememberIsWideScreen())
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(titleFor(uiState)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-                actions = {
-                    (uiState as? ReplayUiState.Loaded)?.let { state ->
-                        // Shows the current layout and toggles to the other one (persisted).
-                        TextButton(
-                            onClick = {
-                                boardPrefs.setMoveListMode(
-                                    if (effectiveMoveListMode == MoveListMode.TABLE) {
-                                        MoveListMode.INLINE
-                                    } else {
-                                        MoveListMode.TABLE
-                                    },
-                                )
-                            },
-                        ) {
-                            Text(if (effectiveMoveListMode == MoveListMode.TABLE) "Table" else "Inline")
-                        }
-                        TextButton(onClick = viewModel::toggleAnalysis) {
-                            Text(
-                                "Analysis",
-                                fontWeight = if (state.analysisEnabled) FontWeight.Bold else FontWeight.Normal,
-                                color =
-                                    if (state.analysisEnabled) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                            )
-                        }
-                    }
-                },
-            )
+    // The move list defaults to the lichess-style table when it renders in the side panel (landscape
+    // phone or wide window) and to the compact inline flow in the portrait column; an explicit toggle
+    // (persisted) overrides that. One effective value drives the top-bar control and the lists below.
+    val inSidePanel = boardArrangement(LocalWindowSizeClass.current) == BoardArrangement.SidePane
+    val effectiveMoveListMode = effectiveMoveListMode(moveListOverride, inSidePanel)
+    AdaptiveScaffold(
+        title = { Text(titleFor(uiState)) },
+        navigationIcon = { AdaptiveBackButton(onBack) },
+        actions = {
+            (uiState as? ReplayUiState.Loaded)?.let { state ->
+                // Shows the current layout and toggles to the other one (persisted).
+                val table = effectiveMoveListMode == MoveListMode.TABLE
+                AdaptiveActionButton(
+                    label = if (table) "Table" else "Inline",
+                    icon = if (table) Icons.Filled.TableRows else Icons.AutoMirrored.Filled.Notes,
+                    onClick = {
+                        boardPrefs.setMoveListMode(if (table) MoveListMode.INLINE else MoveListMode.TABLE)
+                    },
+                )
+                AdaptiveActionButton(
+                    label = "Analysis",
+                    icon = Icons.Filled.Insights,
+                    onClick = viewModel::toggleAnalysis,
+                    selected = state.analysisEnabled,
+                )
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -158,6 +139,12 @@ fun ReplayScreen(
     }
 }
 
+/**
+ * The loaded game through the shared [BoardScreenScaffold]: the player line in the banner slot, the
+ * board (+ eval bar) in the board slot, and the transport / eval / move-list sections in the panel.
+ * The side-pane vs column arrangement comes from the shared window policy — a landscape phone and a
+ * wide window both put the board beside the panel — replacing the private 840 dp two-pane breakpoint.
+ */
 @Composable
 internal fun LoadedReplay(
     state: ReplayUiState.Loaded,
@@ -171,87 +158,86 @@ internal fun LoadedReplay(
     onJump: (Int) -> Unit,
     onRetryEval: () -> Unit,
 ) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        // The two-pane breakpoint doubles as the board's "wide" flag — at/above it the board auto-fits
-        // and gets a resize handle; below it the board is full-width auto-fit with no handle.
-        val isWide = maxWidth >= TWO_PANE_MIN_WIDTH
-        if (isWide) {
-            WideReplay(
-                state,
-                boardSize,
-                onBoardSizeChange,
-                tableMoveList,
-                onStart,
-                onStepBack,
-                onStepForward,
-                onEnd,
-                onJump,
-                onRetryEval,
-            )
+    val windowSizeClass = LocalWindowSizeClass.current
+    val boardResize = boardResizeEnabled(windowSizeClass)
+    val inSidePanel = boardArrangement(windowSizeClass) == BoardArrangement.SidePane
+    // At compact height the transport renders dense — panel width is board budget there.
+    val compactTransport = windowSizeClass.isHeightCompact
+    // Dragging the board past its default size widens the side-pane container past the default
+    // margins (BoardScreenScaffold.contentWidthExpansion). Zero where the resize handle is
+    // disabled — the stored fraction is ignored there, so it must not widen anything either.
+    val enlargement =
+        if (boardResize) {
+            ((boardSize - BOARD_SIZE_DEFAULT) / (BOARD_SIZE_MAX - BOARD_SIZE_DEFAULT)).coerceIn(0f, 1f)
         } else {
-            NarrowReplay(
-                state,
-                boardSize,
-                onBoardSizeChange,
-                tableMoveList,
-                onStart,
-                onStepBack,
-                onStepForward,
-                onEnd,
-                onJump,
-                onRetryEval,
-            )
+            0f
         }
-    }
-}
-
-/** The phone layout: one scrolling column, the eval section between board and transport controls. */
-@Composable
-private fun NarrowReplay(
-    state: ReplayUiState.Loaded,
-    boardSize: Float,
-    onBoardSizeChange: (Float) -> Unit,
-    tableMoveList: Boolean,
-    onStart: () -> Unit,
-    onStepBack: () -> Unit,
-    onStepForward: () -> Unit,
-    onEnd: () -> Unit,
-    onJump: (Int) -> Unit,
-    onRetryEval: () -> Unit,
-) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    // When the eval bar is shown, its width (+ the Row gap) is reserved in both places that size
+    // the square — the pane split and the board box — so enabling analysis never shrinks the board.
+    val evalReserve = if (state.analysisEnabled) EvalBarWidth + 8.dp else 0.dp
+    BoardScreenScaffold(
+        banner = { PlayerLine(state.game.headers) },
+        board = {
+            BoardWithEvalBar(
+                state = state,
+                boardResize = boardResize,
+                boardSize = boardSize,
+                onBoardSizeChange = onBoardSizeChange,
+                reservedWidth = evalReserve,
+            )
+        },
+        contentWidthExpansion = enlargement,
+        boardExtraWidth = evalReserve,
     ) {
         val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
-        PlayerLine(state.game.headers)
-        Spacer(Modifier.height(12.dp))
-        // Phones are never "wide": full-width auto-fit board, no resize handle.
-        BoardWithEvalBar(state = state, isWide = false, boardSize = boardSize, onBoardSizeChange = onBoardSizeChange)
-        if (state.analysisEnabled) {
-            Spacer(Modifier.height(8.dp))
-            // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
-            Crossfade(targetState = state.currentEval, modifier = sectionModifier, label = "evalPanel") { eval ->
-                EvalPanel(eval = eval, onRetry = onRetryEval)
+        if (inSidePanel) {
+            // Beside the board the transport leads the panel, so stepping through plies never needs
+            // a scroll; the eval text follows it.
+            if (state.isTruncated) {
+                Spacer(Modifier.height(8.dp))
+                TruncationBanner(modifier = sectionModifier)
             }
-        }
-        Spacer(Modifier.height(12.dp))
-        if (state.isTruncated) {
-            TruncationBanner(modifier = sectionModifier)
             Spacer(Modifier.height(12.dp))
+            TransportControls(
+                state = state,
+                onStart = onStart,
+                onBack = onStepBack,
+                onForward = onStepForward,
+                onEnd = onEnd,
+                modifier = sectionModifier,
+                compact = compactTransport,
+            )
+            if (state.analysisEnabled) {
+                Spacer(Modifier.height(12.dp))
+                // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+                Crossfade(targetState = state.currentEval, modifier = sectionModifier, label = "evalPanel") { eval ->
+                    EvalPanel(eval = eval, onRetry = onRetryEval)
+                }
+            }
+        } else {
+            // The portrait column keeps its shipped order: eval text right under the board's eval
+            // bar, then the truncation notice, then the transport row.
+            if (state.analysisEnabled) {
+                Spacer(Modifier.height(8.dp))
+                // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
+                Crossfade(targetState = state.currentEval, modifier = sectionModifier, label = "evalPanel") { eval ->
+                    EvalPanel(eval = eval, onRetry = onRetryEval)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            if (state.isTruncated) {
+                TruncationBanner(modifier = sectionModifier)
+                Spacer(Modifier.height(12.dp))
+            }
+            TransportControls(
+                state = state,
+                onStart = onStart,
+                onBack = onStepBack,
+                onForward = onStepForward,
+                onEnd = onEnd,
+                modifier = sectionModifier,
+            )
         }
-        TransportControls(
-            state = state,
-            onStart = onStart,
-            onBack = onStepBack,
-            onForward = onStepForward,
-            onEnd = onEnd,
-            modifier = sectionModifier,
-        )
         Spacer(Modifier.height(16.dp))
         MoveList(
             sanMoves = state.game.sanMoves,
@@ -264,108 +250,9 @@ private fun NarrowReplay(
 }
 
 /**
- * The expanded layout (web/tablet ≥ [TWO_PANE_MIN_WIDTH]): board + eval bar + transport on the
- * left, eval panel + move list on the right. Same state, no layout-specific behavior.
- */
-@Composable
-private fun WideReplay(
-    state: ReplayUiState.Loaded,
-    boardSize: Float,
-    onBoardSizeChange: (Float) -> Unit,
-    tableMoveList: Boolean,
-    onStart: () -> Unit,
-    onStepBack: () -> Unit,
-    onStepForward: () -> Unit,
-    onEnd: () -> Unit,
-    onJump: (Int) -> Unit,
-    onRetryEval: () -> Unit,
-) {
-    // Centre the two-pane content. The width cap is the default margin, but it expands toward the full
-    // window as the board is enlarged past its default — so dragging the board bigger can spill past
-    // the default margins instead of being trapped inside them.
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val fullWidth = maxWidth
-        val enlargement = ((boardSize - BOARD_SIZE_DEFAULT) / (BOARD_SIZE_MAX - BOARD_SIZE_DEFAULT)).coerceIn(0f, 1f)
-        val containerMax =
-            if (fullWidth <= CONTENT_MAX_WIDTH) {
-                fullWidth
-            } else {
-                CONTENT_MAX_WIDTH + (fullWidth - CONTENT_MAX_WIDTH) * enlargement
-            }
-        Row(
-            modifier =
-                Modifier
-                    .widthIn(max = containerMax)
-                    .fillMaxSize()
-                    .align(Alignment.TopCenter)
-                    .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Board column takes the remaining width; the side panel is bounded so the move list never
-            // takes half the screen.
-            Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
-                PlayerLine(state.game.headers)
-                Spacer(Modifier.height(12.dp))
-                // Wide layout: the board auto-fits the pane (bounded by viewport height) and gets a resize handle.
-                BoardWithEvalBar(
-                    state = state,
-                    isWide = true,
-                    boardSize = boardSize,
-                    onBoardSizeChange = onBoardSizeChange,
-                )
-                Spacer(Modifier.height(12.dp))
-                if (state.isTruncated) {
-                    TruncationBanner(modifier = sectionModifier)
-                    Spacer(Modifier.height(12.dp))
-                }
-                TransportControls(
-                    state = state,
-                    onStart = onStart,
-                    onBack = onStepBack,
-                    onForward = onStepForward,
-                    onEnd = onEnd,
-                    modifier = sectionModifier,
-                )
-            }
-            Column(
-                modifier =
-                    Modifier
-                        .widthIn(max = SIDE_PANEL_MAX_WIDTH)
-                        .verticalScroll(rememberScrollState()),
-            ) {
-                if (state.analysisEnabled) {
-                    // Crossfade the panel between eval states (Loading ↔ Evaluated ↔ Unavailable …).
-                    Crossfade(
-                        targetState = state.currentEval,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = "evalPanel",
-                    ) { eval ->
-                        EvalPanel(eval = eval, onRetry = onRetryEval)
-                    }
-                    Spacer(Modifier.height(16.dp))
-                }
-                MoveList(
-                    sanMoves = state.game.sanMoves,
-                    currentPly = state.currentPly,
-                    onJump = onJump,
-                    modifier = Modifier.fillMaxWidth(),
-                    tableMode = tableMoveList,
-                )
-            }
-        }
-    }
-}
-
-/**
- * The board, sized by [ResizableBoardBox] (auto-fit + resize handle on wide screens), with the
- * vertical eval bar on its right. The board's modifier is a concrete square, so the inner
+ * The board, sized by [ResizableBoardBox] (auto-fit; corner drag handle where [boardResize] holds),
+ * with the vertical eval bar on its right — [reservedWidth] is the bar's room (the caller reserves
+ * the same amount in the pane split). The board's modifier is a concrete square, so the inner
  * `IntrinsicSize.Min` Row gives the eval bar the board's exact height — without querying the
  * surrounding `BoxWithConstraints` for intrinsics (which a SubcomposeLayout can't answer). The bar
  * appears only while analysis is enabled.
@@ -373,18 +260,16 @@ private fun WideReplay(
 @Composable
 private fun BoardWithEvalBar(
     state: ReplayUiState.Loaded,
-    isWide: Boolean,
+    boardResize: Boolean,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
+    reservedWidth: Dp,
 ) {
-    // When the eval bar is shown, reserve its width (+ the Row gap) so the board leaves room for it —
-    // otherwise on a phone the full-width board pushes the bar off-screen.
-    val reserved = if (state.analysisEnabled) EvalBarWidth + 8.dp else 0.dp
     ResizableBoardBox(
-        isWide = isWide,
+        isWide = boardResize,
         size = boardSize,
         onSizeChange = onBoardSizeChange,
-        reservedWidth = reserved,
+        reservedWidth = reservedWidth,
     ) { boardModifier ->
         Row(
             modifier = Modifier.height(IntrinsicSize.Min),
@@ -442,21 +327,47 @@ private fun TransportControls(
     onForward: () -> Unit,
     onEnd: () -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
+    // At compact height every dp is board budget: 32 dp-tall buttons with tight padding instead of
+    // the default 40 dp (the touch target still meets the interactive minimum via M3's enforcement).
+    val buttonHeight = if (compact) Modifier.height(32.dp) else Modifier
+    val contentPadding =
+        if (compact) PaddingValues(horizontal = 8.dp, vertical = 4.dp) else ButtonDefaults.ContentPadding
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Button(onClick = onStart, enabled = state.canStepBack, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onStart,
+            enabled = state.canStepBack,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text("|<")
         }
-        Button(onClick = onBack, enabled = state.canStepBack, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onBack,
+            enabled = state.canStepBack,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text("<")
         }
-        Button(onClick = onForward, enabled = state.canStepForward, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onForward,
+            enabled = state.canStepForward,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text(">")
         }
-        Button(onClick = onEnd, enabled = state.canStepForward, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onEnd,
+            enabled = state.canStepForward,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text(">|")
         }
     }

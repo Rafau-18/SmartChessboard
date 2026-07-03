@@ -5,28 +5,26 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
@@ -52,13 +51,41 @@ import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ReedDiagnosticsGrid
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
-import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
-import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveActionButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
+import org.rurbaniak.smartchessboard.presentation.components.BOARD_CHROME_COLUMN
+import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
+import org.rurbaniak.smartchessboard.presentation.components.SyncIndicator
+import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
+import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.boardResizeEnabled
 import org.rurbaniak.smartchessboard.presentation.play.EndGamePicker
 
-/** Caps the non-board sections (status, diagnostics, controls, move list) so they don't stretch edge-to-edge on wide screens. */
-private val SECTION_MAX_WIDTH = 480.dp
+/**
+ * PhysicalPlay's banner slot is taller than the shared default: the slot must fit the recovery
+ * [BoardMessage] — up to two message lines plus a Reconnect / Show-diagnostics action — with the
+ * turn banner as its no-message fallback. 12 dp surface padding ×2 + two 20 dp text lines + 8 dp
+ * gap + a 40 dp button.
+ */
+private val PHYSICAL_BANNER_SLOT_HEIGHT = 112.dp
+
+/**
+ * Cap on the message text inside the banner slot: a longer recovery text scrolls internally rather
+ * than growing the slot (the no-jump invariant — the slot's size never depends on its content).
+ */
+private val MESSAGE_TEXT_MAX_HEIGHT = 40.dp
+
+/**
+ * Viewport height consumed above/below the diagnostics grid when it leads the side panel at compact
+ * height: system bars (~24) + screen padding (32) + the banner slot (112) + the panel spacer (12).
+ * Passing this as the grid's chrome keeps the whole grid visible beside the board without scrolling
+ * — the FR-010/011 recovery aid the side-pane arrangement exists for.
+ */
+private val DIAGNOSTICS_PANE_CHROME = 180.dp
 
 /**
  * The physical-mode game screen (S-06). Renders the same components as the digital flow but driven by
@@ -67,7 +94,6 @@ private val SECTION_MAX_WIDTH = 480.dp
  * Resolved per game so reopening a different game never reuses a stale state machine. Reachable only
  * on platforms where `supportsPhysicalBoard` is true — web routes a physical game to Replay instead.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhysicalPlayScreen(
     gameId: String,
@@ -79,31 +105,25 @@ fun PhysicalPlayScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val boardPrefs = koinViewModel<BoardPreferencesViewModel>()
     val boardSize by boardPrefs.boardSize.collectAsStateWithLifecycle()
-    val isWide = rememberIsWideScreen()
+    // Window-shape policies (same reads as PlayScreen): the resize handle only on a true wide screen,
+    // and the move-list default follows the container it renders in (side panel → TABLE).
+    val windowSizeClass = LocalWindowSizeClass.current
+    val boardResize = boardResizeEnabled(windowSizeClass)
+    val inSidePanel = boardArrangement(windowSizeClass) == BoardArrangement.SidePane
     val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
-    val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
-    Scaffold(
+    val tableMoveList = effectiveMoveListMode(moveListOverride, inSidePanel) == MoveListMode.TABLE
+    AdaptiveScaffold(
+        title = { Text(titleFor(state)) },
         // The board screen is watched, not tapped, for minutes — keep it awake so a dim/auto-lock can't
         // background the app and drop the foreground-first BLE link. Compose's own iOS idle-timer manager
         // owns UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what actually holds
         // it (S-09 Phase 8).
         modifier = Modifier.keepScreenOn(),
-        topBar = {
-            TopAppBar(
-                title = { Text(titleFor(state)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-                actions = {
-                    if (state is PhysicalPlayState.Playing) {
-                        TextButton(onClick = viewModel::flipBoard) {
-                            Text("Flip")
-                        }
-                    }
-                },
-            )
+        navigationIcon = { AdaptiveBackButton(onBack) },
+        actions = {
+            if (state is PhysicalPlayState.Playing) {
+                AdaptiveActionButton(label = "Flip", icon = Icons.Filled.SwapVert, onClick = viewModel::flipBoard)
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -129,13 +149,9 @@ fun PhysicalPlayScreen(
 
                 is PhysicalPlayState.Playing -> {
                     PlayingContent(
-                        modifier =
-                            Modifier
-                                .widthIn(max = CONTENT_MAX_WIDTH)
-                                .fillMaxHeight()
-                                .align(Alignment.TopCenter),
                         state = current,
-                        isWide = isWide,
+                        boardResize = boardResize,
+                        inSidePanel = inSidePanel,
                         tableMoveList = tableMoveList,
                         boardSize = boardSize,
                         onBoardSizeChange = boardPrefs::setBoardSize,
@@ -160,7 +176,8 @@ fun PhysicalPlayScreen(
 @Composable
 private fun PlayingContent(
     state: PhysicalPlayState.Playing,
-    isWide: Boolean,
+    boardResize: Boolean,
+    inSidePanel: Boolean,
     tableMoveList: Boolean,
     boardSize: Float,
     onBoardSizeChange: (Float) -> Unit,
@@ -177,51 +194,74 @@ private fun PlayingContent(
     onBackToHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier =
-            modifier
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    // The live reed-matrix overlay is on by default; this screen-local toggle hides it. Display-only,
+    // so flipping it never touches game state (S-09 Phase 7). Hoisted above the scaffold because the
+    // toggle lives in the panel while the dots render in the board slot.
+    var showSensorDots by rememberSaveable { mutableStateOf(true) }
+    BoardScreenScaffold(
+        banner = {
+            PhysicalBanner(
+                state = state,
+                onShowDiagnostics = onShowDiagnostics,
+                onReconnect = onReconnect,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        board = {
+            ResizableBoardBox(
+                isWide = boardResize,
+                size = boardSize,
+                onSizeChange = onBoardSizeChange,
+            ) { boardModifier ->
+                ChessBoardView(
+                    position = state.position,
+                    modifier = boardModifier,
+                    orientation = state.orientation,
+                    // Display-only — moves come from the physical board, never taps. Lifted pieces are highlighted.
+                    interaction = null,
+                    highlightedSquares = state.liftedSquares,
+                    // Live reed-matrix overlay: mirror what the board senses right now (null while toggled off).
+                    occupancyDots = if (showSensorDots) state.sensedOccupancy else null,
+                )
+            }
+        },
+        modifier = modifier,
+        bannerSlotHeight = PHYSICAL_BANNER_SLOT_HEIGHT,
     ) {
         val sectionModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
-        // The live reed-matrix overlay is on by default; this screen-local toggle hides it. Display-only,
-        // so flipping it never touches game state (S-09 Phase 7).
-        var showSensorDots by rememberSaveable { mutableStateOf(true) }
-        StatusBanner(state = state, modifier = sectionModifier)
-        Spacer(Modifier.height(8.dp))
-        BoardMessage(
-            state = state,
-            onShowDiagnostics = onShowDiagnostics,
-            onReconnect = onReconnect,
-            modifier = sectionModifier,
-        )
-        Spacer(Modifier.height(12.dp))
-        ResizableBoardBox(isWide = isWide, size = boardSize, onSizeChange = onBoardSizeChange) { boardModifier ->
-            ChessBoardView(
-                position = state.position,
-                modifier = boardModifier,
-                orientation = state.orientation,
-                // Display-only — moves come from the physical board, never taps. Lifted pieces are highlighted.
-                interaction = null,
-                highlightedSquares = state.liftedSquares,
-                // Live reed-matrix overlay: mirror what the board senses right now (null while toggled off).
-                occupancyDots = if (showSensorDots) state.sensedOccupancy else null,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        SensorDotsToggle(
-            checked = showSensorDots,
-            onCheckedChange = { showSensorDots = it },
-            modifier = sectionModifier,
-        )
-        if (state.diagnosticsVisible) {
-            Spacer(Modifier.height(12.dp))
-            ReedDiagnosticsSection(
-                state = state,
-                onHideDiagnostics = onHideDiagnostics,
+        if (inSidePanel) {
+            // Recovery aid first: beside the board the grid must sit above the panel's fold, so a
+            // player comparing board vs sensors (FR-010/011) never scrolls between the two.
+            if (state.diagnosticsVisible) {
+                Spacer(Modifier.height(12.dp))
+                ReedDiagnosticsSection(
+                    state = state,
+                    onHideDiagnostics = onHideDiagnostics,
+                    modifier = sectionModifier,
+                    gridVerticalChrome = DIAGNOSTICS_PANE_CHROME,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            SensorDotsToggle(
+                checked = showSensorDots,
+                onCheckedChange = { showSensorDots = it },
                 modifier = sectionModifier,
             )
+        } else {
+            Spacer(Modifier.height(8.dp))
+            SensorDotsToggle(
+                checked = showSensorDots,
+                onCheckedChange = { showSensorDots = it },
+                modifier = sectionModifier,
+            )
+            if (state.diagnosticsVisible) {
+                Spacer(Modifier.height(12.dp))
+                ReedDiagnosticsSection(
+                    state = state,
+                    onHideDiagnostics = onHideDiagnostics,
+                    modifier = sectionModifier,
+                )
+            }
         }
         Spacer(Modifier.height(8.dp))
         SyncIndicator(syncPending = state.syncPending, modifier = sectionModifier)
@@ -261,33 +301,67 @@ private fun PlayingContent(
 }
 
 /**
- * The physical-board status line beneath the turn banner: a disconnected board pauses play; a
- * setup mismatch asks the player to match the on-screen position; a rejected confirmation pauses the
- * game (the [PhysicalPlayState.Playing.recovering] gate) and offers the live reed grid as the
- * restoration aid (S-07, FR-010). Renders nothing when the board is connected, set up, and the last
- * confirmation was accepted.
+ * What PhysicalPlay shows in the scaffold's fixed banner slot: the recovery [BoardMessage] when one
+ * applies, else the turn [StatusBanner]. One slot, one occupant — the message outranks the turn
+ * indicator because during a pause/rejection the instruction is what the player needs, and both never
+ * fit the reserved height together. Swapping inside the fixed slot keeps the board perfectly still.
  */
 @Composable
-private fun BoardMessage(
+private fun PhysicalBanner(
     state: PhysicalPlayState.Playing,
     onShowDiagnostics: () -> Unit,
     onReconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (state.result != null) return
-    val message =
-        when {
-            state.paused -> "Board disconnected — moves are paused until it reconnects."
+    val message = boardMessageFor(state)
+    if (message != null) {
+        BoardMessage(
+            message = message,
+            state = state,
+            onShowDiagnostics = onShowDiagnostics,
+            onReconnect = onReconnect,
+            modifier = modifier,
+        )
+    } else {
+        StatusBanner(state = state, modifier = modifier)
+    }
+}
 
-            // A rejected move outranks the generic setup-mismatch text: the reason (illegal / inconsistent /
-            // promotion) is what the player needs, even though placing the wrong piece also trips
-            // setupMismatch. The reed grid still opens — diagnosticsVisible includes setupMismatch (S-09 P8).
-            state.rejection != null -> rejectionText(state.rejection)
+/**
+ * The physical-board status message (S-07, FR-010): a disconnected board pauses play; a setup
+ * mismatch asks the player to match the on-screen position; a rejected confirmation pauses the game
+ * (the [PhysicalPlayState.Playing.recovering] gate). `null` when the board is connected, set up, and
+ * the last confirmation was accepted — [PhysicalBanner] then falls back to the turn banner.
+ */
+private fun boardMessageFor(state: PhysicalPlayState.Playing): String? {
+    if (state.result != null) return null
+    return when {
+        state.paused -> "Board disconnected — moves are paused until it reconnects."
 
-            state.setupMismatch -> "Set up the board to match the position on screen."
+        // A rejected move outranks the generic setup-mismatch text: the reason (illegal / inconsistent /
+        // promotion) is what the player needs, even though placing the wrong piece also trips
+        // setupMismatch. The reed grid still opens — diagnosticsVisible includes setupMismatch (S-09 P8).
+        state.rejection != null -> rejectionText(state.rejection)
 
-            else -> null
-        } ?: return
+        state.setupMismatch -> "Set up the board to match the position on screen."
+
+        else -> null
+    }
+}
+
+/**
+ * Renders a [boardMessageFor] message with its escape hatch, sized for the fixed banner slot: the
+ * text is capped at [MESSAGE_TEXT_MAX_HEIGHT] with internal scroll so a long recovery text never
+ * grows the slot, and the action button stays visible below it.
+ */
+@Composable
+private fun BoardMessage(
+    message: String,
+    state: PhysicalPlayState.Playing,
+    onShowDiagnostics: () -> Unit,
+    onReconnect: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.errorContainer,
@@ -299,6 +373,10 @@ private fun BoardMessage(
         ) {
             Text(
                 message,
+                modifier =
+                    Modifier
+                        .heightIn(max = MESSAGE_TEXT_MAX_HEIGHT)
+                        .verticalScroll(rememberScrollState()),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 textAlign = TextAlign.Center,
@@ -337,18 +415,29 @@ private fun BoardMessage(
 }
 
 /**
- * The live reed-diagnostics panel under the board while [PhysicalPlayState.Playing.diagnosticsVisible]
- * (S-07, FR-011): a raw-diagnostics caption and the observed-vs-expected [ReedDiagnosticsGrid]. A
- * "Hide" affordance shows only when the grid was opened manually ([PhysicalPlayState.Playing.manualDiagnostics]) —
- * a setup-mismatch auto-entry clears itself once the board matches, so there is nothing to dismiss.
+ * The live reed-diagnostics panel while [PhysicalPlayState.Playing.diagnosticsVisible] (S-07, FR-011):
+ * the observed-vs-expected [ReedDiagnosticsGrid] with its caption below. A "Hide" affordance shows
+ * only when the grid was opened manually ([PhysicalPlayState.Playing.manualDiagnostics]) — a
+ * setup-mismatch auto-entry clears itself once the board matches, so there is nothing to dismiss.
+ * [gridVerticalChrome] is the grid's viewport reservation — the side panel passes its own so the grid
+ * stays fully visible beside the board.
  */
 @Composable
 private fun ReedDiagnosticsSection(
     state: PhysicalPlayState.Playing,
     onHideDiagnostics: () -> Unit,
     modifier: Modifier = Modifier,
+    gridVerticalChrome: Dp = BOARD_CHROME_COLUMN,
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        ReedDiagnosticsGrid(
+            observed = state.latestOccupancy ?: state.position.toOccupancy(),
+            expected = state.position.toOccupancy(),
+            modifier = Modifier.fillMaxWidth(),
+            orientation = state.orientation,
+            verticalChrome = gridVerticalChrome,
+        )
+        Spacer(Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -364,13 +453,6 @@ private fun ReedDiagnosticsSection(
                 TextButton(onClick = onHideDiagnostics) { Text("Hide") }
             }
         }
-        Spacer(Modifier.height(8.dp))
-        ReedDiagnosticsGrid(
-            observed = state.latestOccupancy ?: state.position.toOccupancy(),
-            expected = state.position.toOccupancy(),
-            modifier = Modifier.fillMaxWidth(),
-            orientation = state.orientation,
-        )
     }
 }
 
@@ -448,26 +530,6 @@ private fun StatusBanner(
         }
     } else {
         Text(text, modifier = modifier, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
-    }
-}
-
-@Composable
-private fun SyncIndicator(
-    syncPending: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    if (!syncPending) return
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-        Text(
-            "Saving…",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

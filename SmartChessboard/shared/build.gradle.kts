@@ -99,6 +99,13 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
+            // Official window classification: the modern WindowSizeClass type (width 600/840 + height
+            // 480/900 breakpoints). Type-only — the class is computed from LocalWindowInfo at the App
+            // root (ladder rung 2: material3.adaptive needs AGP >= 9.1, we're on 9.0.1).
+            implementation(libs.androidx.window.core)
+            // Icon-only actions in the compact-height rail (AdaptiveActionButton). Frozen at 1.7.3
+            // upstream; unused icons are stripped per target (R8 / wasm DCE / Native link).
+            implementation(libs.compose.materialIconsExtended)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)

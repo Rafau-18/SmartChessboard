@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,14 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,9 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.board.DiscoveredBoard
-
-/** Caps the content width so the list/status don't stretch edge-to-edge on wide screens. */
-private val CONNECTION_MAX_WIDTH = 480.dp
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
 /**
  * The BLE connection / pairing screen (S-09 Phase 5) — a gate the physical-play flow passes through:
@@ -45,7 +43,6 @@ private val CONNECTION_MAX_WIDTH = 480.dp
  * The screen owns the OS permission handshake (the [BlePermissionController]) and feeds its result back
  * as an intent; the rest of the surface renders [ConnectionUiState.phase].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConnectionScreen(
     onBack: () -> Unit,
@@ -69,27 +66,23 @@ fun ConnectionScreen(
         if (connected) onConnected()
     }
 
-    Scaffold(
+    AdaptiveScaffold(
+        title = { Text("Connect board") },
         // Scanning/pairing can take seconds with no interaction — keep the screen awake so a dim doesn't
         // background the app mid-handshake. Compose's own iOS idle-timer manager owns
         // UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what holds it (S-09 P8).
         modifier = Modifier.keepScreenOn(),
-        topBar = {
-            TopAppBar(
-                title = { Text("Connect board") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
-                },
-            )
-        },
+        navigationIcon = { AdaptiveBackButton(onBack) },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(
                 modifier =
                     Modifier
                         .align(Alignment.TopCenter)
-                        .widthIn(max = CONNECTION_MAX_WIDTH)
-                        .fillMaxWidth()
+                        .widthIn(max = SECTION_MAX_WIDTH)
+                        // Fill the height so the device list can take a weighted share and the trailing
+                        // "Forget saved board" action stays pinned on screen at any list length / height.
+                        .fillMaxSize()
                         .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -148,7 +141,7 @@ private fun StatusBlock(
 }
 
 @Composable
-private fun ScanningBlock(
+private fun ColumnScope.ScanningBlock(
     state: ConnectionUiState,
     onSelect: (String) -> Unit,
     onForget: () -> Unit,
@@ -169,7 +162,10 @@ private fun ScanningBlock(
             textAlign = TextAlign.Center,
         )
     } else {
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        // weight(fill = false): a short list keeps its natural height (trailing action sits right below);
+        // a long list caps at its weighted share and scrolls internally, so "Forget saved board" below
+        // never gets pushed off-window.
+        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f, fill = false)) {
             items(state.devices, key = { it.id }) { board ->
                 BoardRow(board = board, onClick = { onSelect(board.id) })
                 HorizontalDivider()

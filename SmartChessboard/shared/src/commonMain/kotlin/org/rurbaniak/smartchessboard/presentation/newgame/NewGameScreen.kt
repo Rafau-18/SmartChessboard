@@ -7,18 +7,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,11 +32,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
+import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
-/** Caps the form width on wide screens so the fields don't stretch edge-to-edge. */
-private val FORM_MAX_WIDTH = 480.dp
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewGameScreen(
     onBack: () -> Unit,
@@ -62,28 +60,25 @@ fun NewGameScreen(
     // shown only where the platform can drive a physical board (web stays digital-only).
     var physical by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("New game") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-            )
-        },
+    AdaptiveScaffold(
+        title = { Text("New game") },
+        navigationIcon = { AdaptiveBackButton(onBack) },
     ) { padding ->
         Column(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    // At compact heights (landscape phone) or with the keyboard open the form no longer
+                    // fits: scroll keeps the Start button reachable, imePadding lifts the focused field
+                    // clear of the IME. enableEdgeToEdge() (MainActivity) routes the ime inset here.
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            val fieldModifier = Modifier.widthIn(max = FORM_MAX_WIDTH).fillMaxWidth()
+            val fieldModifier = Modifier.widthIn(max = SECTION_MAX_WIDTH).fillMaxWidth()
             // Digital / Physical picker — only on platforms that can drive a physical board. Web never
             // shows it and defaults to digital, so a web-created game is never a physical one.
             if (supportsPhysicalBoard) {

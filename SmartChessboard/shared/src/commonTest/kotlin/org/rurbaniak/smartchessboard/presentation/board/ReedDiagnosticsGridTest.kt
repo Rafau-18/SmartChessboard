@@ -1,6 +1,9 @@
 package org.rurbaniak.smartchessboard.presentation.board
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -8,6 +11,7 @@ import kotlin.test.assertTrue
  * Guards the diagnostics grid's bit math — especially the h8 corner (square 63 is the sign bit), the
  * documented occupancy footgun (`Occupancy.kt`). Headless, so it proves the math on every target
  * (a signed `> 0` regression would misread exactly h8 and never surface on the JVM host alone).
+ * Also covers `diagnosticsGridSide`, the pure half of the grid's height-bounding.
  */
 class ReedDiagnosticsGridTest {
     @Test
@@ -34,5 +38,30 @@ class ReedDiagnosticsGridTest {
         // A single-square mismatch on a1.
         assertTrue(occupancyDiffers(observed = 1L, expected = 0L, square = 0))
         assertFalse(occupancyDiffers(observed = 1L, expected = 0L, square = 63))
+    }
+
+    @Test
+    fun `grid side is width-bound with an unknown or generous height budget`() {
+        // Early frame / preview: no window size yet → width-bound, like boardSide().
+        assertEquals(328.dp, diagnosticsGridSide(availableWidth = 328.dp, heightBudget = Dp.Unspecified))
+        // Tall portrait viewport: the width is the smaller bound.
+        assertEquals(328.dp, diagnosticsGridSide(availableWidth = 328.dp, heightBudget = 600.dp))
+    }
+
+    @Test
+    fun `grid side is height-bound in a short window`() {
+        // Landscape-phone side panel (393-high window less the pane chrome): budget below width wins.
+        assertEquals(213.dp, diagnosticsGridSide(availableWidth = 340.dp, heightBudget = 213.dp))
+        // Portrait split-screen: the same bound applies in a scrolling column.
+        assertEquals(260.dp, diagnosticsGridSide(availableWidth = 328.dp, heightBudget = 260.dp))
+    }
+
+    @Test
+    fun `grid side floors at the readability minimum but never above the width`() {
+        assertEquals(120.dp, diagnosticsGridSide(availableWidth = 340.dp, heightBudget = 80.dp))
+        // A negative budget (viewport smaller than the chrome estimate) still resolves to the floor.
+        assertEquals(120.dp, diagnosticsGridSide(availableWidth = 340.dp, heightBudget = (-20).dp))
+        // The floor yields to a slot narrower than itself instead of overflowing it.
+        assertEquals(100.dp, diagnosticsGridSide(availableWidth = 100.dp, heightBudget = 80.dp))
     }
 }

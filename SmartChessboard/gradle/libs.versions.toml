@@ -13,6 +13,7 @@ composeMultiplatform = "1.11.1"
 junit = "4.13.2"
 kotlin = "2.4.0"
 material3 = "1.11.0-alpha07"
+androidxWindow = "1.5.1"
 supabase = "3.6.0"
 ktor = "3.5.0"
 kotlinxSerialization = "1.11.0"
@@ -47,6 +48,11 @@ navigation3-browser = { module = "com.github.terrakok:navigation3-browser", vers
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+# Material icon set for the compact-height left rail (icon-only actions). Frozen upstream at 1.7.3
+# (JetBrains stopped publishing the icons artifacts after CMP 1.7) — pure ImageVector builders on
+# stable ui-graphics APIs, so the pin is independent of the CMP/material3 versions above.
+compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version = "1.7.3" }
+androidx-window-core = { module = "org.jetbrains.androidx.window:window-core", version.ref = "androidxWindow" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
