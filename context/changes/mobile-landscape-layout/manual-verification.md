@@ -6,6 +6,15 @@ on the owner fleet (Android phone + iPhone + web resize; tablet/iPad if at hand)
 
 Status legend: `[ ]` pending, `[x]` confirmed on the fleet.
 
+> **Owner acceptance, 2026-07-04**: after three feedback/fix rounds on the fleet (web wide +
+> Android landscape + iPhone landscape — Replay/Play/History exercised, board density, rail
+> icons, eval-bar sizing and the Saving-hint no-jump all re-verified by eye), the owner
+> accepted the current state and merged the branch to `main`. The per-row matrix below stays
+> as-is: rows not individually confirmed remain `[ ]` (notably the physical-board BLE checks
+> 5.2–5.5, the cutout both-rotations sweep 1.6/3.3, and EndGamePicker 1.5) and will surface
+> as soft warnings at `/10x-archive` — close them opportunistically during future device
+> sessions or accept at archive time.
+
 ## Phase 1: Functional fixes
 
 Automated gate: **passed** (all four Gradle targets green + ktlint clean).
