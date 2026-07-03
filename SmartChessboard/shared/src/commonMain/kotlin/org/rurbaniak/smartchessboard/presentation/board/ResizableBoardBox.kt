@@ -24,8 +24,6 @@ import androidx.compose.ui.unit.dp
 import org.rurbaniak.smartchessboard.domain.preferences.clampBoardSize
 import org.rurbaniak.smartchessboard.presentation.components.BOARD_CHROME_COLUMN
 import org.rurbaniak.smartchessboard.presentation.components.MIN_BOARD_SIDE
-import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
-import org.rurbaniak.smartchessboard.presentation.layout.isWidthExpanded
 
 /** Generous absolute backstop on the board side (sanity only) — the viewport height is the real limit
  * on a normal screen; this just prevents an absurd size on a very large monitor. */
@@ -33,16 +31,6 @@ private val BOARD_MAX_SIDE = 1000.dp
 
 /** The corner drag handle's touch target. */
 private val HANDLE_SIZE = 28.dp
-
-/**
- * True when the current window is width-expanded (>= 840 dp) — the historical "wide screen" flag,
- * now a one-line derivation of [LocalWindowSizeClass] so every screen shares the root's
- * classification. Deprecated in spirit: new code should use the policy functions in
- * `presentation/layout/AdaptiveLayout.kt` (`screenChrome` / `boardArrangement` /
- * `boardResizeEnabled`); this remains only for existing call sites and retires with them.
- */
-@Composable
-fun rememberIsWideScreen(): Boolean = LocalWindowSizeClass.current.isWidthExpanded
 
 /**
  * Sizes a chessboard consistently across the board screens. On a phone ([isWide] = false) the board

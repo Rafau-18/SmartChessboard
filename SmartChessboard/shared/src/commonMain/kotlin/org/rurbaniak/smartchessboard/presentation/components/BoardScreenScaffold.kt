@@ -48,6 +48,11 @@ private val SCREEN_PADDING = 16.dp
  * - [panelContent] — the screen's sections (controls, move list, …), each capping its own width via
  *   [SECTION_MAX_WIDTH]. Renders under the board in the column arrangement, in the side panel's own
  *   scroll otherwise.
+ *
+ * [contentWidthExpansion] (0..1) slides the side-pane arrangement's width cap from
+ * [CONTENT_MAX_WIDTH] toward the full window width. Replay maps its board-enlargement fraction here
+ * so dragging the board past its default size spills past the default margins; screens without that
+ * behavior keep the default 0 (hard cap).
  */
 @Composable
 fun BoardScreenScaffold(
@@ -55,6 +60,7 @@ fun BoardScreenScaffold(
     board: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     bannerSlotHeight: Dp = BANNER_SLOT_HEIGHT,
+    contentWidthExpansion: Float = 0f,
     panelContent: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -82,7 +88,16 @@ fun BoardScreenScaffold(
             }
 
             BoardArrangement.SidePane -> {
-                val rowWidth = minOf(maxWidth, CONTENT_MAX_WIDTH) - SCREEN_PADDING * 2
+                // The container cap slides from CONTENT_MAX_WIDTH toward the full window width as
+                // [contentWidthExpansion] grows, so an enlarged board can spill past the default
+                // margins (Replay's drag-to-grow) instead of being trapped inside them.
+                val containerMax =
+                    if (maxWidth <= CONTENT_MAX_WIDTH) {
+                        maxWidth
+                    } else {
+                        CONTENT_MAX_WIDTH + (maxWidth - CONTENT_MAX_WIDTH) * contentWidthExpansion.coerceIn(0f, 1f)
+                    }
+                val rowWidth = containerMax - SCREEN_PADDING * 2
                 val panelWidth =
                     sidePanelWidth(
                         rowWidth = rowWidth,
@@ -91,7 +106,7 @@ fun BoardScreenScaffold(
                 Row(
                     modifier =
                         Modifier
-                            .widthIn(max = CONTENT_MAX_WIDTH)
+                            .widthIn(max = containerMax)
                             .fillMaxSize()
                             .align(Alignment.TopCenter)
                             .padding(SCREEN_PADDING),

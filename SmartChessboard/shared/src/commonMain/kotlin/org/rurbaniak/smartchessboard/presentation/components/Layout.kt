@@ -9,14 +9,10 @@ import androidx.compose.ui.unit.dp
  */
 val CONTENT_MAX_WIDTH: Dp = 1200.dp
 
-/** Max width of Replay's right column (eval panel + move list) in the two-pane layout. */
-val SIDE_PANEL_MAX_WIDTH: Dp = 340.dp
-
 /**
  * Min width of a board screen's side panel (`BoardScreenScaffold`) — below this the move list and
  * controls stop being usable, so the panel claims it even from the board (which keeps its own
- * [MIN_BOARD_SIDE] floor). The panel's max is the shared [SECTION_MAX_WIDTH] cap. Replay's
- * pre-scaffold [SIDE_PANEL_MAX_WIDTH] retires with its Phase 6 migration.
+ * [MIN_BOARD_SIDE] floor). The panel's max is the shared [SECTION_MAX_WIDTH] cap.
  */
 val SIDE_PANEL_MIN_WIDTH: Dp = 340.dp
 

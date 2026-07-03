@@ -138,3 +138,145 @@ Manual checks (deferred to the end-of-slice pass):
       sensor dots intact
 - [ ] 5.5 Mid-game rotation (physical/BLE or emulator): link + state survive, layout
       re-arranges cleanly
+
+## Phase 6: Replay unification + wide regression + polish
+
+Automated gate: **passed** (all four Gradle targets green — previews included in
+`assembleDebug`; ktlint clean; grep checks: `TWO_PANE_MIN_WIDTH`, `rememberIsWideScreen`,
+and `SIDE_PANEL_MAX_WIDTH` gone from sources; no `840.dp` literal anywhere; the only 840/480
+occurrences left are the policy layer's named constants/kdoc and its boundary tests, plus the
+Phase-2-approved single `SECTION_MAX_WIDTH = 480.dp` token).
+
+Implementation notes for the pass:
+- Replay renders through `BoardScreenScaffold`: the player line ("White vs Black · result")
+  sits in the fixed banner slot, the board + eval bar compose unchanged in the board slot
+  (`BoardWithEvalBar`, reserved-width pattern), and the sections live in the panel. Panel
+  order is per-arrangement: side-pane leads with the transport row (stepping never needs a
+  scroll), then the eval panel; the portrait column keeps the shipped order (eval panel,
+  truncation notice, transport). The move list closes the panel in both.
+- The private 840 dp `TWO_PANE_MIN_WIDTH` and its local `BoxWithConstraints` measurement
+  basis are gone — Replay reads the shared window classification. A landscape phone now gets
+  the side-pane arrangement (board + eval bar beside the panel) instead of a rotated portrait
+  column.
+- Drag-to-grow is preserved via the new `BoardScreenScaffold.contentWidthExpansion` (0..1):
+  past the default board size the container cap slides from `CONTENT_MAX_WIDTH` toward the
+  full window, so an enlarged board still spills past the default margins. It stays 0 (hard
+  cap) for Play/PhysicalPlay and wherever the resize handle is disabled.
+- The resize handle + stored fraction now gate on `boardResizeEnabled()` in Replay too: a
+  ≥ 840 dp-wide landscape phone loses the handle it accidentally had (auto-fit instead, per
+  the restored `BoardSize` contract); wide web/desktop behavior is unchanged. The move-list
+  default follows the container (side panel → TABLE), so it no longer flips on rotation for
+  wide phones — and a landscape-phone Replay now defaults to the table layout.
+- `SIDE_PANEL_MAX_WIDTH` (hard 340 dp) retired: the shared panel sizing applies, so on a
+  large monitor Replay's panel can now be up to 480 dp wide. Expected deltas for the
+  regression eye: slightly wider panel on big screens, player line at the top of the panel
+  (side-pane) instead of above the board, transport row in the panel instead of under the
+  board, and in portrait the board sits ~30 dp lower (fixed banner slot — same as Play).
+- `rememberIsWideScreen()` deleted (its last call site migrated); `BoardSize`'s doc names
+  `boardResizeEnabled()` as the gate; `ReplayTruncatedPreview` pins a portrait-phone
+  `LocalWindowSizeClass` so it keeps previewing the column arrangement.
+
+Manual checks (deferred to the end-of-slice pass):
+
+- [ ] 6.3 Wide regression pass (web maximized / desktop / tablet): Replay two-pane visually
+      equivalent to pre-change — centered margins, board-size drag grows toward edges, tight
+      pane gap, eval bar matches board height, move-list toggle + persistence intact
+- [ ] 6.4 Replay landscape phone: SidePane with eval bar beside board; transport + move list
+      reachable in the panel; stepping plies keeps the board stable (no jump)
+- [ ] 6.5 History / NewGame / Connection landscape: caps and centering correct (History 720
+      cap unchanged)
+- [ ] 6.6 End-of-slice acceptance pass on the owner fleet: full matrix below confirmed
+
+## End-of-slice acceptance pass (6.6) — fleet matrix
+
+One pass over the owner fleet confirms every deferred row above (1.3–1.6, 2.6, 3.2–3.4,
+4.2–4.5, 5.2–5.5, 6.3–6.5). Suggested order: web first (window resize covers the most
+shapes fastest), then the Android phone, then the iPhone, then the physical board. Tick the
+per-phase rows above as the runs confirm them.
+
+**Launching the targets** (all Gradle calls from `SmartChessboard/`):
+
+- **Web**: `ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew :webApp:wasmJsBrowserDevelopmentRun`
+  → opens `http://localhost:8080/` in the default browser. Resize the window by hand; for the
+  short-wide shape use a window ≲ 470 px tall (or devtools responsive mode with e.g. 900×420).
+- **Android**: connect the phone (USB debugging on), `ANDROID_HOME="$HOME/Library/Android/sdk"
+  ./gradlew :androidApp:installDebug`, open *SmartChessboard* on the phone. Enable auto-rotate.
+- **iOS**: open `SmartChessboard/iosApp` in Xcode → run the `iosApp` scheme on the iPhone
+  (or a notched simulator). Make sure the orientation lock in Control Center is off.
+- **Physical board**: power the ESP32 board (SmartChessboard-DA3A); it is single-central, so
+  test with one phone at a time.
+
+### Run A — Web (Chrome, resizable window; digital subset only — no Connection/PhysicalPlay)
+
+1. **Wide Replay regression (6.3)**: maximize the window (≳ 1400×800). History → open a
+   finished game (Replay). Verify against the pre-change look: content centered with side
+   margins; board left, panel right with a tight (12 dp) gap; enable **Analysis** — the eval
+   bar appears beside the board and exactly matches the board's height. Drag the board's
+   corner handle right: the board grows and, past its default size, the whole two-pane
+   container widens past the default margins toward the window edges; drag it back. Toggle
+   **Table/Inline**: reload the page (or leave and reopen the game) — the choice persists.
+   Step plies with `|< < > >|` and by clicking moves in the list.
+2. **Resize handle gating (4.4 part)**: still wide — handle present. Now shrink the window
+   to a phone-ish column (~420×900 css px): handle gone, board full-width auto-fit,
+   portrait column layout, move list defaults to INLINE (unless you persisted an override in
+   step 1 — the override must win here too, 4.5).
+3. **Short-wide window → rail (3.4)**: stretch the window wide but short (~900×420). Every
+   screen (History, NewGame, Play, Replay) swaps the top bar for the **left rail** (Back on
+   top, actions below, no title). Replay shows SidePane: board + eval bar left, panel right
+   with transport on top (6.4 shape on web). Slowly drag the window taller: past ~480 px the
+   top bar returns (continuous resize, no reload).
+4. **Play banner no-jump (4.3)**: in a short-wide or portrait window start a NewGame → Play.
+   Make a few moves incl. giving check — the status banner text/emphasis changes in its slot
+   and the board never shifts. End the game (End game → pick result → confirm): the
+   "X wins" banner swap must not move the board either.
+5. **NewGame landscape shape (6.5 part)**: short-wide window — form centered, 480 dp cap,
+   scrollable, Start reachable with the duplicate-name error visible.
+6. **History cap (6.5 part)**: wide window — list centered at its 720 dp cap, unchanged.
+
+### Run B — Android phone (cutout device)
+
+1. **Portrait spot-check (2.6)**: walk SignIn → History → NewGame → Play → Replay in
+   portrait. Everything looks familiar; the one intended delta: on Play/PhysicalPlay/Replay
+   the board sits ~30 dp lower (fixed banner slot).
+2. **Rail on all six screens (3.2)**: rotate to landscape on History, NewGame, Play,
+   PhysicalPlay, Connection, Replay — each shows the left rail (Back + that screen's
+   actions, no title); rotate back — top bar returns.
+3. **Cutout both rotations (1.6, 3.3)**: on each landscape screen rotate both ways
+   (cutout-left and cutout-right): no content or tap target under the cutout, rail items
+   comfortably tappable (≥ 48 dp); portrait unregressed.
+4. **NewGame IME + error (1.3)**: landscape, focus a name field — the IME must not cover
+   the focused field (form scrolls; `imePadding`). Trigger the duplicate-name error — Start
+   still reachable.
+5. **Play landscape (4.2, 4.4, 4.5)**: board fills the height beside the panel; no primary
+   control below the fold; **no resize handle**; move list defaults to TABLE in the panel
+   (with your persisted override winning if set); banner no-jump when check/result appears
+   (4.3).
+6. **EndGamePicker at compact height (1.5)**: in landscape Play tap "End game" — all result
+   options + Confirm reachable (internal scroll if needed).
+7. **Replay landscape (6.4)**: open a finished game, rotate: SidePane with eval bar beside
+   the board (enable Analysis), transport at the top of the panel, move list below; stepping
+   plies never moves the board.
+8. **Connection reachability (1.4)**: open Connection (physical game) with a long device
+   list at phone height (landscape helps): "Forget saved board" reachable (list is bounded,
+   trailing action on screen).
+
+### Run C — iPhone
+
+1. Repeat B.2–B.7 on the iPhone (the notch is the cutout; both landscape rotations). Web-
+   style resize doesn't apply; rotation covers the shapes.
+2. **NewGame IME (1.3 iOS half)**: landscape + keyboard — focused field stays visible.
+3. **Home-indicator edge**: in landscape board screens nothing sits under the home
+   indicator (scaffold insets).
+
+### Run D — Physical board (BLE, Android or iPhone)
+
+1. **Recovery side-by-side (5.2)**: start/resume a physical game, rotate to landscape,
+   lift a wrong piece / mis-place to trigger recovery (or toggle diagnostics): the reed
+   grid renders **beside** the live board, both fully visible, no scrolling.
+2. **Portrait grid bound (5.3)**: same flow in portrait — the grid caps to the viewport
+   (no overflow), caption + Hide below it.
+3. **BoardMessage no-jump (5.4)**: as messages appear/disappear (disconnect the board,
+   reconnect, reject a move) the board never moves; a long message scrolls inside its slot;
+   screen stays awake; sensor dots overlay intact and toggleable.
+4. **Mid-game rotation (5.5)**: rotate the phone mid physical game: BLE link + game state
+   survive, the layout re-arranges with no reload flash; make a move after rotating.

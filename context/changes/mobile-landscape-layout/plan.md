@@ -472,7 +472,7 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 5.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean
+- [x] 5.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean — 59a8d7d
 
 #### Manual
 
@@ -485,8 +485,8 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [ ] 6.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug (previews); ktlint clean
-- [ ] 6.2 Grep: `TWO_PANE_MIN_WIDTH` gone; breakpoint literals only in the policy layer
+- [x] 6.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug (previews); ktlint clean
+- [x] 6.2 Grep: `TWO_PANE_MIN_WIDTH` gone; breakpoint literals only in the policy layer
 
 #### Manual
 
