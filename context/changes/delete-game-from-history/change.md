@@ -1,9 +1,9 @@
 ---
 change_id: delete-game-from-history
 title: Delete game from history
-status: implementing
+status: implemented
 created: 2026-07-02
-updated: 2026-07-02
+updated: 2026-07-03
 archived_at: null
 ---
 

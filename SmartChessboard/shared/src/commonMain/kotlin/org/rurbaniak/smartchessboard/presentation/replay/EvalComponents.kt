@@ -212,10 +212,14 @@ internal fun formatEvalScore(
         }
     }
 
-/** `"e2e4"` → `"e2→e4"`; a promotion suffix is dropped. Null for a malformed UCI string. */
+/**
+ * `"e2e4"` → `"e2-e4"` (long algebraic); a promotion suffix is dropped. Null for a malformed UCI
+ * string. A hyphen, not an arrow: the bundled WasmJS font has no `→` (U+2192) glyph, so an arrow
+ * renders as tofu on web — and `e2-e4` is standard long-algebraic notation anyway.
+ */
 internal fun formatBestMove(uci: String): String? {
     if (uci.length < 4) return null
-    return "${uci.substring(0, 2)}→${uci.substring(2, 4)}"
+    return "${uci.substring(0, 2)}-${uci.substring(2, 4)}"
 }
 
 /**

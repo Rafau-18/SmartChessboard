@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.rurbaniak.smartchessboard.domain.games.GameDeleter
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
 import org.rurbaniak.smartchessboard.domain.games.GamesRepository
 import kotlin.coroutines.cancellation.CancellationException
@@ -22,11 +23,26 @@ sealed interface HistoryUiState {
     data object Error : HistoryUiState
 }
 
+/**
+ * The delete confirmation prompt for one game, driving the dialog on the History screen. Null (no
+ * prompt) is the resting state; [deleting] disables the dialog while the delete is in flight;
+ * [failed] keeps the dialog open with an error line and flips its confirm button to Retry.
+ */
+data class DeletePromptState(
+    val game: GameSummary,
+    val deleting: Boolean = false,
+    val failed: Boolean = false,
+)
+
 class HistoryViewModel(
     private val gamesRepository: GamesRepository,
+    private val gameDeleter: GameDeleter,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
     val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
+
+    private val _deletePrompt = MutableStateFlow<DeletePromptState?>(null)
+    val deletePrompt: StateFlow<DeletePromptState?> = _deletePrompt.asStateFlow()
 
     init {
         load()
@@ -41,6 +57,39 @@ class HistoryViewModel(
 
     fun retry() {
         load()
+    }
+
+    /** Opens the delete confirmation prompt for [game]. Nothing is deleted until [confirmDelete]. */
+    fun requestDelete(game: GameSummary) {
+        _deletePrompt.value = DeletePromptState(game)
+    }
+
+    /** Closes the prompt without deleting. Ignored while the delete is in flight. */
+    fun dismissDelete() {
+        if (_deletePrompt.value?.deleting == true) return
+        _deletePrompt.value = null
+    }
+
+    /**
+     * Performs the confirmed delete (also serves as Retry after a failure). Idempotent while in
+     * flight. On success the prompt closes and the list refreshes itself via the repository
+     * [GamesRepository.changes] signal; on failure the prompt stays open in the failed state.
+     */
+    fun confirmDelete() {
+        val prompt = _deletePrompt.value ?: return
+        if (prompt.deleting) return
+        _deletePrompt.value = prompt.copy(deleting = true, failed = false)
+        viewModelScope.launch {
+            try {
+                gameDeleter.delete(prompt.game.id)
+                _deletePrompt.value = null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                // Throwable (not Exception): a wasm Ktor fetch failure is a kotlin.Error.
+                _deletePrompt.value = prompt.copy(deleting = false, failed = true)
+            }
+        }
     }
 
     /**
