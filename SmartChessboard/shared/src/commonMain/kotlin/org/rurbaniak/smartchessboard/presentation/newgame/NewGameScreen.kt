@@ -18,7 +18,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
@@ -62,11 +62,7 @@ fun NewGameScreen(
 
     AdaptiveScaffold(
         title = { Text("New game") },
-        navigationIcon = {
-            TextButton(onClick = onBack) {
-                Text("Back")
-            }
-        },
+        navigationIcon = { AdaptiveBackButton(onBack) },
     ) { padding ->
         Column(
             modifier =

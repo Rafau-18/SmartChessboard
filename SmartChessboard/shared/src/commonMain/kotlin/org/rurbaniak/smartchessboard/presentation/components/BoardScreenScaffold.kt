@@ -24,12 +24,19 @@ import androidx.compose.ui.unit.dp
 import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
 import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
 import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
+import org.rurbaniak.smartchessboard.presentation.layout.isHeightCompact
 
 /** Gap between the board pane and the side panel (Replay's proven two-pane gap). */
 private val PANE_GAP = 12.dp
 
 /** The board screens' outer padding — the same 16 dp every screen applies today. */
 private val SCREEN_PADDING = 16.dp
+
+/**
+ * Vertical outer padding in the side-pane arrangement at compact height: every dp above/below the
+ * board comes straight out of the board's square, so a ~360 dp window keeps only a hairline margin.
+ */
+private val SCREEN_PADDING_V_COMPACT = 4.dp
 
 /**
  * One arrangement authority for the board screens (Play / PhysicalPlay / Replay), driven by
@@ -97,11 +104,17 @@ fun BoardScreenScaffold(
                     } else {
                         CONTENT_MAX_WIDTH + (maxWidth - CONTENT_MAX_WIDTH) * contentWidthExpansion.coerceIn(0f, 1f)
                     }
+                // Compact height trades margins and panel width for board size: hairline vertical
+                // padding and a tighter panel floor, so the board's square is as tall as the window
+                // allows. Non-compact (wide) keeps the regular paddings and the roomier panel.
+                val heightCompact = LocalWindowSizeClass.current.isHeightCompact
+                val verticalPadding = if (heightCompact) SCREEN_PADDING_V_COMPACT else SCREEN_PADDING
                 val rowWidth = containerMax - SCREEN_PADDING * 2
                 val panelWidth =
                     sidePanelWidth(
                         rowWidth = rowWidth,
-                        boardTarget = maxHeight - BOARD_CHROME_SIDE_PANE,
+                        boardTarget = maxHeight - verticalPadding * 2,
+                        panelMin = if (heightCompact) SIDE_PANEL_MIN_WIDTH_COMPACT else SIDE_PANEL_MIN_WIDTH,
                     )
                 Row(
                     modifier =
@@ -109,12 +122,14 @@ fun BoardScreenScaffold(
                             .widthIn(max = containerMax)
                             .fillMaxSize()
                             .align(Alignment.TopCenter)
-                            .padding(SCREEN_PADDING),
+                            .padding(horizontal = SCREEN_PADDING, vertical = verticalPadding),
                     horizontalArrangement = Arrangement.spacedBy(PANE_GAP),
                 ) {
+                    // Top-aligned like the panel beside it — a board smaller than the pane (wide
+                    // screens) must not float to the vertical centre while the panel hugs the top.
                     Box(
                         modifier = Modifier.weight(1f).fillMaxHeight(),
-                        contentAlignment = Alignment.Center,
+                        contentAlignment = Alignment.TopCenter,
                     ) {
                         board()
                     }
@@ -158,15 +173,17 @@ private fun BannerSlot(
 /**
  * Width of the side panel in the side-pane arrangement. The board is the primary: the panel gets
  * what remains of [rowWidth] after a height-filling board ([boardTarget] — the pane's height budget)
- * and the pane gap, clamped to [SIDE_PANEL_MIN_WIDTH]..[SECTION_MAX_WIDTH]. The min never crushes
- * the board below [MIN_BOARD_SIDE], and a degenerate window resolves to zero rather than a negative
- * width. Pure, so it is unit-testable on every target.
+ * and the pane gap, clamped to [panelMin]..[SECTION_MAX_WIDTH] ([SIDE_PANEL_MIN_WIDTH] normally,
+ * the tighter [SIDE_PANEL_MIN_WIDTH_COMPACT] at compact height so a narrow-landscape phone keeps a
+ * full-height board). The floor never crushes the board below [MIN_BOARD_SIDE], and a degenerate
+ * window resolves to zero rather than a negative width. Pure, so it is unit-testable on every target.
  */
 internal fun sidePanelWidth(
     rowWidth: Dp,
     boardTarget: Dp,
+    panelMin: Dp = SIDE_PANEL_MIN_WIDTH,
 ): Dp =
     (rowWidth - boardTarget - PANE_GAP)
-        .coerceIn(SIDE_PANEL_MIN_WIDTH, SECTION_MAX_WIDTH)
+        .coerceIn(panelMin, SECTION_MAX_WIDTH)
         .coerceAtMost(rowWidth - MIN_BOARD_SIDE - PANE_GAP)
         .coerceAtLeast(0.dp)

@@ -187,6 +187,32 @@ Manual checks (deferred to the end-of-slice pass):
       cap unchanged)
 - [ ] 6.6 End-of-slice acceptance pass on the owner fleet: full matrix below confirmed
 
+### Round-1 findings from the fleet pass (2026-07-03) — fixed
+
+The first fleet pass (web wide + Android/iPhone landscape) surfaced four UX findings; all
+fixed on top of `d390c91`:
+
+1. **Board pane vertically centered while the panel is top-aligned** (visible on web/desktop
+   wide) — the scaffold's board pane now top-aligns (`Alignment.TopCenter`), matching the
+   panel and the pre-migration WideReplay look. Re-check under 6.3.
+2. **Landscape phone: board not maximal** — the side-pane arrangement at compact height now
+   uses 4 dp vertical padding (was 16) and a 260 dp compact panel floor (was 340 —
+   `SIDE_PANEL_MIN_WIDTH_COMPACT`), so the board's square takes the window height less
+   system bars even on narrow-landscape phones; `sidePanelWidth` gained a `panelMin`
+   parameter (+2 boundary tests). Re-check under 4.2 / 5.2 / 6.4.
+3. **Transport buttons oversized in the panel at compact height** — Replay's transport
+   renders a 32 dp-tall compact variant (tight content padding) at height-compact;
+   unchanged on wide screens. Re-check under 6.4.
+4. **Rail actions were text buttons** — the rail is now icon-only via the new
+   `AdaptiveActionButton`/`AdaptiveBackButton` (the label becomes the accessibility
+   description; Replay's selected emphasis maps to primary tint): Back arrow, Flip
+   (swap-vert), Table/Inline (table-rows / notes), Analysis (insights), theme cycle
+   (auto / light / dark), New game (+), Sign out (logout). Top-bar mode keeps the exact
+   pre-change text buttons. New dependency:
+   `org.jetbrains.compose.material:material-icons-extended:1.7.3` (frozen upstream after
+   CMP 1.7; pure ImageVector builders — compiles and tests green on all three targets).
+   Re-check under 3.2 / 3.4.
+
 ## End-of-slice acceptance pass (6.6) — fleet matrix
 
 One pass over the owner fleet confirms every deferred row above (1.3–1.6, 2.6, 3.2–3.4,
@@ -221,10 +247,11 @@ per-phase rows above as the runs confirm them.
    portrait column layout, move list defaults to INLINE (unless you persisted an override in
    step 1 — the override must win here too, 4.5).
 3. **Short-wide window → rail (3.4)**: stretch the window wide but short (~900×420). Every
-   screen (History, NewGame, Play, Replay) swaps the top bar for the **left rail** (Back on
-   top, actions below, no title). Replay shows SidePane: board + eval bar left, panel right
-   with transport on top (6.4 shape on web). Slowly drag the window taller: past ~480 px the
-   top bar returns (continuous resize, no reload).
+   screen (History, NewGame, Play, Replay) swaps the top bar for the **left rail** —
+   icon-only: Back arrow on top, the screen's action icons below, no title. Replay shows
+   SidePane: board + eval bar left, panel right with transport on top (6.4 shape on web).
+   Slowly drag the window taller: past ~480 px the top bar returns with its usual **text**
+   buttons (continuous resize, no reload).
 4. **Play banner no-jump (4.3)**: in a short-wide or portrait window start a NewGame → Play.
    Make a few moves incl. giving check — the status banner text/emphasis changes in its slot
    and the board never shifts. End the game (End game → pick result → confirm): the
@@ -239,8 +266,9 @@ per-phase rows above as the runs confirm them.
    portrait. Everything looks familiar; the one intended delta: on Play/PhysicalPlay/Replay
    the board sits ~30 dp lower (fixed banner slot).
 2. **Rail on all six screens (3.2)**: rotate to landscape on History, NewGame, Play,
-   PhysicalPlay, Connection, Replay — each shows the left rail (Back + that screen's
-   actions, no title); rotate back — top bar returns.
+   PhysicalPlay, Connection, Replay — each shows the icon-only left rail (Back arrow +
+   that screen's action icons, no title; History: theme / + / logout, Replay: table-or-notes
+   / insights); rotate back — the top bar returns with text buttons.
 3. **Cutout both rotations (1.6, 3.3)**: on each landscape screen rotate both ways
    (cutout-left and cutout-right): no content or tap target under the cutout, rail items
    comfortably tappable (≥ 48 dp); portrait unregressed.

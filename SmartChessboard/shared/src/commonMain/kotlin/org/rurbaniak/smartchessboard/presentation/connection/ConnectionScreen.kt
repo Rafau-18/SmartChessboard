@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.board.DiscoveredBoard
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
@@ -71,9 +72,7 @@ fun ConnectionScreen(
         // background the app mid-handshake. Compose's own iOS idle-timer manager owns
         // UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what holds it (S-09 P8).
         modifier = Modifier.keepScreenOn(),
-        navigationIcon = {
-            TextButton(onClick = onBack) { Text("Back") }
-        },
+        navigationIcon = { AdaptiveBackButton(onBack) },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(

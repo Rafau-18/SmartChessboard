@@ -43,4 +43,18 @@ class BoardScreenScaffoldTest {
         // panel still gets its usable minimum.
         assertEquals(340.dp, sidePanelWidth(rowWidth = 868.dp, boardTarget = 1904.dp))
     }
+
+    @Test
+    fun compactFloorPreservesFullHeightBoardOnNarrowPhone() {
+        // 640×360-class landscape phone with the compact floor: the 268 leftover passes through
+        // (the regular 340 floor would steal 72 dp from the height-filling board's square).
+        assertEquals(268.dp, sidePanelWidth(rowWidth = 608.dp, boardTarget = 328.dp, panelMin = 260.dp))
+    }
+
+    @Test
+    fun compactFloorStillWinsOverTinyLeftover() {
+        // A board target that eats nearly the whole row: the panel still floors at the compact
+        // minimum, and the board (rowWidth − 260 − gap = 428) stays above MIN_BOARD_SIDE.
+        assertEquals(260.dp, sidePanelWidth(rowWidth = 700.dp, boardTarget = 600.dp, panelMin = 260.dp))
+    }
 }

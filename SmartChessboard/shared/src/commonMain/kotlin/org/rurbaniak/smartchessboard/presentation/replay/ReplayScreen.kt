@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,17 +15,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.TableRows
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +44,8 @@ import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewMode
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveActionButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
@@ -48,6 +54,7 @@ import org.rurbaniak.smartchessboard.presentation.layout.BoardArrangement
 import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
 import org.rurbaniak.smartchessboard.presentation.layout.boardArrangement
 import org.rurbaniak.smartchessboard.presentation.layout.boardResizeEnabled
+import org.rurbaniak.smartchessboard.presentation.layout.isHeightCompact
 
 @Composable
 fun ReplayScreen(
@@ -68,39 +75,24 @@ fun ReplayScreen(
     val effectiveMoveListMode = effectiveMoveListMode(moveListOverride, inSidePanel)
     AdaptiveScaffold(
         title = { Text(titleFor(uiState)) },
-        navigationIcon = {
-            TextButton(onClick = onBack) {
-                Text("Back")
-            }
-        },
+        navigationIcon = { AdaptiveBackButton(onBack) },
         actions = {
             (uiState as? ReplayUiState.Loaded)?.let { state ->
                 // Shows the current layout and toggles to the other one (persisted).
-                TextButton(
+                val table = effectiveMoveListMode == MoveListMode.TABLE
+                AdaptiveActionButton(
+                    label = if (table) "Table" else "Inline",
+                    icon = if (table) Icons.Filled.TableRows else Icons.AutoMirrored.Filled.Notes,
                     onClick = {
-                        boardPrefs.setMoveListMode(
-                            if (effectiveMoveListMode == MoveListMode.TABLE) {
-                                MoveListMode.INLINE
-                            } else {
-                                MoveListMode.TABLE
-                            },
-                        )
+                        boardPrefs.setMoveListMode(if (table) MoveListMode.INLINE else MoveListMode.TABLE)
                     },
-                ) {
-                    Text(if (effectiveMoveListMode == MoveListMode.TABLE) "Table" else "Inline")
-                }
-                TextButton(onClick = viewModel::toggleAnalysis) {
-                    Text(
-                        "Analysis",
-                        fontWeight = if (state.analysisEnabled) FontWeight.Bold else FontWeight.Normal,
-                        color =
-                            if (state.analysisEnabled) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                    )
-                }
+                )
+                AdaptiveActionButton(
+                    label = "Analysis",
+                    icon = Icons.Filled.Insights,
+                    onClick = viewModel::toggleAnalysis,
+                    selected = state.analysisEnabled,
+                )
             }
         },
     ) { padding ->
@@ -168,6 +160,8 @@ internal fun LoadedReplay(
     val windowSizeClass = LocalWindowSizeClass.current
     val boardResize = boardResizeEnabled(windowSizeClass)
     val inSidePanel = boardArrangement(windowSizeClass) == BoardArrangement.SidePane
+    // At compact height the transport renders dense — panel width is board budget there.
+    val compactTransport = windowSizeClass.isHeightCompact
     // Dragging the board past its default size widens the side-pane container past the default
     // margins (BoardScreenScaffold.contentWidthExpansion). Zero where the resize handle is
     // disabled — the stored fraction is ignored there, so it must not widen anything either.
@@ -205,6 +199,7 @@ internal fun LoadedReplay(
                 onForward = onStepForward,
                 onEnd = onEnd,
                 modifier = sectionModifier,
+                compact = compactTransport,
             )
             if (state.analysisEnabled) {
                 Spacer(Modifier.height(12.dp))
@@ -327,21 +322,47 @@ private fun TransportControls(
     onForward: () -> Unit,
     onEnd: () -> Unit,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
+    // At compact height every dp is board budget: 32 dp-tall buttons with tight padding instead of
+    // the default 40 dp (the touch target still meets the interactive minimum via M3's enforcement).
+    val buttonHeight = if (compact) Modifier.height(32.dp) else Modifier
+    val contentPadding =
+        if (compact) PaddingValues(horizontal = 8.dp, vertical = 4.dp) else ButtonDefaults.ContentPadding
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Button(onClick = onStart, enabled = state.canStepBack, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onStart,
+            enabled = state.canStepBack,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text("|<")
         }
-        Button(onClick = onBack, enabled = state.canStepBack, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onBack,
+            enabled = state.canStepBack,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text("<")
         }
-        Button(onClick = onForward, enabled = state.canStepForward, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onForward,
+            enabled = state.canStepForward,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text(">")
         }
-        Button(onClick = onEnd, enabled = state.canStepForward, modifier = Modifier.weight(1f)) {
+        Button(
+            onClick = onEnd,
+            enabled = state.canStepForward,
+            modifier = Modifier.weight(1f).then(buttonHeight),
+            contentPadding = contentPadding,
+        ) {
             Text(">|")
         }
     }

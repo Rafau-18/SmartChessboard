@@ -12,13 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -39,6 +40,8 @@ import org.rurbaniak.smartchessboard.presentation.board.BoardPreferencesViewMode
 import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveActionButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
@@ -70,16 +73,10 @@ fun PlayScreen(
     val tableMoveList = effectiveMoveListMode(moveListOverride, inSidePanel) == MoveListMode.TABLE
     AdaptiveScaffold(
         title = { Text(titleFor(uiState)) },
-        navigationIcon = {
-            TextButton(onClick = onBack) {
-                Text("Back")
-            }
-        },
+        navigationIcon = { AdaptiveBackButton(onBack) },
         actions = {
             if (uiState is PlayUiState.Playing) {
-                TextButton(onClick = viewModel::flipBoard) {
-                    Text("Flip")
-                }
+                AdaptiveActionButton(label = "Flip", icon = Icons.Filled.SwapVert, onClick = viewModel::flipBoard)
             }
         },
     ) { padding ->

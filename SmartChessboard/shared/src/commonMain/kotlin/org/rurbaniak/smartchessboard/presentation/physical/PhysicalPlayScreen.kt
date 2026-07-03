@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -50,6 +52,8 @@ import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ReedDiagnosticsGrid
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveActionButton
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveBackButton
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.BOARD_CHROME_COLUMN
 import org.rurbaniak.smartchessboard.presentation.components.BoardScreenScaffold
@@ -115,16 +119,10 @@ fun PhysicalPlayScreen(
         // owns UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what actually holds
         // it (S-09 Phase 8).
         modifier = Modifier.keepScreenOn(),
-        navigationIcon = {
-            TextButton(onClick = onBack) {
-                Text("Back")
-            }
-        },
+        navigationIcon = { AdaptiveBackButton(onBack) },
         actions = {
             if (state is PhysicalPlayState.Playing) {
-                TextButton(onClick = viewModel::flipBoard) {
-                    Text("Flip")
-                }
+                AdaptiveActionButton(label = "Flip", icon = Icons.Filled.SwapVert, onClick = viewModel::flipBoard)
             }
         },
     ) { padding ->

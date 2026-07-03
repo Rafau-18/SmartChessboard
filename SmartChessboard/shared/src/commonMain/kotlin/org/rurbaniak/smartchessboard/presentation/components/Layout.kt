@@ -16,6 +16,14 @@ val CONTENT_MAX_WIDTH: Dp = 1200.dp
  */
 val SIDE_PANEL_MIN_WIDTH: Dp = 340.dp
 
+/**
+ * The side panel's width floor at compact height (landscape phones), where the board is the
+ * priority: tighter than [SIDE_PANEL_MIN_WIDTH] so a narrow-landscape window (640 dp-class) gives
+ * the height-filling board its square before the panel claims width. The panel content copes —
+ * transport buttons render compact there and the move list wraps.
+ */
+val SIDE_PANEL_MIN_WIDTH_COMPACT: Dp = 260.dp
+
 /** Max width of the History games list — a list reads better narrow than stretched across a monitor. */
 val LIST_MAX_WIDTH: Dp = 720.dp
 
@@ -31,13 +39,6 @@ val SECTION_MAX_WIDTH: Dp = 480.dp
  * (top bar + status line + controls stacked above/below the board).
  */
 val BOARD_CHROME_COLUMN: Dp = 140.dp
-
-/**
- * Vertical room reserved around the board in a side-pane arrangement — only the screen's own vertical
- * paddings; the controls sit beside the board, not above/below it. Consumed by `BoardScreenScaffold`
- * when splitting the row: the board's height budget is the pane height less this reservation.
- */
-val BOARD_CHROME_SIDE_PANE: Dp = 32.dp
 
 /**
  * The board never shrinks below this, even in a very tight window, so it stays usable. Shared by the

@@ -20,12 +20,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.rurbaniak.smartchessboard.presentation.layout.LocalWindowSizeClass
 import org.rurbaniak.smartchessboard.presentation.layout.ScreenChrome
@@ -114,7 +123,8 @@ private fun LeftActionRail(
                         .union(WindowInsets.displayCutout)
                         .only(WindowInsetsSides.Start + WindowInsetsSides.Vertical),
                 )
-                // As wide as its widest action label; scrolls if a short window can't fit them all.
+                // As wide as its widest item (icon-only buttons via AdaptiveActionButton, ~48 dp);
+                // scrolls if a short window can't fit them all.
                 .width(IntrinsicSize.Max)
                 .verticalScroll(rememberScrollState())
                 .padding(4.dp),
@@ -124,4 +134,59 @@ private fun LeftActionRail(
         navigationIcon()
         actions()
     }
+}
+
+/**
+ * A chrome-aware control for [AdaptiveScaffold]'s navigation/actions slots: a labelled [TextButton]
+ * in the top bar (unchanged from the pre-rail screens), an icon-only [IconButton] in the left rail,
+ * where horizontal space is the scarce resource — [label] becomes the accessibility description.
+ * [selected] carries the Replay-style emphasis tri-state: `true` renders primary (+bold label),
+ * `false` renders muted, `null` keeps the component defaults.
+ */
+@Composable
+fun AdaptiveActionButton(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    selected: Boolean? = null,
+) {
+    when (screenChrome(LocalWindowSizeClass.current)) {
+        ScreenChrome.TopBar -> {
+            TextButton(onClick = onClick) {
+                when (selected) {
+                    null -> {
+                        Text(label)
+                    }
+
+                    true -> {
+                        Text(
+                            label,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+
+                    false -> {
+                        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        }
+
+        ScreenChrome.LeftRail -> {
+            IconButton(onClick = onClick) {
+                when (selected) {
+                    null -> Icon(icon, contentDescription = label)
+                    true -> Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary)
+                    false -> Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+/** The shared Back control: a "Back" [TextButton] in the top bar, an arrow icon in the rail. */
+@Composable
+fun AdaptiveBackButton(onBack: () -> Unit) {
+    AdaptiveActionButton(label = "Back", icon = Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
 }

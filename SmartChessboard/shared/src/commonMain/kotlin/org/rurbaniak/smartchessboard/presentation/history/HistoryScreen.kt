@@ -12,16 +12,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +37,7 @@ import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveActionButton
 import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.LIST_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.theme.label
@@ -55,17 +62,11 @@ fun HistoryScreen(
     AdaptiveScaffold(
         title = { Text("My games") },
         actions = {
-            // Cycles System → Light → Dark → System; the label is the current mode so the
+            // Cycles System → Light → Dark → System; the label/icon is the current mode so the
             // control doubles as the live indicator. Lives here (no Settings screen, by decision).
-            TextButton(onClick = onCycleTheme) {
-                Text(themeMode.label())
-            }
-            TextButton(onClick = onNewGame) {
-                Text("New game")
-            }
-            TextButton(onClick = onSignOut) {
-                Text("Sign out")
-            }
+            AdaptiveActionButton(label = themeMode.label(), icon = themeMode.icon(), onClick = onCycleTheme)
+            AdaptiveActionButton(label = "New game", icon = Icons.Filled.Add, onClick = onNewGame)
+            AdaptiveActionButton(label = "Sign out", icon = Icons.AutoMirrored.Filled.Logout, onClick = onSignOut)
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -155,6 +156,14 @@ private fun GameRow(
     }
     HorizontalDivider()
 }
+
+/** The theme-cycle control's rail icon — the current mode, mirroring [ThemeMode.label]. */
+private fun ThemeMode.icon(): ImageVector =
+    when (this) {
+        ThemeMode.SYSTEM -> Icons.Filled.BrightnessAuto
+        ThemeMode.LIGHT -> Icons.Filled.LightMode
+        ThemeMode.DARK -> Icons.Filled.DarkMode
+    }
 
 /** An in-progress physical game is the FR-013 resume offer: tapping the row continues it on this device. */
 private fun GameSummary.isResumablePhysical(): Boolean = mode == GameMode.PHYSICAL && status == GameStatus.IN_PROGRESS
