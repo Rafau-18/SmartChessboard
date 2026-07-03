@@ -14,14 +14,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,9 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.games.GameMode
 import org.rurbaniak.smartchessboard.platform.supportsPhysicalBoard
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewGameScreen(
     onBack: () -> Unit,
@@ -63,16 +60,12 @@ fun NewGameScreen(
     // shown only where the platform can drive a physical board (web stays digital-only).
     var physical by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("New game") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-            )
+    AdaptiveScaffold(
+        title = { Text("New game") },
+        navigationIcon = {
+            TextButton(onClick = onBack) {
+                Text("Back")
+            }
         },
     ) { padding ->
         Column(

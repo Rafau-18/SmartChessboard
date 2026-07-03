@@ -18,15 +18,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +50,7 @@ import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ReedDiagnosticsGrid
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
@@ -65,7 +63,6 @@ import org.rurbaniak.smartchessboard.presentation.play.EndGamePicker
  * Resolved per game so reopening a different game never reuses a stale state machine. Reachable only
  * on platforms where `supportsPhysicalBoard` is true — web routes a physical game to Replay instead.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhysicalPlayScreen(
     gameId: String,
@@ -80,28 +77,24 @@ fun PhysicalPlayScreen(
     val isWide = rememberIsWideScreen()
     val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
     val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
-    Scaffold(
+    AdaptiveScaffold(
+        title = { Text(titleFor(state)) },
         // The board screen is watched, not tapped, for minutes — keep it awake so a dim/auto-lock can't
         // background the app and drop the foreground-first BLE link. Compose's own iOS idle-timer manager
         // owns UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what actually holds
         // it (S-09 Phase 8).
         modifier = Modifier.keepScreenOn(),
-        topBar = {
-            TopAppBar(
-                title = { Text(titleFor(state)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-                actions = {
-                    if (state is PhysicalPlayState.Playing) {
-                        TextButton(onClick = viewModel::flipBoard) {
-                            Text("Flip")
-                        }
-                    }
-                },
-            )
+        navigationIcon = {
+            TextButton(onClick = onBack) {
+                Text("Back")
+            }
+        },
+        actions = {
+            if (state is PhysicalPlayState.Playing) {
+                TextButton(onClick = viewModel::flipBoard) {
+                    Text("Flip")
+                }
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {

@@ -54,3 +54,26 @@ Dependency-spike outcome (plan Phase 2 item #1, decision ladder):
 Manual checks (deferred to the end-of-slice pass):
 
 - [ ] 2.6 Spot-check (Android): visuals unchanged — phase is behavior-neutral
+
+## Phase 3: Adaptive chrome — left rail at compact height
+
+Automated gate: **passed** (all four Gradle targets green + ktlint clean on `src/`; the only
+ktlint hits sit in `shared/build/generated/` — BuildKonfig + compose resource generator output,
+outside the gate).
+
+Implementation notes for the pass:
+- `AdaptiveScaffold` (new, `presentation/components/`) is the one chrome authority: M3
+  `Scaffold` + `TopAppBar` normally; at compact height a left vertical rail with Back on top,
+  then the screen's actions, title dropped. All six screens migrated; signatures unchanged.
+- The rail consumes `displayCutout` + `systemBars` on its leading edge; the content pane keeps
+  the trailing-edge + vertical insets (covers the other rotation's cutout). Touch targets rely
+  on M3's 48 dp minimum-interactive-size enforcement.
+- `keepScreenOn` stayed per-screen (PhysicalPlay + Connection pass it via the modifier slot).
+
+Manual checks (deferred to the end-of-slice pass):
+
+- [ ] 3.2 All six screens at compact height show the rail (Back + actions, no title);
+      portrait keeps the TopAppBar
+- [ ] 3.3 Rail cutout-safe in both landscape rotations (Android cutout device + iPhone)
+- [ ] 3.4 Rail targets tappable (>= 48 dp); web short window shows rail, tall window restores
+      the top bar (continuous resize)

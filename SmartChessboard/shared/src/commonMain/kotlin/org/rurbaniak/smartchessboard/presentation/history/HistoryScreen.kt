@@ -14,13 +14,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,10 +31,10 @@ import org.rurbaniak.smartchessboard.domain.games.GameResult
 import org.rurbaniak.smartchessboard.domain.games.GameStatus
 import org.rurbaniak.smartchessboard.domain.games.GameSummary
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.LIST_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.theme.label
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     userId: String,
@@ -55,24 +52,20 @@ fun HistoryScreen(
     // push/pop on every platform, and composition-re-entry / lifecycle-resume signals diverge
     // across Android / iOS / web, so neither fires reliably here (a covered entry's composition is
     // disposed on Android/web but retained on iOS; ON_RESUME tracks the app, not the nav entry).
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My games") },
-                actions = {
-                    // Cycles System → Light → Dark → System; the label is the current mode so the
-                    // control doubles as the live indicator. Lives here (no Settings screen, by decision).
-                    TextButton(onClick = onCycleTheme) {
-                        Text(themeMode.label())
-                    }
-                    TextButton(onClick = onNewGame) {
-                        Text("New game")
-                    }
-                    TextButton(onClick = onSignOut) {
-                        Text("Sign out")
-                    }
-                },
-            )
+    AdaptiveScaffold(
+        title = { Text("My games") },
+        actions = {
+            // Cycles System → Light → Dark → System; the label is the current mode so the
+            // control doubles as the live indicator. Lives here (no Settings screen, by decision).
+            TextButton(onClick = onCycleTheme) {
+                Text(themeMode.label())
+            }
+            TextButton(onClick = onNewGame) {
+                Text("New game")
+            }
+            TextButton(onClick = onSignOut) {
+                Text("Sign out")
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {

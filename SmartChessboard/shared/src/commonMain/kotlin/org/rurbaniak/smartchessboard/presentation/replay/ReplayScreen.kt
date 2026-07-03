@@ -19,13 +19,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,6 +44,7 @@ import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.parseUciArrow
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
@@ -55,7 +53,6 @@ import org.rurbaniak.smartchessboard.presentation.components.SIDE_PANEL_MAX_WIDT
 /** Material "expanded" breakpoint — at and above this width ReplayScreen lays out as two panes. */
 private val TWO_PANE_MIN_WIDTH = 840.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReplayScreen(
     gameId: String,
@@ -72,46 +69,42 @@ fun ReplayScreen(
     // phones; an explicit toggle (persisted) overrides that. One effective value drives the top-bar
     // control and the lists below.
     val effectiveMoveListMode = effectiveMoveListMode(moveListOverride, rememberIsWideScreen())
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(titleFor(uiState)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-                actions = {
-                    (uiState as? ReplayUiState.Loaded)?.let { state ->
-                        // Shows the current layout and toggles to the other one (persisted).
-                        TextButton(
-                            onClick = {
-                                boardPrefs.setMoveListMode(
-                                    if (effectiveMoveListMode == MoveListMode.TABLE) {
-                                        MoveListMode.INLINE
-                                    } else {
-                                        MoveListMode.TABLE
-                                    },
-                                )
+    AdaptiveScaffold(
+        title = { Text(titleFor(uiState)) },
+        navigationIcon = {
+            TextButton(onClick = onBack) {
+                Text("Back")
+            }
+        },
+        actions = {
+            (uiState as? ReplayUiState.Loaded)?.let { state ->
+                // Shows the current layout and toggles to the other one (persisted).
+                TextButton(
+                    onClick = {
+                        boardPrefs.setMoveListMode(
+                            if (effectiveMoveListMode == MoveListMode.TABLE) {
+                                MoveListMode.INLINE
+                            } else {
+                                MoveListMode.TABLE
                             },
-                        ) {
-                            Text(if (effectiveMoveListMode == MoveListMode.TABLE) "Table" else "Inline")
-                        }
-                        TextButton(onClick = viewModel::toggleAnalysis) {
-                            Text(
-                                "Analysis",
-                                fontWeight = if (state.analysisEnabled) FontWeight.Bold else FontWeight.Normal,
-                                color =
-                                    if (state.analysisEnabled) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                            )
-                        }
-                    }
-                },
-            )
+                        )
+                    },
+                ) {
+                    Text(if (effectiveMoveListMode == MoveListMode.TABLE) "Table" else "Inline")
+                }
+                TextButton(onClick = viewModel::toggleAnalysis) {
+                    Text(
+                        "Analysis",
+                        fontWeight = if (state.analysisEnabled) FontWeight.Bold else FontWeight.Normal,
+                        color =
+                            if (state.analysisEnabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                    )
+                }
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {

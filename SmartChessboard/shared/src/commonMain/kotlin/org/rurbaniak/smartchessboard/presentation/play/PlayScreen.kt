@@ -17,14 +17,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,11 +43,11 @@ import org.rurbaniak.smartchessboard.presentation.board.ChessBoardView
 import org.rurbaniak.smartchessboard.presentation.board.PromotionPicker
 import org.rurbaniak.smartchessboard.presentation.board.ResizableBoardBox
 import org.rurbaniak.smartchessboard.presentation.board.rememberIsWideScreen
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.CONTENT_MAX_WIDTH
 import org.rurbaniak.smartchessboard.presentation.components.MoveList
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayScreen(
     gameId: String,
@@ -67,23 +64,19 @@ fun PlayScreen(
     val isWide = rememberIsWideScreen()
     val moveListOverride by boardPrefs.moveListMode.collectAsStateWithLifecycle()
     val tableMoveList = effectiveMoveListMode(moveListOverride, isWide) == MoveListMode.TABLE
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(titleFor(uiState)) },
-                navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
-                },
-                actions = {
-                    if (uiState is PlayUiState.Playing) {
-                        TextButton(onClick = viewModel::flipBoard) {
-                            Text("Flip")
-                        }
-                    }
-                },
-            )
+    AdaptiveScaffold(
+        title = { Text(titleFor(uiState)) },
+        navigationIcon = {
+            TextButton(onClick = onBack) {
+                Text("Back")
+            }
+        },
+        actions = {
+            if (uiState is PlayUiState.Playing) {
+                TextButton(onClick = viewModel::flipBoard) {
+                    Text("Flip")
+                }
+            }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {

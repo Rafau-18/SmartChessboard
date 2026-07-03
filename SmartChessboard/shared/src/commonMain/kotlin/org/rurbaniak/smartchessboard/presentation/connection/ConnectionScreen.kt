@@ -14,14 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.rurbaniak.smartchessboard.domain.board.DiscoveredBoard
+import org.rurbaniak.smartchessboard.presentation.components.AdaptiveScaffold
 import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
 
 /**
@@ -44,7 +42,6 @@ import org.rurbaniak.smartchessboard.presentation.components.SECTION_MAX_WIDTH
  * The screen owns the OS permission handshake (the [BlePermissionController]) and feeds its result back
  * as an intent; the rest of the surface renders [ConnectionUiState.phase].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConnectionScreen(
     onBack: () -> Unit,
@@ -68,18 +65,14 @@ fun ConnectionScreen(
         if (connected) onConnected()
     }
 
-    Scaffold(
+    AdaptiveScaffold(
+        title = { Text("Connect board") },
         // Scanning/pairing can take seconds with no interaction — keep the screen awake so a dim doesn't
         // background the app mid-handshake. Compose's own iOS idle-timer manager owns
         // UIApplication.idleTimerDisabled, so this modifier (not a manual set) is what holds it (S-09 P8).
         modifier = Modifier.keepScreenOn(),
-        topBar = {
-            TopAppBar(
-                title = { Text("Connect board") },
-                navigationIcon = {
-                    TextButton(onClick = onBack) { Text("Back") }
-                },
-            )
+        navigationIcon = {
+            TextButton(onClick = onBack) { Text("Back") }
         },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
