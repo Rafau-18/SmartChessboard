@@ -243,15 +243,15 @@ No schema or data migration. Stale journal entries from games deleted *before* t
 
 #### Automated
 
-- [x] 2.1 JVM tests pass (`:shared:testAndroidHostTest`)
-- [x] 2.2 iOS tests pass (`:shared:iosSimulatorArm64Test`)
-- [x] 2.3 Web tests pass (`:shared:wasmJsTest`)
-- [x] 2.4 ktlint clean on touched files
+- [x] 2.1 JVM tests pass (`:shared:testAndroidHostTest`) — da84c35
+- [x] 2.2 iOS tests pass (`:shared:iosSimulatorArm64Test`) — da84c35
+- [x] 2.3 Web tests pass (`:shared:wasmJsTest`) — da84c35
+- [x] 2.4 ktlint clean on touched files — da84c35
 
 #### Manual
 
-- [x] 2.5 Android: delete finished + in-progress, cancel, offline error + retry
-- [x] 2.6 iOS: delete finished + in-progress, cancel, offline error + retry
-- [x] 2.7 Web: full flow with mouse; offline failure degrades gracefully (no crash)
-- [x] 2.8 Cross-device: deleted game absent on second device after refresh
-- [x] 2.9 No resurrection: delete in-progress game with unsynced local moves, restart app, game stays gone
+- [x] 2.5 Android: delete finished + in-progress, cancel, offline error + retry — da84c35
+- [x] 2.6 iOS: delete finished + in-progress, cancel, offline error + retry — da84c35
+- [x] 2.7 Web: full flow with mouse; offline failure degrades gracefully (no crash) — da84c35
+- [x] 2.8 Cross-device: deleted game absent on second device after refresh — da84c35
+- [x] 2.9 No resurrection: delete in-progress game with unsynced local moves, restart app, game stays gone — da84c35
