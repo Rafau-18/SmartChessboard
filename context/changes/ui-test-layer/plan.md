@@ -633,15 +633,15 @@ section updated to say so.
 
 #### Automated
 
-- [x] 0.1 `gh auth status` exits 0 with repo+workflow scopes
-- [x] 0.2 `gh repo view` returns the private repo
-- [x] 0.3 `git remote -v` shows origin→GitHub, bitbucket→old remote
-- [x] 0.4 `git push origin main` exits 0
+- [x] 0.1 `gh auth status` exits 0 with repo+workflow scopes — 8892540
+- [x] 0.2 `gh repo view` returns the private repo — 8892540
+- [x] 0.3 `git remote -v` shows origin→GitHub, bitbucket→old remote — 8892540
+- [x] 0.4 `git push origin main` exits 0 — 8892540
 
 #### Manual
 
-- [x] 0.5 User confirms repo visibility/ownership
-- [x] 0.6 User completed `gh auth login`
+- [x] 0.5 User confirms repo visibility/ownership — 8892540
+- [x] 0.6 User completed `gh auth login` — 8892540
 
 ### Phase 1: Roborazzi foundation + first board goldens
 
