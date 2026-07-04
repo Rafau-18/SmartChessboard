@@ -72,18 +72,30 @@ an explicit `LocalWindowSizeClass` (the 0×0 default silently renders the landsc
 SidePane arrangement, not portrait), a fixed shot size, and the shared
 record/compare options. A plain test run (no flags) neither records nor verifies.
 
+**CI is the canonical recording environment.** Goldens are recorded by the
+`record-goldens.yml` workflow on ubuntu — the same image `tests.yml` verifies on.
+Local record (`recordRoborazziAndroidHostTest` on a Mac) is **preview-only**: fonts
+rasterize differently, so Mac-recorded goldens fail CI verify. Never commit them.
+
 **Re-record ritual (intentional UI change):**
 
-1. Make the visual change; run the **verify** task — red confirms the goldens see it.
-2. Review the diff: HTML report + `_compare.webp` triptychs (Reference | Diff | New).
-   The diff must contain exactly the change you intended — nothing else.
-3. Run the **record** task to refresh the goldens, then verify once more (green).
-4. Commit the refreshed goldens together with the code change.
+1. Make the visual change on a branch; run the local **verify** task — red confirms
+   the goldens see it. Preview the triptychs (Reference | Diff | New) in the HTML
+   report; the diff must contain exactly the change you intended — nothing else.
+2. Push the branch, then dispatch the record workflow on it:
+   `gh workflow run record-goldens.yml --ref <branch>` → `gh run watch`.
+   The refreshed goldens come back as a `github-actions[bot]` commit
+   (`test(goldens): re-record on CI`) on that branch.
+3. Pull and review the bot commit's golden diff, then confirm the gate:
+   `gh workflow run tests.yml --ref <branch>` → green.
+4. Merge. (A bot push via `GITHUB_TOKEN` does not itself trigger `tests.yml` —
+   dispatch it explicitly or open the PR.)
 
-Until the CI record workflow exists (Phase 5 of the `ui-test-layer` change), local
-record is canonical. Once it lands, goldens are recorded **by CI only**
-(`record-goldens.yml` dispatch) and local record becomes preview-only — update
-this section then.
+CI test workflows (`.github/workflows/`): `tests.yml` — PR/main gate, JVM suite with
+golden verify + wasm suite, uploads the Roborazzi diff report as artifact on failure;
+`record-goldens.yml` — dispatch-only golden refresh (above); `ios-tests.yml` —
+nightly + dispatch iOS simulator suite on macOS (deliberately not a PR gate, ×10
+minutes billing).
 
 Expectations baked into the golden set:
 
