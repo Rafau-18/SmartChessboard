@@ -20,7 +20,7 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 
 - **Problem**: Web Bluetooth has inconsistent cross-browser support — Chromium-only on desktop, no Safari on iOS, mobile browsers limited. Attempting to share the BLE board adapter between mobile and web targets would force expect/actual or extra abstractions for a feature the MVP does not need on web.
 
-- **Rule**: Web target supports only the **digital subset**: pass-and-play (FR-003, FR-004), game history list (FR-015), replay (FR-016), post-game analysis (FR-017), and end-of-game marking (FR-018). It explicitly excludes physical-board mode (FR-008–FR-013), BLE transport, and reed-switch diagnostics (FR-011). The BLE library (Kable or expect/actual) is added only to `androidMain` + `iosMain`, never to `wasmJsMain`. This is documented in `prd.md` FR-020, Non-Goals, Implementation Decisions, and `tech-stack.md` mobile sub-project table.
+- **Rule**: Web target supports only the **digital subset**: pass-and-play (FR-003, FR-004), game history list (FR-015), replay (FR-016), post-game analysis (FR-017), end-of-game marking (FR-018), and game deletion (FR-021). It explicitly excludes physical-board mode (FR-008–FR-013), BLE transport, and reed-switch diagnostics (FR-011). The BLE library (Kable or expect/actual) is added only to `androidMain` + `iosMain`, never to `wasmJsMain`. This is documented in `prd.md` FR-020, Non-Goals, Implementation Decisions, and `tech-stack.md` mobile sub-project table.
 
 - **Applies to**: any work on the mobile sub-project that touches BLE, physical-board mode, or reed-switch diagnostics. Also applies to architecture decisions (DI, Navigation routes) — web target should never have a route to "Physical game" screens.
 

@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-06-29
+updated: 2026-07-02
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -44,6 +44,8 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart             | S-07             | FR-013, US-02                                         | in progress     |
 | S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                 | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, FR-012, US-02         | implemented     |
 | S-10 | ble-connectivity-robustness   | (hardening) reliable BLE connect/reconnect + settle pairing model | S-09             | FR-012, NFR reliability                               | proposed        |
+| S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | ready           |
+| S-12 | mobile-landscape-layout       | space-efficient landscape UI across board screens (2-col + control placement) | S-02, S-03, S-04, S-06 | FR-004, FR-008, FR-016, FR-017, FR-019, US-01–US-03   | ready           |
 
 ## Streams
 
@@ -51,10 +53,11 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme          | Chain                                          | Note                                                                                      |
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| A      | Review loop    | `S-01` → `S-02` → `S-03`                       | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** |
+| A      | Review loop    | `S-01` → `S-02` → `S-03`; `S-01` → `S-11`      | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** `S-11` (delete a game) branches off `S-01`'s history list — history curation, independent of the review loop. |
 | B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green). S-05 implemented 2026-06-17 (game end & result, three-surface E2E green).** |
 | C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is now unblocked — reed-matrix repair done (2026-06-28) and F-03 on-hardware gates confirmed (2026-06-29); ready to plan. **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
 | D      | Firmware       | `F-03`                                         | Firmware software (BLE GATT service) for the ESP32 board — unit-tested + validated against the F-02 emulator's contract; runs fully parallel to Streams A–C from now and joins Stream C at `S-09` for on-hardware integration. **F-03 implemented + impl-reviewed + merged to `main` 2026-06-20 (`b4b2810`); automated gates green; reed matrix repaired (2026-06-28) and **on-hardware F-03 gates 2.4–3.10 confirmed 2026-06-29** — `S-09` is unblocked and ready to plan.** |
+| E      | Presentation / UI | `S-12`                                    | Cross-cutting landscape / short-height polish over the board screens from Streams A–C (Replay, Play, Physical). Presentational only — traces to existing FRs, adds no new capability; closes the iOS↔Android two-column parity gap on phone landscape. |
 
 ## Baseline
 
@@ -239,6 +242,33 @@ Context note (outside the app codebase): firmware status has since advanced well
 - **Scope (proposed):** reproduce the connectivity/reconnect issues on ≥2 Android + ≥2 iOS devices; capture the drop `reason=` codes; decide the final pairing model; if device-independent problems remain, harden the reconnect/scan flow (e.g. a scan-by-name fallback should the service-UUID filter miss on some Android stacks). The single-central board stays a constraint (PRD non-goal).
 - **Status:** proposed — a post-S-09 hardening slice; not MVP-blocking (S-09 is accepted with the plaintext link working on the tested devices).
 
+### S-11: Delete a game from history
+
+- **Outcome:** User can permanently delete one of their own games from the history list — in any status (in-progress or finished) — after an explicit confirmation, on iOS, Android, and the web target; the game is removed from local storage and cloud backup and disappears across the player's signed-in devices.
+- **Change ID:** delete-game-from-history
+- **PRD refs:** FR-021, US-04
+- **Prerequisites:** S-01
+- **Parallel with:** everything — touches only the games repository, the local journal, and the history surface; shares no code with the physical / BLE stream.
+- **Blockers:** —
+- **Unknowns:**
+  - The delete affordance on the history row (swipe-to-dismiss vs overflow menu) and the exact confirmation surface (dialog vs inline) — Owner: team (decide in `/10x-plan`). Block: no.
+- **Risk:** Small vertical slice, but the first destructive user action in the app — the confirmation gate and owner-scoping are the load-bearing parts. The backend is already in place (RLS `games_delete_own` + the `DELETE` API surface shipped in S-01), so residual risk is client-side: also removing the row from the local journal (so a deleted game does not resurrect on the next reconcile) and emitting the repository `changes` signal so the retained History screen refreshes (per the push-driven-refresh lesson). Hard delete, no trash/undo (PRD Non-Goal); one shared path across all surfaces (no per-target if-ology).
+- **Status:** ready — Prerequisite S-01 (history list) is implemented; no blocking unknowns. Plannable now via `/10x-plan delete-game-from-history`.
+
+### S-12: Space-efficient landscape UI across board screens
+
+- **Outcome:** On phones in landscape — where vertical space is scarce (tablets excluded) — every board-bearing screen (Replay/Analysis, Play, Physical) uses a **mandatory two-column layout** (board | right column), a **left icon-only navigation rail** that replaces the text top bar and drops the title in this mode, and the game **title moved into the right column** above its content. On Replay the right column is: title → start/back/forward/end controls → move list; on Play it is the move list plus end-of-game actions (back to history / go to analysis). The playback controls sit between the title and the move list in the two-column layout on larger screens too; they render **compact** (reduced padding around the icons) **only on height-constrained phone landscape**, so the move list keeps room. Closes the current gap where Android gets the two-column landscape but iOS phone-landscape does not.
+- **Change ID:** mobile-landscape-layout
+- **PRD refs:** FR-004, FR-008, FR-016, FR-017, FR-019, US-01, US-02, US-03; NFR (mobile usability on iOS/Android)
+- **Prerequisites:** S-02, S-03, S-04, S-06
+- **Parallel with:** everything — purely presentational; touches only `presentation/` screens, no domain / data / contract change.
+- **Blockers:** —
+- **Unknowns:**
+  - The adaptive signal that triggers the two-column layout and the compact controls (window height / orientation vs the existing width-only ≥840 dp breakpoint from S-03) — Owner: team (decide in `/10x-plan`). Block: no.
+  - The left icon-rail realization per target (Compose Multiplatform incl. web) and how it coexists with Navigation 3 — Owner: team (`/10x-plan`; tooling: `adaptive` + `navigation-3` skills). Block: no.
+- **Risk:** Presentational, no logic/contract change (UI/UX is explicitly out of `contract-surfaces.md` scope), so it needs no PRD FR — it refines the placement of controls FR-016 already requires. Residual risk is three-target visual consistency (Android already two-column, iOS phone-landscape currently single — this closes that FR-019 parity gap) and not regressing the existing ≥840 dp tablet/desktop two-pane. Manual gate = visual pass in portrait + landscape at phone and tablet widths on Android / iOS / web.
+- **Status:** ready — all prerequisite screens (S-02/S-03 replay+analysis, S-04 play, S-06 physical) are implemented; no blocking unknowns. Plannable now via `/10x-plan mobile-landscape-layout`.
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                     | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                   |
@@ -255,6 +285,8 @@ Context note (outside the app codebase): firmware status has since advanced well
 | S-07       | reject-recover-diagnostics    | Sequence rejection + live reed diagnostics recovery                | no                    | After S-06                              |
 | S-08       | physical-resume-after-restart | Resume physical game after app restart                             | no                    | After S-07                              |
 | S-09       | real-board-over-ble           | Real-board BLE integration                                         | no                    | In implementation — `F-03` done, reed matrix repaired 2026-06-28 |
+| S-11       | delete-game-from-history      | Delete a game from history (hard delete, all surfaces)             | yes                   | Run `/10x-plan delete-game-from-history` |
+| S-12       | mobile-landscape-layout       | Landscape UI: two-column + control placement across board screens  | yes                   | Run `/10x-plan mobile-landscape-layout` |
 
 ## Open Roadmap Questions
 
@@ -277,6 +309,8 @@ Context note (outside the app codebase): firmware status has since advanced well
 - **Time control / per-player clocks** — Why parked: PRD §Non-Goals (buttons are confirmation-only).
 - **Multi-client realtime physical play** — Why parked: PRD §Non-Goals (one active device next to the board).
 - **Guided physical-board recovery UX** — Why parked: PRD §Non-Goals (MVP ships raw diagnostics + error message only).
+- **Bulk / multi-select game deletion** — Why parked: PRD §Non-Goals; MVP delete (S-11) acts on one game at a time.
+- **Trash / undo / restore / archive for deleted games** — Why parked: PRD §Non-Goals; S-11 is a permanent hard delete, recovery is out of MVP scope.
 
 ## Done
 
