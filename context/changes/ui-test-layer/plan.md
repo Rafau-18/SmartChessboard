@@ -688,9 +688,9 @@ section updated to say so.
 
 #### Automated
 
-- [x] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest`
-- [x] 4.2 Android host per Phase 3 resolution
-- [x] 4.3 No-secrets run still green
+- [x] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest` — 8dc9640
+- [x] 4.2 Android host per Phase 3 resolution — 8dc9640
+- [x] 4.3 No-secrets run still green — 8dc9640
 
 #### Manual
 
