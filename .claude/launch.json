@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "smartchessboard-web",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": [
+        "-p",
+        "SmartChessboard",
+        ":webApp:wasmJsBrowserDevelopmentRun",
+        "--console=plain",
+        "--no-daemon"
+      ],
+      "port": 8080
+    }
+  ]
+}
