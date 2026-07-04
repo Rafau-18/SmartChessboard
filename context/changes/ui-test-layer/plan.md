@@ -661,14 +661,14 @@ section updated to say so.
 
 #### Automated
 
-- [x] 2.1 Verify green over complete set; 3 consecutive deterministic runs
-- [x] 2.2 Golden tree ≤ ~10 MB
-- [x] 2.3 Full `:shared:testAndroidHostTest` green
+- [x] 2.1 Verify green over complete set; 3 consecutive deterministic runs — a49785f
+- [x] 2.2 Golden tree ≤ ~10 MB — a49785f
+- [x] 2.3 Full `:shared:testAndroidHostTest` green — a49785f
 
 #### Manual
 
-- [x] 2.4 Visual pass over all goldens in both themes
-- [x] 2.5 AGENTS.md ritual section followable cold
+- [x] 2.4 Visual pass over all goldens in both themes — a49785f
+- [x] 2.5 AGENTS.md ritual section followable cold — a49785f
 
 ### Phase 3: uiTest harness + digital happy path
 
