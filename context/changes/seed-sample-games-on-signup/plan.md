@@ -326,16 +326,16 @@ Negligible: 8 single-row inserts fire once per account creation. No hot path, no
 
 #### Automated
 
-- [x] 1.1 `PgnFixtures.kt` contains 8 fixtures; the 6 new ones added
-- [x] 1.2 Parser suite passes on JVM host (`:shared:testAndroidHostTest`)
-- [x] 1.3 Parser suite passes on iOS Native (`:shared:iosSimulatorArm64Test`)
-- [x] 1.4 Parser suite passes on wasm (`:shared:wasmJsTest`)
-- [x] 1.5 ktlint clean
+- [x] 1.1 `PgnFixtures.kt` contains 8 fixtures; the 6 new ones added — cbd10ad
+- [x] 1.2 Parser suite passes on JVM host (`:shared:testAndroidHostTest`) — cbd10ad
+- [x] 1.3 Parser suite passes on iOS Native (`:shared:iosSimulatorArm64Test`) — cbd10ad
+- [x] 1.4 Parser suite passes on wasm (`:shared:wasmJsTest`) — cbd10ad
+- [x] 1.5 ktlint clean — cbd10ad
 
 #### Manual
 
-- [ ] 1.6 Each new PGN sourced from a reliable canonical source (byte-clean, no variations)
-- [ ] 1.7 Each outcome→`result` mapping verified; #6 Polgár–Kasparov discrepancy resolved
+- [x] 1.6 Each new PGN sourced from a reliable canonical source (byte-clean, no variations)
+- [x] 1.7 Each outcome→`result` mapping verified; #6 Polgár–Kasparov discrepancy resolved
 
 ### Phase 2: Backend — seed trigger migration + tests + reconciliation
 
