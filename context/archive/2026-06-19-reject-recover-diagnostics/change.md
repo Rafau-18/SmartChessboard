@@ -1,10 +1,10 @@
 ---
 change_id: reject-recover-diagnostics
 title: Reject recover diagnostics
-status: implemented
+status: archived
 created: 2026-06-19
 updated: 2026-07-04
-archived_at: null
+archived_at: 2026-07-04
 ---
 
 ## Notes

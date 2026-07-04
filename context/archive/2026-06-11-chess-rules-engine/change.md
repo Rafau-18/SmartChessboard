@@ -1,10 +1,10 @@
 ---
 change_id: chess-rules-engine
 title: Chess rules engine — full legality validation + mate/stalemate detection
-status: impl_reviewed
+status: archived
 created: 2026-06-11
 updated: 2026-06-11
-archived_at: null
+archived_at: 2026-07-04
 ---
 
 ## Notes

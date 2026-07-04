@@ -1,10 +1,10 @@
 ---
-change_id: post-game-evals-in-replay
-title: Post game evals in replay
-status: implemented
+change_id: digital-pass-and-play
+title: Digital pass and play
+status: archived
 created: 2026-06-12
 updated: 2026-06-13
-archived_at: null
+archived_at: 2026-07-04
 ---
 
 ## Notes

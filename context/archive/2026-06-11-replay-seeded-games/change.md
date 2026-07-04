@@ -1,10 +1,10 @@
 ---
 change_id: replay-seeded-games
 title: Replay seeded games
-status: implemented
+status: archived
 created: 2026-06-11
 updated: 2026-06-12
-archived_at: null
+archived_at: 2026-07-04
 ---
 
 ## Notes
