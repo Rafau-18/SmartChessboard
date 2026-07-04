@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-07-02
+updated: 2026-07-04
 context_type: greenfield
 product_type: mobile
 target_scale:
@@ -185,6 +185,9 @@ Each player wants their own account, their own game history, and the ability to 
 - FR-021: Player can permanently delete one of their own games from their history — on iOS, Android, and the web target. Deletion is offered from the history surface for games in any status (in-progress or finished), requires an explicit confirmation step because it is irreversible, removes only the selected game, and propagates to both local storage and cloud backup across the player's signed-in devices. Priority: must-have
   > Socrates: Counter-argument considered: "Delete is user cleanup the backend already permits (RLS `games_delete_own`), so it need not be a numbered product requirement." Resolution: promoted to must-have; completing CRUD for the durable game record is a stated product goal, and a destructive, irreversible action needs an explicit confirmation guardrail and owner-scoping that only a first-class requirement pins down. Hard delete (no trash/undo) keeps MVP scope tight and matches the already-shipped `DELETE` contract surface (`contract-surfaces.md` §3.2).
 
+- FR-022: On first sign-in (automatic account creation), the product seeds the new account with a small fixed set of at least five well-known historical chess games, so the game history is never empty on first run. Seeded games are ordinary owned records — they appear in the chronological history (FR-015), replay with full controls (FR-016), support post-game analysis (FR-017), and can be permanently deleted like any other game (FR-021). Seeding runs exactly once, at account creation; deleting a seeded game never re-seeds, and a returning user with an existing account is never re-seeded. Priority: nice-to-have
+  > Socrates: Counter-argument considered: "Seeding non-authored games cuts against a product whose whole point is the player's OWN game history; an empty first run could be handled with an onboarding illustration instead." Resolution: kept as nice-to-have; an empty first-run history reads as broken and gives a new player nothing to exercise replay, analysis, or delete against, whereas seeds that are the user's own freely-deletable rows let them try every history capability immediately and clear them in one action — first-run evaluation improves without compromising the own-history model.
+
 ### Platform Surfaces
 
 - FR-019: Player can use the core play, save, history, replay, and post-game analysis flow on iOS and Android. Priority: must-have
@@ -214,7 +217,7 @@ Beyond recording and reviewing games, the owner may permanently remove one of th
 
 ## Access Control
 
-Users sign in through an external OAuth identity provider selected during downstream stack selection. If the person signing in does not already have an account, the product should automatically create one where possible.
+Users sign in through an external OAuth identity provider selected during downstream stack selection. If the person signing in does not already have an account, the product should automatically create one where possible. Sign-up is open in the MVP: any Google account can sign in and have an account auto-created — there is no invitation or allow-list gate. On that first account creation the new account is seeded with sample historical games (FR-022), so a new user never lands on an empty history.
 
 The MVP uses a flat user model: every signed-in user has the same capabilities. There are no separate admin, owner, guest, coach, or viewer roles in the MVP.
 
@@ -241,6 +244,8 @@ The following stack-shape decisions were settled on 2026-05-27, after the origin
 - **Firmware BLE GATT UUIDs assigned (2026-06-19, F-03)**: the smart-board GATT family is minted and recorded in `contract-surfaces.md` §1.2 — 128-bit base `787e000X-15a4-4fc9-a469-05096dbad1a1`, where `X` = 1 (primary service) / 2 (`board_event`, notify) / 3 (`mobile_command`, write). The firmware (F-03) and the mobile BLE adapter (S-09) must use these exact bytes. Mirrored here per the contract's §1 change-control rule (Section 1 BLE changes land in both `prd-firmware.md` and `prd.md`); no product-FR change — this is an internal firmware↔mobile wire detail. The firmware toolchain is settled as **ESP-IDF + NimBLE** and power as **USB-only** (`battery_pct` constant 100); see `prd-firmware.md` Open Questions 2/4/5.
 
 - **CRUD completion — delete a game (2026-07-02, S-11)**: game history gains a delete capability (FR-021, US-04), promoted to must-have to complete CRUD for the durable game record. **Hard delete** (permanent `DELETE`, no trash/undo), **owner-scoped** by the already-shipped RLS policy `games_delete_own`, offered from the history surface for games in **any status** (in-progress or finished), gated behind an **explicit user confirmation** because it is irreversible, and wired **identically on iOS, Android, and the web target** (one shared path, no per-surface branching). No schema or migration change — the `games_delete_own` policy and the `DELETE` API surface have existed since S-01; this decision only makes them a first-class product requirement. Delete never removes rows from the global `position_evals` cache. Delete is **online-only** in the MVP (cloud `DELETE` first; on success the local write-ahead-journal entry is dropped; offline it fails visibly and removes nothing) — the history list is itself cloud-only so delete is unreachable offline, and a queued-delete/tombstone design is deferred as a post-MVP option. See `contract-surfaces.md` §2.4/§3.2/§3.4.
+
+- **New-account onboarding seed (2026-07-04, S-13)**: game history is seeded on first sign-in (FR-022) so a new account never opens to an empty list. Mechanism: a Postgres `AFTER INSERT` trigger on `auth.users` (the standard `handle_new_user` pattern) inserts a fixed set of ≥5 well-known historical games as ordinary owned `games` rows — `mode='digital'`, `status='finished'`, real `result` — reusing the fixture-verified PGNs already in `supabase/cloud-seed-replay-games.sql`, extended to the final chosen set, so they replay (FR-016) and analyze (FR-017) through the existing S-02/S-03 paths and delete (FR-021) like any other game. The seed fires once per account (INSERT-triggered), so a deleted seed game never re-seeds and returning users are never re-seeded. No new user-facing surface — seeds flow into the existing history/replay/analysis/delete flows. Sign-up stays open (any Google account, auto-created, no allow-list). The concrete trigger + PGN set are pinned in `/10x-plan`; the trigger/function name is registered in `contract-surfaces.md` §2 when the migration lands. See `contract-surfaces.md` §2.
 
 These decisions resolve the earlier Open Questions 1, 3, and 4 in the way that those questions' resolutions already anticipated — see the Open Questions section below for the full reasoning trail.
 

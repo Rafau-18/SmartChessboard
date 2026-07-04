@@ -3,7 +3,7 @@ project: "Smart Chessboard"
 version: 1
 status: draft
 created: 2026-06-10
-updated: 2026-07-02
+updated: 2026-07-04
 prd_version: 1
 main_goal: speed
 top_blocker: capacity
@@ -46,6 +46,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-10 | ble-connectivity-robustness   | (hardening) reliable BLE connect/reconnect + settle pairing model | S-09             | FR-012, NFR reliability                               | proposed        |
 | S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | ready           |
 | S-12 | mobile-landscape-layout       | space-efficient landscape UI across board screens (2-col + control placement) | S-02, S-03, S-04, S-06 | FR-004, FR-008, FR-016, FR-017, FR-019, US-01–US-03   | ready           |
+| S-13 | seed-sample-games-on-signup   | start on a pre-seeded history of 8 famous games (replayable/analyzable/deletable), not an empty list | S-01             | FR-022, FR-015, FR-016, FR-017, FR-021, US-03         | ready           |
 
 ## Streams
 
@@ -53,7 +54,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme          | Chain                                          | Note                                                                                      |
 | ------ | -------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| A      | Review loop    | `S-01` → `S-02` → `S-03`; `S-01` → `S-11`      | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** `S-11` (delete a game) branches off `S-01`'s history list — history curation, independent of the review loop. |
+| A      | Review loop    | `S-01` → `S-02` → `S-03`; `S-01` → `S-11`; `S-01` → `S-13` | Fastest route to the north star under `main_goal: speed` — no foundation, no hardware. **North star reached 2026-06-13 (S-03 implemented, three-surface cloud E2E green).** `S-11` (delete a game) and `S-13` (seed sample games on first sign-in) both branch off `S-01`'s history list — history curation / onboarding, independent of the review loop. |
 | B      | Play & record  | `F-01` → `S-04` → `S-05`                       | Joins Stream A at `S-04` (needs `S-01`, `S-02`); `F-01` runs parallel to Stream A from day one. **S-04 implemented 2026-06-13 (digital pass-and-play, three-surface cloud E2E green). S-05 implemented 2026-06-17 (game end & result, three-surface E2E green).** |
 | C      | Physical board | `F-02` → `S-06` → `S-07` → `S-08` → `S-09`     | Joins Stream B at `S-06`; tail item `S-09` is now unblocked — reed-matrix repair done (2026-06-28) and F-03 on-hardware gates confirmed (2026-06-29); ready to plan. **S-06 implemented 2026-06-19 (physical-mode capture vs the emulator, three-target E2E green; the hardest bet proven without hardware).** |
 | D      | Firmware       | `F-03`                                         | Firmware software (BLE GATT service) for the ESP32 board — unit-tested + validated against the F-02 emulator's contract; runs fully parallel to Streams A–C from now and joins Stream C at `S-09` for on-hardware integration. **F-03 implemented + impl-reviewed + merged to `main` 2026-06-20 (`b4b2810`); automated gates green; reed matrix repaired (2026-06-28) and **on-hardware F-03 gates 2.4–3.10 confirmed 2026-06-29** — `S-09` is unblocked and ready to plan.** |
@@ -269,6 +270,21 @@ Context note (outside the app codebase): firmware status has since advanced well
 - **Risk:** Presentational, no logic/contract change (UI/UX is explicitly out of `contract-surfaces.md` scope), so it needs no PRD FR — it refines the placement of controls FR-016 already requires. Residual risk is three-target visual consistency (Android already two-column, iOS phone-landscape currently single — this closes that FR-019 parity gap) and not regressing the existing ≥840 dp tablet/desktop two-pane. Manual gate = visual pass in portrait + landscape at phone and tablet widths on Android / iOS / web.
 - **Status:** ready — all prerequisite screens (S-02/S-03 replay+analysis, S-04 play, S-06 physical) are implemented; no blocking unknowns. Plannable now via `/10x-plan mobile-landscape-layout`.
 
+### S-13: Seed sample games on first sign-in
+
+- **Outcome:** A brand-new account opens onto a non-empty history: on first sign-in it is seeded with eight well-known historical games (the fixed set is pinned under Unknowns below). Seeded games are ordinary owned records — they list chronologically, replay with full controls, support post-game analysis, and are permanently deletable (FR-021) like any other game. Seeding fires exactly once per account; deleting a seeded game never re-seeds and returning users are never re-seeded.
+- **Change ID:** seed-sample-games-on-signup
+- **PRD refs:** FR-022, FR-015, FR-016, FR-017, FR-021, US-03
+- **Prerequisites:** S-01 (auth + `games` table + RLS + history surface)
+- **Parallel with:** everything — the seed is a backend-only concern (a Supabase trigger + PGN fixtures); it shares no code with the physical / BLE stream and adds no new client surface.
+- **Blockers:** —
+- **Unknowns:**
+  - **Seed set — decided 2026-07-04 (8 games, all `finished` with a real result):** (1) The Opera Game — Morphy vs Duke Karl / Count Isouard, Paris 1858, 1-0; (2) The Immortal Game — Anderssen vs Kieseritzky, London 1851, 1-0; (3) The Evergreen Game — Anderssen vs Dufresne, Berlin 1852, 1-0; (4) The Game of the Century — Donald Byrne vs Fischer, New York 1956, 0-1; (5) Kasparov vs Topalov ("Kasparov's Immortal"), Wijk aan Zee 1999, 1-0; (6) Judit Polgár vs Kasparov, Russia vs Rest of World 2002, 0-1; (7) Deep Blue vs Kasparov, game 6, 1997, 1-0; (8) Levitsky vs Marshall ("Gold Coins"), Breslau 1912, 0-1. PGNs for #1–#2 already exist in `supabase/cloud-seed-replay-games.sql`; #3–#8 are sourced and fixture-verified (parser + legality round-trip, as PgnFixtures parity) during `/10x-implement`. Block: no.
+  - Seed-mechanism placement: an `AFTER INSERT` trigger on `auth.users` (server-side, all surfaces at once, reuses the existing manual `cloud-seed-replay-games.sql` PGNs) vs a client-side first-run insert — the server-side trigger is the leading option. Owner: team (`/10x-plan`). Block: no.
+  - Whether "open sign-up" needs any product gate beyond the current auto-create-on-first-login (the seed itself does not change the auth model; open-signup is verified in the Supabase + Google consoles, not in code) — Owner: user. Block: no.
+- **Risk:** Small backend-only slice; the backend and delete path already exist (S-01 `games` schema + RLS `games_delete_own`, S-11 delete). Residual risk: the trigger must run as the table owner / bypass RLS correctly and fire once-only (INSERT, not per-login) so seeds neither fail on RLS nor resurrect after delete; the chosen PGNs must pass the existing parser + legality engine (fixture parity, as the two current seed PGNs already do).
+- **Status:** ready — Prerequisite S-01 (auth + history + `games` schema) is implemented; the manual `supabase/cloud-seed-replay-games.sql` is a proven starting point. Plannable now via `/10x-plan seed-sample-games-on-signup`.
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                     | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                   |
@@ -287,6 +303,7 @@ Context note (outside the app codebase): firmware status has since advanced well
 | S-09       | real-board-over-ble           | Real-board BLE integration                                         | no                    | In implementation — `F-03` done, reed matrix repaired 2026-06-28 |
 | S-11       | delete-game-from-history      | Delete a game from history (hard delete, all surfaces)             | yes                   | Run `/10x-plan delete-game-from-history` |
 | S-12       | mobile-landscape-layout       | Landscape UI: two-column + control placement across board screens  | yes                   | Run `/10x-plan mobile-landscape-layout` |
+| S-13       | seed-sample-games-on-signup   | Seed ≥5 famous games on first sign-in (non-empty new-user history)  | yes                   | Run `/10x-plan seed-sample-games-on-signup` |
 
 ## Open Roadmap Questions
 
