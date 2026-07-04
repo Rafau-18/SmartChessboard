@@ -147,7 +147,6 @@ kotlin {
             implementation(libs.roborazzi.compose)
             implementation(libs.compose.uiTestJunit4)
             implementation(libs.androidx.uiTestManifest)
-            implementation(libs.webp.imageio)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

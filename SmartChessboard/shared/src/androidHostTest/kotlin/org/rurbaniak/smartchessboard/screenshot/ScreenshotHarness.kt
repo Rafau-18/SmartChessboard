@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.computeWindowSizeClass
 import com.dropbox.differ.SimpleImageComparator
-import com.github.takahirom.roborazzi.LosslessWebPImageIoFormat
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.rurbaniak.smartchessboard.domain.preferences.ThemeMode
@@ -53,6 +52,11 @@ private const val GOLDEN_TAG = "golden-root"
  * per-pixel color distance so platform antialiasing alone never fails a verify; goldens are stored
  * at half scale to keep the committed tree small. Pinned in code (not gradle.properties) so the
  * options cannot drift between invocation styles.
+ *
+ * Format is PNG (Roborazzi's default AWT writer, JDK-native `ImageIO`): lossless, deterministic,
+ * and identical across platforms. WebP via `webp-imageio` (luciad) was dropped — its writer
+ * non-deterministically emitted files its own reader then failed to decode (`ImageIO.read`
+ * returning null → verify NPE), so a different ~40% of goldens went unreadable on every record.
  */
 @OptIn(com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
 private val GOLDEN_OPTIONS =
@@ -60,9 +64,6 @@ private val GOLDEN_OPTIONS =
         recordOptions =
             RoborazziOptions.RecordOptions(
                 resizeScale = 0.5,
-                // Lossless WebP (VP8L via webp-imageio): a lossy golden never byte-matches the
-                // next render, so verify would fail on unchanged code.
-                imageIoFormat = LosslessWebPImageIoFormat(),
             ),
         compareOptions =
             RoborazziOptions.CompareOptions(
@@ -98,7 +99,7 @@ fun ComposeContentTestRule.golden(
     }
     prepare()
     onNodeWithTag(GOLDEN_TAG).captureRoboImage(
-        filePath = "$SNAPSHOTS_DIR/$name.webp",
+        filePath = "$SNAPSHOTS_DIR/$name.png",
         roborazziOptions = GOLDEN_OPTIONS,
     )
 }
