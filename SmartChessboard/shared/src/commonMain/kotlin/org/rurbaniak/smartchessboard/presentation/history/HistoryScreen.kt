@@ -42,6 +42,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -195,7 +197,12 @@ private fun GameRow(
         // future row actions. Available on every row regardless of status or mode.
         Box {
             var menuExpanded by remember { mutableStateOf(false) }
-            IconButton(onClick = { menuExpanded = true }) {
+            // The kebab is drawn on a Canvas (no glyph, no Icon), so it carries no semantics of its
+            // own — the description is what screen readers and UI tests address it by.
+            IconButton(
+                onClick = { menuExpanded = true },
+                modifier = Modifier.semantics { contentDescription = "Game actions" },
+            ) {
                 KebabDots()
             }
             DropdownMenu(

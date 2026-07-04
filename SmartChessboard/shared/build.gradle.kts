@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.buildkonfig)
+    alias(libs.plugins.roborazzi)
 }
 
 // Supabase creds: local.properties (dev) → -P project property / env (prod build).
@@ -131,6 +132,22 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.multiplatform.settings.test)
+            // compose.uiTest v2 smoke flows (uitest/): real App() + Koin fake overrides, driven by
+            // semantics. Contract targets are iosSimulatorArm64Test + wasmJsTest; on the Android
+            // host the uitest/ package is excluded below (no instrumentation under plain JUnit4).
+            implementation(libs.compose.uiTest)
+        }
+        // Golden (screenshot) tests: JVM-only, Robolectric-rendered (NATIVE graphics), Roborazzi-
+        // compared. Goldens live in src/androidHostTest/snapshots/ — see "Screenshot (golden)
+        // tests" in ../AGENTS.md for the record/verify invocations.
+        getByName("androidHostTest").dependencies {
+            implementation(libs.junit)
+            implementation(libs.robolectric)
+            implementation(libs.roborazzi)
+            implementation(libs.roborazzi.compose)
+            implementation(libs.compose.uiTestJunit4)
+            implementation(libs.androidx.uiTestManifest)
+            implementation(libs.webp.imageio)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -158,4 +175,21 @@ buildkonfig {
 
 dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
+}
+
+// The compose.uiTest smoke flows (src/commonTest/.../uitest/) run on the contract targets:
+// iosSimulatorArm64Test + wasmJsTest. The Android host task is a plain-JUnit4 JVM run with no
+// instrumentation — AndroidComposeUiTestEnvironment NPEs probing android.os.Build.FINGERPRINT
+// (its Robolectric detection) before any test body runs, and commonTest classes cannot carry
+// @RunWith(RobolectricTestRunner). Android behavior stays covered by the ViewModel/reducer
+// suites. Only the JVM host task has type Test, so the iOS/wasm test tasks are unaffected.
+// The same host task also carries the Roborazzi mode flags: -Droborazzi.* forwarded from the
+// CLI into the test JVM, so `:shared:testAndroidHostTest -Droborazzi.test.record=true` (and
+// …verify=true) works regardless of whether the Roborazzi plugin wires its record/verify tasks
+// for the AGP KMP androidHostTest suite.
+tasks.withType<Test>().configureEach {
+    exclude("**/uitest/**")
+    listOf("roborazzi.test.record", "roborazzi.test.compare", "roborazzi.test.verify").forEach { key ->
+        System.getProperty(key)?.let { systemProperty(key, it) }
+    }
 }

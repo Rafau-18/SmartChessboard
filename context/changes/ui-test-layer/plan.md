@@ -647,38 +647,38 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 1.1 Record invocation produces first goldens in `snapshots/`
-- [ ] 1.2 Verify invocation green on unchanged code
-- [ ] 1.3 Deliberate-break check: verify fails on color change, green after revert
-- [ ] 1.4 Full `:shared:testAndroidHostTest` green
+- [x] 1.1 Record invocation produces first goldens in `snapshots/` — 38b2a8f
+- [x] 1.2 Verify invocation green on unchanged code — 38b2a8f
+- [x] 1.3 Deliberate-break check: verify fails on color change, green after revert — 38b2a8f
+- [x] 1.4 Full `:shared:testAndroidHostTest` green — 38b2a8f
 
 #### Manual
 
-- [ ] 1.5 Goldens visually correct (pieces, colors, no clipping)
-- [ ] 1.6 HTML report readable as diff-review surface
+- [x] 1.5 Goldens visually correct (pieces, colors, no clipping) — 38b2a8f
+- [x] 1.6 HTML report readable as diff-review surface — 38b2a8f
 
 ### Phase 2: Full golden matrix
 
 #### Automated
 
-- [ ] 2.1 Verify green over complete set; 3 consecutive deterministic runs
-- [ ] 2.2 Golden tree ≤ ~10 MB
-- [ ] 2.3 Full `:shared:testAndroidHostTest` green
+- [x] 2.1 Verify green over complete set; 3 consecutive deterministic runs — a49785f
+- [x] 2.2 Golden tree ≤ ~10 MB — a49785f
+- [x] 2.3 Full `:shared:testAndroidHostTest` green — a49785f
 
 #### Manual
 
-- [ ] 2.4 Visual pass over all goldens in both themes
-- [ ] 2.5 AGENTS.md ritual section followable cold
+- [x] 2.4 Visual pass over all goldens in both themes — a49785f
+- [x] 2.5 AGENTS.md ritual section followable cold — a49785f
 
 ### Phase 3: uiTest harness + digital happy path
 
 #### Automated
 
-- [ ] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke
-- [ ] 3.2 `:shared:wasmJsTest` green incl. smoke
-- [ ] 3.3 Android host smoke runs green OR documented exclusion committed
-- [ ] 3.4 No-secrets run green (blank/absent Supabase creds)
-- [ ] 3.5 Full `:shared:testAndroidHostTest` green
+- [x] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke — 9b165f2
+- [x] 3.2 `:shared:wasmJsTest` green incl. smoke — 9b165f2
+- [x] 3.3 Android host smoke runs green OR documented exclusion committed — 9b165f2
+- [x] 3.4 No-secrets run green (blank/absent Supabase creds) — 9b165f2
+- [x] 3.5 Full `:shared:testAndroidHostTest` green — 9b165f2
 
 #### Manual
 
@@ -688,9 +688,9 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest`
-- [ ] 4.2 Android host per Phase 3 resolution
-- [ ] 4.3 No-secrets run still green
+- [x] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest` — 8dc9640
+- [x] 4.2 Android host per Phase 3 resolution — 8dc9640
+- [x] 4.3 No-secrets run still green — 8dc9640
 
 #### Manual
 

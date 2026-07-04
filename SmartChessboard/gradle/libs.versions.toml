@@ -26,6 +26,12 @@ googleid = "1.1.1"
 navigation3 = "1.1.1"
 navigation3Browser = "1.1.0"
 kable = "0.43.1"
+roborazzi = "1.64.0"
+robolectric = "4.16.1"
+webpImageio = "0.3.3"
+# Must track the androidx.compose.ui version that CMP's ui-test-junit4 resolves to on the Android
+# target (check `:shared:dependencies --configuration androidHostTestRuntimeClasspath`).
+composeUiAndroid = "1.11.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -54,6 +60,9 @@ compose-material3 = { module = "org.jetbrains.compose.material3:material3", vers
 compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version = "1.7.3" }
 androidx-window-core = { module = "org.jetbrains.androidx.window:window-core", version.ref = "androidxWindow" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+# Multiplatform compose.uiTest (v2 API) for the commonTest smoke flows — same artifact the
+# `compose.uiTest` plugin DSL accessor resolves; catalog entry for consistency with the rest.
+compose-uiTest = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
@@ -74,6 +83,14 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kable-core = { module = "com.juul.kable:kable-core", version.ref = "kable" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+# Lossy-WebP encoder for the JVM (javax.imageio has no WebP writer) — golden files only.
+webp-imageio = { module = "io.github.darkxanter:webp-imageio", version.ref = "webpImageio" }
+compose-uiTestJunit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "composeMultiplatform" }
+# Declares androidx.activity.ComponentActivity in the host-test merged manifest (createComposeRule).
+androidx-uiTestManifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "composeUiAndroid" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -83,3 +100,4 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
