@@ -5,9 +5,16 @@ Kanoniczne (angielskie) źródło prawdy to `manual-verification.md` w tym samym
 folderze — tam odhaczaj `[x]`, kiedy skończysz. Ten plik jest tylko po to, żebyś
 nie musiał sobie tego wszystkiego przypominać od nowa.
 
-Kod jest już zmergowany do `main` (commit `c8a7441`, 2026-07-04). Nic z poniższego
-nie blokuje działania aplikacji — to tylko potwierdzenia jakościowe, które ktoś
-(Ty) powinien kiedyś przejrzeć.
+Kod jest już zmergowany do `main`. Nic z poniższego nie blokuje działania aplikacji
+— to tylko potwierdzenia jakościowe, które ktoś (Ty) powinien kiedyś przejrzeć.
+
+**Aktualizacja (2026-07-05)**: po zmergowaniu Fazy 5 bramka na `main` na chwilę
+zaczerwieniła się z innego powodu — biblioteka do zapisu/odczytu goldenów w
+formacie WebP okazała się wadliwa (jej własny czytnik nie potrafił odczytać
+części plików, które sama zapisała). Przełączyliśmy format na PNG (commit
+`62e7015`, zawiera przenagranie kanoniczne `3693aec`) i `main` jest znów
+zielony. To nie zmienia nic w punktach poniżej — dotyczy tylko formatu pliku,
+nie treści testów.
 
 ---
 
@@ -105,13 +112,14 @@ zmieniło w wyglądzie".
 
 ### 5.6b — Przegląd konkretnego odświeżenia goldenów przez bota
 
-To osobny, mniejszy punkt: zanim Faza 5 ruszyła, zdalny robot CI (nie ja, nie
-Ty — automat GitHuba) przeliczył wszystkie zrzuty planszy od nowa na swoim
-środowisku i zacommitował różnice.
+To osobny, mniejszy punkt: zdalny robot CI (nie ja, nie Ty — automat GitHuba)
+przeliczył wszystkie zrzuty planszy od nowa na swoim środowisku i zacommitował
+różnice. (Uwaga: to jest już drugie takie odświeżenie — pierwsze było jeszcze
+w formacie WebP, to poniżej jest aktualne, w PNG, po naprawie kodeka.)
 
 1. Otwórz w przeglądarce:
-   https://github.com/Rafau-18/SmartChessboard/commit/dd6ced7
-2. GitHub sam pokaże podgląd „przed/po" dla każdego zmienionego pliku `.webp`
+   https://github.com/Rafau-18/SmartChessboard/commit/3693aec
+2. GitHub sam pokaże podgląd „przed/po" dla każdego zmienionego pliku `.png`
    (można przełączać widok 2-up / suwak).
 3. Sprawdź, że różnice to wyłącznie subtelne wygładzenie krawędzi bierek
    (antyaliasing) — **nie** zmiana układu, kolorów, brakujące elementy.
@@ -125,8 +133,8 @@ Ty — automat GitHuba) przeliczył wszystkie zrzuty planszy od nowa na swoim
 **Co sprawdzić**: czy darmowy limit minut na GitHub Actions (2000 min/miesiąc)
 nie zostanie przekroczony przez nasze nowe automaty.
 
-**Kiedy to zrobić**: nie wcześniej niż **2026-07-11** (tydzień od dzisiaj) —
-wcześniej dane będą niemiarodajne.
+**Kiedy to zrobić**: nie wcześniej niż **2026-07-12** (tydzień od uruchomienia
+pierwszych workflow'ów) — wcześniej dane będą niemiarodajne.
 
 **Jak to zrobić**:
 

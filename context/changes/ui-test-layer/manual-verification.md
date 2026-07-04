@@ -43,6 +43,12 @@ deliberate-break demo on scratch branch `ci-break-demo` (deleted after use) — 
 `ios-tests.yml` green both via manual dispatch and its own nightly cron; all three workflow
 files pass `actionlint` 1.7.12. Merged `ui-test-layer-ci` → `main` at `c8a7441`.
 
+**Post-merge codec fix (2026-07-05)**: the golden gate on `main` briefly went red for an
+unrelated reason — the WebP codec (`webp-imageio`) non-deterministically failed to read files
+it had itself written. Switched goldens to PNG (JDK-native `ImageIO`), dropped the WebP
+dependency, re-recorded canonically on CI (`3693aec`), merged (`62e7015`). See
+`context/foundation/lessons.md` for the full incident. Superseded the `dd6ced7` reference below.
+
 Pending confirmation (needs a human look, not just a code read):
 
 - [ ] 5.6 Review the Roborazzi diff-report artifact end-to-end and confirm the triptych
@@ -50,10 +56,11 @@ Pending confirmation (needs a human look, not just a code read):
   Fetch a fresh one from any `tests.yml` run: `gh run download <run-id> -n roborazzi-report -D <dir>`,
   open `reports/roborazzi/androidHostTest/index.html`.
 - [ ] 5.6b Review the golden-refresh diff in bot commit
-  [`dd6ced7`](https://github.com/Rafau-18/SmartChessboard/commit/dd6ced7) — confirm every changed
-  `board_*.webp` shows only antialiasing-level pixel drift, no structural/color change.
-- [ ] 5.7 Check Actions minutes consumption after the first full week (from 2026-07-04, so on or
-  after 2026-07-11) at Settings → Billing and licensing → Usage, and confirm it's comfortably
+  [`3693aec`](https://github.com/Rafau-18/SmartChessboard/commit/3693aec) (PNG, canonical) —
+  confirm every changed `board_*.png` shows only antialiasing-level pixel drift, no
+  structural/color change.
+- [ ] 5.7 Check Actions minutes consumption after the first full week (from 2026-07-05, so on or
+  after 2026-07-12) at Settings → Billing and licensing → Usage, and confirm it's comfortably
   inside the free 2,000 min/month tier given the nightly iOS job bills at ×10.
 
 See `manual-verification-pl.md` in this folder for a plain-language, step-by-step Polish
