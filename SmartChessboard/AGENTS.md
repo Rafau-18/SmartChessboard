@@ -72,6 +72,29 @@ an explicit `LocalWindowSizeClass` (the 0×0 default silently renders the landsc
 SidePane arrangement, not portrait), a fixed shot size, and the shared
 record/compare options. A plain test run (no flags) neither records nor verifies.
 
+**Re-record ritual (intentional UI change):**
+
+1. Make the visual change; run the **verify** task — red confirms the goldens see it.
+2. Review the diff: HTML report + `_compare.webp` triptychs (Reference | Diff | New).
+   The diff must contain exactly the change you intended — nothing else.
+3. Run the **record** task to refresh the goldens, then verify once more (green).
+4. Commit the refreshed goldens together with the code change.
+
+Until the CI record workflow exists (Phase 5 of the `ui-test-layer` change), local
+record is canonical. Once it lands, goldens are recorded **by CI only**
+(`record-goldens.yml` dispatch) and local record becomes preview-only — update
+this section then.
+
+Expectations baked into the golden set:
+
+- Material3 is pinned at an **alpha** — an M3 bump legitimately moves component
+  pixels (top bar, rail, buttons). A broad, reviewed re-record after the bump is
+  the ritual working, not drift.
+- Board shots are **light-only by design**: the wood and every on-wood overlay are
+  constant across modes (`ChessColors`), so dark board goldens would be
+  bit-identical duplicates. The promotion shot is the exception (Material-themed
+  picker surface) and exists in both modes.
+
 ## IDE split (AGP 9.0.1 vs IntelliJ)
 
 IntelliJ tops out at AGP 9.0.0-alpha06 but the project is on AGP 9.0.1, so each

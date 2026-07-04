@@ -647,28 +647,28 @@ section updated to say so.
 
 #### Automated
 
-- [x] 1.1 Record invocation produces first goldens in `snapshots/`
-- [x] 1.2 Verify invocation green on unchanged code
-- [x] 1.3 Deliberate-break check: verify fails on color change, green after revert
-- [x] 1.4 Full `:shared:testAndroidHostTest` green
+- [x] 1.1 Record invocation produces first goldens in `snapshots/` — 38b2a8f
+- [x] 1.2 Verify invocation green on unchanged code — 38b2a8f
+- [x] 1.3 Deliberate-break check: verify fails on color change, green after revert — 38b2a8f
+- [x] 1.4 Full `:shared:testAndroidHostTest` green — 38b2a8f
 
 #### Manual
 
-- [x] 1.5 Goldens visually correct (pieces, colors, no clipping)
-- [x] 1.6 HTML report readable as diff-review surface
+- [x] 1.5 Goldens visually correct (pieces, colors, no clipping) — 38b2a8f
+- [x] 1.6 HTML report readable as diff-review surface — 38b2a8f
 
 ### Phase 2: Full golden matrix
 
 #### Automated
 
-- [ ] 2.1 Verify green over complete set; 3 consecutive deterministic runs
-- [ ] 2.2 Golden tree ≤ ~10 MB
-- [ ] 2.3 Full `:shared:testAndroidHostTest` green
+- [x] 2.1 Verify green over complete set; 3 consecutive deterministic runs
+- [x] 2.2 Golden tree ≤ ~10 MB
+- [x] 2.3 Full `:shared:testAndroidHostTest` green
 
 #### Manual
 
-- [ ] 2.4 Visual pass over all goldens in both themes
-- [ ] 2.5 AGENTS.md ritual section followable cold
+- [x] 2.4 Visual pass over all goldens in both themes
+- [x] 2.5 AGENTS.md ritual section followable cold
 
 ### Phase 3: uiTest harness + digital happy path
 

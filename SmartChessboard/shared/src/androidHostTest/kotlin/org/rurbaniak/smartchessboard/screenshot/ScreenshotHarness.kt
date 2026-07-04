@@ -54,6 +54,7 @@ private const val GOLDEN_TAG = "golden-root"
  * at half scale to keep the committed tree small. Pinned in code (not gradle.properties) so the
  * options cannot drift between invocation styles.
  */
+@OptIn(com.github.takahirom.roborazzi.ExperimentalRoborazziApi::class)
 private val GOLDEN_OPTIONS =
     RoborazziOptions(
         recordOptions =
@@ -74,13 +75,16 @@ private val GOLDEN_OPTIONS =
  * Renders [content] under pinned inputs — [AppTheme] dark/light, an explicit [windowSizeClass]
  * via [LocalWindowSizeClass], and a fixed [size] — then records/verifies it as
  * `src/androidHostTest/snapshots/<name>.webp`. One-liner per golden so no test can forget the
- * window-class trap; content must be state-only (no clocks, no network).
+ * window-class trap; content must be state-only (no clocks, no network). [prepare] runs between
+ * composition and capture for the rare shot whose state sits behind the test clock (e.g. the
+ * sync hint's show delay) — advance [ComposeContentTestRule.mainClock] there, nothing else.
  */
 fun ComposeContentTestRule.golden(
     name: String,
     dark: Boolean,
     windowSizeClass: WindowSizeClass = PORTRAIT_MEDIUM,
     size: DpSize = DEFAULT_SHOT,
+    prepare: ComposeContentTestRule.() -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     setContent {
@@ -92,6 +96,7 @@ fun ComposeContentTestRule.golden(
             }
         }
     }
+    prepare()
     onNodeWithTag(GOLDEN_TAG).captureRoboImage(
         filePath = "$SNAPSHOTS_DIR/$name.webp",
         roborazziOptions = GOLDEN_OPTIONS,
