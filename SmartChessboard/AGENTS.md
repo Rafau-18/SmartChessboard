@@ -51,6 +51,27 @@ Plain `test` does **not** cover the KMP targets. Use:
 Put tests in `shared/src/commonTest` to run on every target, or a target-specific
 test source set for platform code.
 
+## Screenshot (golden) tests
+
+JVM-only goldens for Compose UI: Robolectric renders (`@GraphicsMode(NATIVE)`),
+Roborazzi compares. Tests live in `shared/src/androidHostTest/kotlin/**/screenshot/`;
+committed goldens in `shared/src/androidHostTest/snapshots/*.webp` (lossless WebP,
+recorded at 0.5 scale). Wrap invocations with inline `ANDROID_HOME` as usual:
+
+- Record (refresh goldens): `:shared:recordRoborazziAndroidHostTest`
+- Verify (the gate): `:shared:verifyRoborazziAndroidHostTest`
+- Equivalent fallback: `:shared:testAndroidHostTest -Droborazzi.test.record=true`
+  (or `…verify=true`) — the flags are forwarded into the test JVM by
+  `shared/build.gradle.kts`.
+- On a verify failure: triptych diff images land in
+  `shared/build/outputs/roborazzi/*_compare.webp`, HTML report in
+  `shared/build/reports/roborazzi/androidHostTest/`.
+
+Write every golden through `ScreenshotHarness.golden(...)` — it pins `AppTheme`,
+an explicit `LocalWindowSizeClass` (the 0×0 default silently renders the landscape
+SidePane arrangement, not portrait), a fixed shot size, and the shared
+record/compare options. A plain test run (no flags) neither records nor verifies.
+
 ## IDE split (AGP 9.0.1 vs IntelliJ)
 
 IntelliJ tops out at AGP 9.0.0-alpha06 but the project is on AGP 9.0.1, so each

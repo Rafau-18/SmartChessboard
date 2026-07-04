@@ -647,15 +647,15 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 1.1 Record invocation produces first goldens in `snapshots/`
-- [ ] 1.2 Verify invocation green on unchanged code
-- [ ] 1.3 Deliberate-break check: verify fails on color change, green after revert
-- [ ] 1.4 Full `:shared:testAndroidHostTest` green
+- [x] 1.1 Record invocation produces first goldens in `snapshots/`
+- [x] 1.2 Verify invocation green on unchanged code
+- [x] 1.3 Deliberate-break check: verify fails on color change, green after revert
+- [x] 1.4 Full `:shared:testAndroidHostTest` green
 
 #### Manual
 
-- [ ] 1.5 Goldens visually correct (pieces, colors, no clipping)
-- [ ] 1.6 HTML report readable as diff-review surface
+- [x] 1.5 Goldens visually correct (pieces, colors, no clipping)
+- [x] 1.6 HTML report readable as diff-review surface
 
 ### Phase 2: Full golden matrix
 
