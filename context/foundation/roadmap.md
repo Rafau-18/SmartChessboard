@@ -31,18 +31,18 @@ The author and a small circle of friends play chess on a physical wooden board, 
 
 | ID   | Change ID                     | Outcome (user can …)                                              | Prerequisites    | PRD refs                                              | Status          |
 | ---- | ----------------------------- | ----------------------------------------------------------------- | ---------------- | ----------------------------------------------------- | --------------- |
-| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection  | —                | FR-005, FR-007, Guardrails                            | awaiting review |
-| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware  | —                | PRD OQ-1 (resolved), US-02                            | implemented     |
-| F-03 | firmware-ble-gatt-service     | (foundation) ESP32 firmware speaks the §1 BLE board contract      | —                | FR-FW-002–013                                         | implemented     |
-| S-01 | google-signin-own-history     | sign in with Google and see own private game list                 | —                | FR-001, FR-002, FR-015, US-03                         | awaiting review |
-| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)   | S-01             | FR-016, US-03                                         | awaiting review |
-| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                  | S-02             | FR-017, US-01, US-03                                  | awaiting review |
-| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save        | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | awaiting review |
-| S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                | S-04             | FR-007, FR-018, US-01                                 | implemented     |
-| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator                | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | implemented     |
-| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics       | S-06             | FR-010, FR-011, US-02                                 | in progress     |
-| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart             | S-07             | FR-013, US-02                                         | in progress     |
-| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                 | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, FR-012, US-02         | implemented     |
+| F-01 | chess-rules-engine            | (foundation) full-legality validation + mate/stalemate detection  | —                | FR-005, FR-007, Guardrails                            | done |
+| F-02 | reed-board-emulator           | (foundation) physical-mode flow runs end-to-end without hardware  | —                | PRD OQ-1 (resolved), US-02                            | done |
+| F-03 | firmware-ble-gatt-service     | (foundation) ESP32 firmware speaks the §1 BLE board contract      | —                | FR-FW-002–013                                         | done |
+| S-01 | google-signin-own-history     | sign in with Google and see own private game list                 | —                | FR-001, FR-002, FR-015, US-03                         | done |
+| S-02 | replay-seeded-games           | replay a saved game with full controls (seeded snapshots first)   | S-01             | FR-016, US-03                                         | done |
+| S-03 | post-game-evals-in-replay     | view position evaluations in replay (north star)                  | S-02             | FR-017, US-01, US-03                                  | done |
+| S-04 | digital-pass-and-play         | play a fully validated digital game with durable auto-save        | F-01, S-01, S-02 | FR-003, FR-004, FR-005, FR-006, FR-014, FR-019, US-01 | done |
+| S-05 | game-end-and-result           | close a game (auto mate/stalemate + manual result)                | S-04             | FR-007, FR-018, US-01                                 | done |
+| S-06 | physical-capture-emulated     | play physical-mode end-to-end against the emulator                | F-01, F-02, S-04 | FR-005, FR-006, FR-008, FR-009, US-02                 | done |
+| S-07 | reject-recover-diagnostics    | recover from rejected sequences using live reed diagnostics       | S-06             | FR-010, FR-011, US-02                                 | done |
+| S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart             | S-07             | FR-013, US-02                                         | done |
+| S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                 | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, FR-012, US-02         | done |
 | S-10 | ble-connectivity-robustness   | (hardening) reliable BLE connect/reconnect + settle pairing model | S-09             | FR-012, NFR reliability                               | proposed        |
 | S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | ready           |
 | S-12 | mobile-landscape-layout       | space-efficient landscape UI across board screens (2-col + control placement) | S-02, S-03, S-04, S-06 | FR-004, FR-008, FR-016, FR-017, FR-019, US-01–US-03   | ready           |
@@ -331,4 +331,20 @@ Context note (outside the app codebase): firmware status has since advanced well
 
 ## Done
 
-(Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived. Do NOT pre-populate.)
+Archived changes live at `context/archive/<created-date>-<change-id>/` (immutable). The whole
+F-01 → S-09 stream was closed out and archived on **2026-07-04**.
+
+| ID   | Change ID                     | Archived   | Close-out notes                                                                                     |
+| ---- | ----------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
+| F-01 | chess-rules-engine            | 2026-07-04 | impl-review APPROVED. F1 (Position input-boundary contract) recorded in `lessons.md`; F2 (`GameStatus` rename) left as-is — window closed once S-04/05/06 shipped. |
+| F-02 | reed-board-emulator           | 2026-07-04 | impl-review APPROVED. Manual golden-vector recompute gate confirmed by user.                        |
+| F-03 | firmware-ble-gatt-service     | 2026-07-04 | impl-review (3 warnings fixed). On-hardware gates 2.4–3.10 confirmed 2026-06-29 (`SmartChessboard-DA3A`). |
+| S-01 | google-signin-own-history     | 2026-07-04 | impl-review APPROVED.                                                                               |
+| S-02 | replay-seeded-games           | 2026-07-04 | Implemented; Phase-4 review (findings fixed/accepted). Full impl-review not re-run (user OK).       |
+| S-03 | post-game-evals-in-replay     | 2026-07-04 | Implemented (north star). impl-review intentionally **skipped** per user.                           |
+| S-04 | digital-pass-and-play         | 2026-07-04 | Implemented. impl-review intentionally **skipped** per user.                                        |
+| S-05 | game-end-and-result           | 2026-07-04 | impl-review APPROVED (4 observations resolved).                                                     |
+| S-06 | physical-capture-emulated     | 2026-07-04 | impl-review APPROVED. Code-read gate re-verified; device rows user-confirmed.                       |
+| S-07 | reject-recover-diagnostics    | 2026-07-04 | Manual reject→recover gate user-confirmed. impl-review intentionally **skipped** per user.          |
+| S-08 | physical-resume-after-restart | 2026-07-04 | Manual on-device resume gate user-confirmed. impl-review intentionally **skipped** per user.        |
+| S-09 | real-board-over-ble           | 2026-07-04 | impl-review NEEDS ATTENTION; F4 evidence log filled (2026-06-30 on-hardware acceptance + flaky-connect caveat). Doc-drift F1/F2/F3/F5/F6 deferred to **S-10**. |
