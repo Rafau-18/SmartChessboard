@@ -19,3 +19,10 @@ GitHub migration (Phase 0) is a hard prerequisite the user declared
 "absolutely necessary" — the plan assumes GitHub + `gh` CLI so the agent can
 verify CI runs autonomously. Distribution CI stays in the separate
 `github-ci-and-distribution` change.
+
+All 5 phases automated-verified and merged to `main` (`c8a7441`, 2026-07-04).
+`status` stays `implementing`, not `implemented`, because four manual
+confirmations remain open (3.6, 4.4, 5.6, 5.7 — see `manual-verification.md` /
+`manual-verification-pl.md`). User explicitly chose to merge ahead of that
+manual pass due to time constraints; flip to `implemented` (and run the
+epilogue commit) once those are confirmed.

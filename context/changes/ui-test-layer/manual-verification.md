@@ -32,3 +32,29 @@ Pending confirmation (code read):
   confirmation copy asserted in the test ("Delete game?", "This permanently deletes <matchup>…")
   matches the real dialog in `HistoryScreen.kt` (`DeleteGameDialog`).
   File: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/uitest/HistoryReplayDeleteSmokeTest.kt`
+
+## Phase 5 — CI workflows on GitHub Actions
+
+Automated (done, merged to main `c8a7441`): `tests.yml` (PR/main gate, JVM golden verify + wasm)
+green via `gh`; `record-goldens.yml` dispatched on `ui-test-layer-ci`, produced bot commit
+`dd6ced7` refreshing 10 board goldens; `tests.yml` green against the refreshed goldens;
+deliberate-break demo on scratch branch `ci-break-demo` (deleted after use) — verify failed,
+`roborazzi-report` artifact downloaded and inspected, revert turned it green again;
+`ios-tests.yml` green both via manual dispatch and its own nightly cron; all three workflow
+files pass `actionlint` 1.7.12. Merged `ui-test-layer-ci` → `main` at `c8a7441`.
+
+Pending confirmation (needs a human look, not just a code read):
+
+- [ ] 5.6 Review the Roborazzi diff-report artifact end-to-end and confirm the triptych
+  (Reference | Diff | New) format is readable as the ongoing visual-regression review surface.
+  Fetch a fresh one from any `tests.yml` run: `gh run download <run-id> -n roborazzi-report -D <dir>`,
+  open `reports/roborazzi/androidHostTest/index.html`.
+- [ ] 5.6b Review the golden-refresh diff in bot commit
+  [`dd6ced7`](https://github.com/Rafau-18/SmartChessboard/commit/dd6ced7) — confirm every changed
+  `board_*.webp` shows only antialiasing-level pixel drift, no structural/color change.
+- [ ] 5.7 Check Actions minutes consumption after the first full week (from 2026-07-04, so on or
+  after 2026-07-11) at Settings → Billing and licensing → Usage, and confirm it's comfortably
+  inside the free 2,000 min/month tier given the nightly iOS job bills at ×10.
+
+See `manual-verification-pl.md` in this folder for a plain-language, step-by-step Polish
+walkthrough of all four pending items above (3.6, 4.4, 5.6, 5.6b, 5.7).

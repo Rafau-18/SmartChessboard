@@ -700,11 +700,11 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 5.1 `tests.yml` run via `gh` → success
-- [ ] 5.2 `record-goldens.yml` produces bot commit; `tests.yml` green against it
-- [ ] 5.3 Deliberate-break via CI: fail → artifact downloadable → revert → green
-- [ ] 5.4 `ios-tests.yml` manual dispatch → success
-- [ ] 5.5 Workflow files pass actionlint (preferred)
+- [x] 5.1 `tests.yml` run via `gh` → success — c8a7441
+- [x] 5.2 `record-goldens.yml` produces bot commit; `tests.yml` green against it — c8a7441
+- [x] 5.3 Deliberate-break via CI: fail → artifact downloadable → revert → green — c8a7441
+- [x] 5.4 `ios-tests.yml` manual dispatch → success — c8a7441
+- [x] 5.5 Workflow files pass actionlint (preferred) — c8a7441
 
 #### Manual
 
