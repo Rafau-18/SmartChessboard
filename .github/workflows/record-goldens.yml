@@ -1,0 +1,53 @@
+# Golden re-record (ui-test-layer Phase 5): the ONLY sanctioned way to refresh
+# Roborazzi goldens after CI became the canonical recording environment.
+# Dispatch on the branch whose goldens should be refreshed:
+#   gh workflow run record-goldens.yml --ref <branch>
+# The refreshed goldens are committed back to that branch as github-actions[bot].
+name: Record goldens
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Two dispatches must not race a commit+push on the same branch.
+concurrency:
+  group: record-goldens-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  record:
+    name: Re-record goldens on CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: SmartChessboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Record goldens
+        run: ./gradlew :shared:recordRoborazziAndroidHostTest --console=plain
+
+      - name: Commit refreshed goldens
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add shared/src/androidHostTest/snapshots
+          if git diff --cached --quiet; then
+            echo "Goldens unchanged — nothing to commit."
+          else
+            git commit -m "test(goldens): re-record on CI"
+            git push
+          fi

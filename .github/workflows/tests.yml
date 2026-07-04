@@ -1,0 +1,56 @@
+# PR test gate (ui-test-layer Phase 5): JVM suite with golden verify + wasm suite.
+# No repository secrets are used anywhere in this workflow — the test harness runs
+# on fakes with empty BuildKonfig credentials by design.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: JVM goldens + wasm smokes
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: SmartChessboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Full androidHostTest suite with Roborazzi golden verification enabled.
+      # Ubuntu runners ship an Android SDK (ANDROID_HOME preset on the image) and
+      # headless Chrome for the wasm Karma run.
+      - name: JVM suite + golden verify
+        run: ./gradlew :shared:verifyRoborazziAndroidHostTest --console=plain
+
+      - name: wasm suite (headless Chrome)
+        run: ./gradlew :shared:wasmJsTest --console=plain
+
+      # On a golden failure the triptych diff images (Reference | Diff | New) and the
+      # HTML report are the review surface — surfaced as a downloadable artifact.
+      - name: Upload Roborazzi diff report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roborazzi-report
+          path: |
+            SmartChessboard/shared/build/outputs/roborazzi/
+            SmartChessboard/shared/build/reports/roborazzi/
+            SmartChessboard/shared/build/reports/tests/
+          if-no-files-found: ignore

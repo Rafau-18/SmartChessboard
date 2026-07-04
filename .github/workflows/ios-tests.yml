@@ -1,0 +1,52 @@
+# iOS simulator suite (ui-test-layer Phase 5): nightly + manual dispatch,
+# deliberately NOT a PR gate — macOS Actions minutes bill at x10 against the
+# free tier. Failure notification is the red run itself (no extra channels at MVP).
+name: iOS tests
+
+on:
+  schedule:
+    - cron: "30 2 * * *" # nightly, 02:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios-simulator:
+    name: iOS simulator suite
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: SmartChessboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The Kotlin/Native toolchain (~1 GB) is downloaded to ~/.konan on first use;
+      # setup-gradle does not cover it.
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('SmartChessboard/gradle/libs.versions.toml') }}
+
+      - name: iOS simulator suite
+        run: ./gradlew :shared:iosSimulatorArm64Test --console=plain
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-reports
+          path: SmartChessboard/shared/build/reports/tests/
+          if-no-files-found: ignore
