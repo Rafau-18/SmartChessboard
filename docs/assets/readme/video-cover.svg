@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <rect width="1280" height="720" rx="20" fill="#22272e"/>
+  <rect x="14" y="14" width="1252" height="692" rx="14" fill="none" stroke="#768390" stroke-width="3" stroke-dasharray="16 12"/>
+  <circle cx="640" cy="310" r="86" fill="#f04438"/>
+  <polygon points="614,266 614,354 694,310" fill="#ffffff"/>
+  <text x="640" y="470" text-anchor="middle" font-size="42" font-weight="700" fill="#cdd9e5">Demo video</text>
+  <text x="640" y="518" text-anchor="middle" font-size="25" fill="#909dab">move on the real board → confirm on the clock → move appears in the app → replay &amp; analysis</text>
+  <text x="640" y="672" text-anchor="middle" font-size="19" fill="#636e7b">placeholder — becomes the YouTube thumbnail once the video link is filled in</text>
+</svg>

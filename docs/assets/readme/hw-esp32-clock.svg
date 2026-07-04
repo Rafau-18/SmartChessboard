@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <rect width="800" height="600" rx="16" fill="#22272e"/>
+  <rect x="12" y="12" width="776" height="576" rx="12" fill="none" stroke="#768390" stroke-width="3" stroke-dasharray="14 10"/>
+  <text x="400" y="255" text-anchor="middle" font-size="80">🕹️</text>
+  <text x="400" y="330" text-anchor="middle" font-size="32" font-weight="700" fill="#cdd9e5">ESP32 + chess clock</text>
+  <text x="400" y="370" text-anchor="middle" font-size="20" fill="#909dab">the controller and the repurposed DGT-clock confirmation buttons</text>
+  <text x="400" y="560" text-anchor="middle" font-size="16" fill="#636e7b">placeholder — replace with docs/assets/readme/hw-esp32-clock.jpg</text>
+</svg>
