@@ -51,6 +51,13 @@ values
   ('00000000-0000-0000-0000-000000000000', '22222222-2222-2222-2222-222222222222',
    'authenticated', 'authenticated', 'player-b@test.local');
 
+-- The FR-022 onboarding trigger (on_auth_user_created_seed_games) just seeded 8 games
+-- per user; clear them so this suite keeps its original two-users-one-game-each fixture.
+-- The trigger's own behavior is covered by seed_on_signup.test.sql.
+delete from public.games
+  where user_id in ('11111111-1111-1111-1111-111111111111',
+                    '22222222-2222-2222-2222-222222222222');
+
 insert into public.games (id, user_id, created_at, updated_at, mode, status, white_label, black_label)
 values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111',

@@ -341,16 +341,16 @@ Negligible: 8 single-row inserts fire once per account creation. No hot path, no
 
 #### Automated
 
-- [ ] 2.1 Migration applies cleanly (`supabase db reset`)
-- [ ] 2.2 pgTAP green incl. new `seed_on_signup.test.sql` (`supabase test db`)
-- [ ] 2.3 Fixture-parity + full JVM suite green (`:shared:testAndroidHostTest`)
-- [ ] 2.4 Each seed user has exactly 8 finished games + retained edge rows after reset
-- [ ] 2.5 `cloud-seed-replay-games.sql` deleted; no dangling references
-- [ ] 2.6 `contract-surfaces.md` §2.6 registers the function + trigger names
+- [x] 2.1 Migration applies cleanly (`supabase db reset`)
+- [x] 2.2 pgTAP green incl. new `seed_on_signup.test.sql` (`supabase test db`)
+- [x] 2.3 Fixture-parity + full JVM suite green (`:shared:testAndroidHostTest`)
+- [x] 2.4 Each seed user has exactly 8 finished games + retained edge rows after reset
+- [x] 2.5 `cloud-seed-replay-games.sql` deleted; no dangling references
+- [x] 2.6 `contract-surfaces.md` §2.6 registers the function + trigger names
 
 #### Manual
 
-- [ ] 2.7 Fresh sign-in → history shows 8 games chronologically (FR-015)
-- [ ] 2.8 Seeded game replays with controls (FR-016) and evaluates (FR-017)
-- [ ] 2.9 Delete a seeded game (FR-021) → stays deleted; re-login does not re-seed (fire-once)
-- [ ] 2.10 Broken-PGN scratch test → sign-up still succeeds, WARNING logged (error isolation)
+- [x] 2.7 Fresh sign-in → history shows 8 games chronologically (FR-015)
+- [x] 2.8 Seeded game replays with controls (FR-016) and evaluates (FR-017)
+- [x] 2.9 Delete a seeded game (FR-021) → stays deleted; re-login does not re-seed (fire-once)
+- [x] 2.10 Broken-PGN scratch test → sign-up still succeeds, WARNING logged (error isolation)

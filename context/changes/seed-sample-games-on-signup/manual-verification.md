@@ -51,9 +51,41 @@ above and additionally pinned by parser-level `headers.result` assertions in `Pg
 All sources agree Judit Polgár played **White** and **won** (her first win over Kasparov, Russia
 vs the Rest of the World rapid, Moscow, 2002-09-09) ⇒ `[Result "1-0"]` ⇒ column `white`.
 
-## Phase 2 (pending)
+## Phase 2
 
-- 2.7 Fresh sign-in → history shows 8 games chronologically (FR-015)
-- 2.8 Seeded game replays with controls (FR-016) and evaluates (FR-017)
-- 2.9 Delete a seeded game (FR-021) → stays deleted; re-login does not re-seed (fire-once)
-- 2.10 Broken-PGN scratch test → sign-up still succeeds, WARNING logged (error isolation)
+Evidence gathered during implementation (2026-07-04) against the local stack
+(`supabase db reset` on migration `20260704221841_seed_sample_games_on_signup.sql`).
+App-level passes (sign-in, replay/eval, delete) still need a human run.
+
+### 2.7 Fresh sign-in → history shows 8 games chronologically (FR-015)
+
+**DB-level evidence**: after `db reset`, both seed users hold exactly 8 finished
+`digital` games with `result` in (`white`,`black`) matching the Phase 1 mapping
+(6 white / 2 black), with 8 distinct staggered `created_at` values. Alice's history
+query (`created_at desc`) lists the seeds in historical order, newest first:
+Polgár 2002 → Kasparov's Immortal 1999 → Deep Blue 1997 → Byrne–Fischer 1956 →
+Gold Coins 1912 → Opera 1858 → Evergreen 1852 → Immortal 1851 (her two edge-case
+rows interleave by their own timestamps). pgTAP functional checks pin 8-rows-per-new-user,
+correct columns, and staggered timestamps. **Pending human**: fresh sign-in in the app
+and eyeballing the history screen.
+
+### 2.8 Seeded game replays with controls (FR-016) and evaluates (FR-017)
+
+Parity holds (SeedPgnParityTest green: migration PGNs byte-identical to the 8
+parser-verified fixtures), so replayability is proven at the fixture level on
+JVM/iOS/wasm (Phase 1). **Pending human**: open a seeded game in the app; confirm
+replay controls and the eval path.
+
+### 2.9 Delete a seeded game (FR-021) → stays deleted; re-login does not re-seed
+
+pgTAP evidence: deleting one seeded row leaves 7 and re-seeds nothing; an
+`auth.users` UPDATE (login-shaped write) adds no rows (INSERT-only fire-once).
+**Pending human**: delete from the app UI, sign out/in, confirm no resurrection.
+
+### 2.10 Broken-PGN scratch test → sign-up still succeeds, WARNING logged
+
+**Verified in a rolled-back scratch transaction** (local DB, 2026-07-04): replaced
+`seed_sample_games()` with a CHECK-violating insert, inserted a fresh `auth.users`
+row → `INSERT 0 1` succeeded, `WARNING: seed_sample_games failed for 66666666-…:
+new row for relation "games" violates check constraint "games_mode_check"` was
+logged, 0 games seeded, user row present. Sign-up is isolated from seed failures.

@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-07-02
+updated: 2026-07-04
 ---
 
 ## Purpose
@@ -313,6 +313,29 @@ create trigger games_set_updated_at
   before update on public.games
   for each row execute function public.set_updated_at();
 ```
+
+FR-022 onboarding seed (added 2026-07-04, S-13) — `public.seed_sample_games()`
+seeds the 8 sample games exactly once at account creation:
+
+```sql
+create function public.seed_sample_games()
+  returns trigger language plpgsql
+  security definer set search_path = ''
+  -- inserts 8 finished digital games for new.id; PGNs byte-identical to
+  -- PgnFixtures.kt (guarded by SeedPgnParityTest); errors are swallowed with a
+  -- WARNING so seeding never blocks sign-up
+  as $fn$ … $fn$;
+
+create trigger on_auth_user_created_seed_games
+  after insert on auth.users
+  for each row execute function public.seed_sample_games();
+```
+
+Fire-once semantics are INSERT-trigger semantics: deleting a seeded game inserts
+no `auth.users` row, so seeds never resurrect and returning users are never
+re-seeded. `security definer` is load-bearing — there is no JWT during sign-up,
+so `auth.uid()` is NULL and `games_insert_own` would reject the rows if RLS
+applied. Accounts created before the migration are not backfilled.
 
 ---
 
