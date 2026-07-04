@@ -31,6 +31,7 @@ import org.rurbaniak.smartchessboard.presentation.FakeEvalRepository
 import org.rurbaniak.smartchessboard.presentation.FakeGameJournal
 import org.rurbaniak.smartchessboard.presentation.FakeGamesRepository
 import org.rurbaniak.smartchessboard.presentation.play.PlayViewModel
+import org.rurbaniak.smartchessboard.presentation.replay.ReplayViewModel
 
 /**
  * The fake data layer one smoke test drives: the existing hand-written fakes, pre-wired to the
@@ -80,6 +81,15 @@ fun runAppTest(
                             gameId = gameId,
                             gamesRepository = get(),
                             autoSaver = get(),
+                            parseDispatcher = Dispatchers.Main.immediate,
+                        )
+                    }
+                    // Same trap, same fix: ReplayViewModel's load() parses on parseDispatcher too.
+                    viewModel { (gameId: String) ->
+                        ReplayViewModel(
+                            gameId = gameId,
+                            gamesRepository = get(),
+                            evalRepository = get(),
                             parseDispatcher = Dispatchers.Main.immediate,
                         )
                     }

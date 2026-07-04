@@ -19,3 +19,16 @@ Pending confirmation (code read):
   the real flow (History → New game → names → Start → 1. e4 → move list → End game → White wins →
   confirm → Analyse/Back to history → History row "White won").
   File: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/uitest/DigitalPlaySmokeTest.kt`
+
+## Phase 4 — History → Replay + delete smoke
+
+Automated (done, committed): both smokes green on `:shared:iosSimulatorArm64Test` +
+`:shared:wasmJsTest`; Android host green under the Phase 3 `uitest/` exclusion; still no
+credentials anywhere in the worktree.
+
+Pending confirmation (code read):
+
+- [ ] 4.4 `HistoryReplayDeleteSmokeTest` reads correctly as the product flow, and the delete
+  confirmation copy asserted in the test ("Delete game?", "This permanently deletes <matchup>…")
+  matches the real dialog in `HistoryScreen.kt` (`DeleteGameDialog`).
+  File: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/uitest/HistoryReplayDeleteSmokeTest.kt`
