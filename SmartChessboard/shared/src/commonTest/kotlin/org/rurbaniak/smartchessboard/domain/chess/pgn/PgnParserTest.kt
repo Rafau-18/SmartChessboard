@@ -47,6 +47,73 @@ class PgnParserTest {
         assertEquals(GameStatus.Checkmate, status(game.positions.last()))
     }
 
+    @Test
+    fun evergreenGameReplaysToItsKnownMate() {
+        val game = parsePgn(PgnFixtures.EVERGREEN_GAME)
+        assertComplete(game)
+        assertEquals(47, game.sanMoves.size)
+        assertEquals("Bxe7#", game.sanMoves.last())
+        assertEquals(Piece(Color.WHITE, PieceType.BISHOP), game.finalPieceAt("e7"))
+        assertEquals(Piece(Color.BLACK, PieceType.KING), game.finalPieceAt("f8"))
+        assertEquals(GameStatus.Checkmate, status(game.positions.last()))
+        assertEquals("1-0", game.headers.result)
+    }
+
+    @Test
+    fun gameOfTheCenturyReplaysToItsKnownMate() {
+        val game = parsePgn(PgnFixtures.GAME_OF_THE_CENTURY)
+        assertComplete(game)
+        assertEquals(82, game.sanMoves.size)
+        assertEquals("Rc2#", game.sanMoves.last())
+        assertEquals(Piece(Color.BLACK, PieceType.ROOK), game.finalPieceAt("c2"))
+        assertEquals(Piece(Color.WHITE, PieceType.KING), game.finalPieceAt("c1"))
+        assertEquals(GameStatus.Checkmate, status(game.positions.last()))
+        assertEquals("0-1", game.headers.result)
+    }
+
+    // The four resignation games end mid-position: full replay is asserted, but the final board
+    // must be Ongoing — asserting a terminal status on a resigned game would be wrong.
+
+    @Test
+    fun kasparovImmortalReplaysAllPliesToTheResignation() {
+        val game = parsePgn(PgnFixtures.KASPAROV_IMMORTAL)
+        assertComplete(game)
+        assertEquals(87, game.sanMoves.size)
+        assertEquals("Qa7", game.sanMoves.last())
+        assertEquals(GameStatus.Ongoing, status(game.positions.last()))
+        assertEquals("1-0", game.headers.result)
+    }
+
+    @Test
+    fun polgarKasparovReplaysAllPliesToTheResignation() {
+        val game = parsePgn(PgnFixtures.POLGAR_KASPAROV)
+        assertComplete(game)
+        assertEquals(84, game.sanMoves.size)
+        assertEquals("Kc8", game.sanMoves.last())
+        assertEquals(GameStatus.Ongoing, status(game.positions.last()))
+        assertEquals("1-0", game.headers.result)
+    }
+
+    @Test
+    fun deepBlueKasparovGameSixReplaysAllPliesToTheResignation() {
+        val game = parsePgn(PgnFixtures.DEEP_BLUE_KASPAROV)
+        assertComplete(game)
+        assertEquals(37, game.sanMoves.size)
+        assertEquals("c4", game.sanMoves.last())
+        assertEquals(GameStatus.Ongoing, status(game.positions.last()))
+        assertEquals("1-0", game.headers.result)
+    }
+
+    @Test
+    fun goldCoinsGameReplaysAllPliesToTheResignation() {
+        val game = parsePgn(PgnFixtures.GOLD_COINS_GAME)
+        assertComplete(game)
+        assertEquals(46, game.sanMoves.size)
+        assertEquals("Qg3", game.sanMoves.last())
+        assertEquals(GameStatus.Ongoing, status(game.positions.last()))
+        assertEquals("0-1", game.headers.result)
+    }
+
     // --- Special moves ---
 
     @Test
