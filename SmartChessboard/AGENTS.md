@@ -95,6 +95,23 @@ Expectations baked into the golden set:
   bit-identical duplicates. The promotion shot is the exception (Material-themed
   picker surface) and exists in both modes.
 
+## UI smoke tests (compose.uiTest v2)
+
+`shared/src/commonTest/.../uitest/` holds compose.uiTest v2 smoke flows: the
+production `App()` root composed over Koin overrides (`AppTestHarness.runAppTest` —
+fakes at the repository seams, in-memory `Settings`, runs without any Supabase
+credentials). **Contract targets: `:shared:iosSimulatorArm64Test` +
+`:shared:wasmJsTest`.** The `uitest/` package is excluded from `testAndroidHostTest`
+(see the exclude block in `shared/build.gradle.kts`): plain-JUnit4 host tests have no
+instrumentation — `AndroidComposeUiTestEnvironment` NPEs probing
+`android.os.Build.FINGERPRINT` (Robolectric detection), and commonTest classes cannot
+carry `@RunWith(RobolectricTestRunner)`; Android behavior stays covered by the
+ViewModel/reducer suites. Harness rules: assert by semantics (never pixels), keep
+ViewModel suspend work on `Dispatchers.Main.immediate` via the injectable dispatcher
+seams (a `withContext` hop escapes what `waitUntil` pumps on single-threaded wasm),
+and never let a test reach the network. The wasm browser run raises karma-mocha's 2s
+per-test timeout in `shared/karma.config.d/mocha-timeout.js`.
+
 ## IDE split (AGP 9.0.1 vs IntelliJ)
 
 IntelliJ tops out at AGP 9.0.0-alpha06 but the project is on AGP 9.0.1, so each

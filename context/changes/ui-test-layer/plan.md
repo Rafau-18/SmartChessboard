@@ -674,11 +674,11 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke
-- [ ] 3.2 `:shared:wasmJsTest` green incl. smoke
-- [ ] 3.3 Android host smoke runs green OR documented exclusion committed
-- [ ] 3.4 No-secrets run green (blank/absent Supabase creds)
-- [ ] 3.5 Full `:shared:testAndroidHostTest` green
+- [x] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke — 9b165f2
+- [x] 3.2 `:shared:wasmJsTest` green incl. smoke — 9b165f2
+- [x] 3.3 Android host smoke runs green OR documented exclusion committed — 9b165f2
+- [x] 3.4 No-secrets run green (blank/absent Supabase creds) — 9b165f2
+- [x] 3.5 Full `:shared:testAndroidHostTest` green — 9b165f2
 
 #### Manual
 
@@ -688,9 +688,9 @@ section updated to say so.
 
 #### Automated
 
-- [ ] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest`
-- [ ] 4.2 Android host per Phase 3 resolution
-- [ ] 4.3 No-secrets run still green
+- [x] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest` — 8dc9640
+- [x] 4.2 Android host per Phase 3 resolution — 8dc9640
+- [x] 4.3 No-secrets run still green — 8dc9640
 
 #### Manual
 
