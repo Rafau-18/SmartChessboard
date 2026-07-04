@@ -1,0 +1,157 @@
+# Build & sub-project tests: proves the app artifacts still build (Android APK,
+# web bundle) and runs the sub-project suites the PR gate doesn't cover
+# (firmware host tests, Supabase Edge Function + pgTAP tests).
+# Manual dispatch only for now:
+#   gh workflow run build.yml --ref main
+# Promote (some of) these jobs into the PR gate later if they earn their minutes.
+# No repository secrets are used anywhere in this workflow.
+#
+# Deliberately absent: iosApp xcodebuild — the project has no shared Xcode scheme
+# (only xcuserdata), TEAM_ID lives outside the repo, and macOS bills x10; the KMP
+# half of iOS (Shared framework) already compiles+links nightly in ios-tests.yml.
+name: Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    name: Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: SmartChessboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # BuildKonfig credentials are intentionally empty here — a debug APK builds
+      # (and boots to the sign-in screen) without Supabase keys.
+      - name: Assemble debug APK
+        run: ./gradlew :androidApp:assembleDebug --console=plain
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: SmartChessboard/androidApp/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+  web-dist:
+    name: Web production bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: SmartChessboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build wasm production bundle
+        run: ./gradlew :webApp:wasmJsBrowserDistribution --console=plain
+
+      - name: Upload web bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-production-bundle
+          path: SmartChessboard/webApp/build/dist/wasmJs/productionExecutable/
+          retention-days: 14
+
+  firmware:
+    name: Firmware build + host tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: firmware
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ESP-IDF toolchain + framework (~1.5 GB) land in ~/.platformio on first run.
+      - name: Cache PlatformIO packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: platformio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      # Device build (esp32dev, ESP-IDF): proves the firmware still compiles+links.
+      - name: Build firmware (esp32dev)
+        run: pio run
+
+      # Host tests (Unity, native env): wire codec + debounce logic, no hardware.
+      - name: Host tests (native)
+        run: pio test -e native
+
+  supabase-functions:
+    name: Supabase Edge Function tests (deno)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: supabase/functions/lichess-eval
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Unit tests with injected fetch/cache fakes — no real egress by design
+      # (see supabase/AGENTS.md), so blanket permissions are safe here.
+      - name: deno test
+        run: deno test --allow-all
+
+  supabase-db:
+    name: Supabase schema/RLS tests (pgTAP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Local Postgres via docker (ubuntu runners ship docker); migrations apply
+      # on start, then pgTAP suites in supabase/tests/ run against it.
+      - name: Start local database
+        run: supabase db start
+
+      - name: Run pgTAP tests
+        run: supabase test db
