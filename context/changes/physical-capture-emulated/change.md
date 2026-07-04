@@ -88,3 +88,4 @@ archived_at: null
   scope-cancellation / `disconnect()` to the BLE adapter swap and cross-referencing each module. No behavior
   change; `:shared:testAndroidHostTest` + ktlint re-verified green. Polish-language review mirror also saved
   (`reviews/impl-review.pl.md`). All findings now resolved.
+- 2026-07-04: **manual gate ACCEPTED** — code-read rows (1.5–3.6) re-verified by Claude (capability flags true/true/false, wasm DI binds only `Settings`, interpreter returns only `legalMoves`-sourced moves); device rows (4.4–4.6, 5.6) user-confirmed. impl-review already APPROVED. Closing via `/10x-archive`.

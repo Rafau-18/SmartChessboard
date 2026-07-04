@@ -557,7 +557,7 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 ## Progress
 
-> Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
+> Convention: `- [x]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
 ### Phase 1: Board domain port & event model
 
@@ -580,8 +580,8 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Manual
 
-- [ ] 2.3 Golden vectors spot-checked against §1.3 by hand (incl. start-position snapshot bytes)
-- [ ] 2.4 Contract edit minimal + both PRD mirror lines (firmware + product) present and dated
+- [x] 2.3 Golden vectors spot-checked against §1.3 by hand (incl. start-position snapshot bytes)
+- [x] 2.4 Contract edit minimal + both PRD mirror lines (firmware + product) present and dated
 
 ### Phase 3: Emulated board core
 
@@ -592,8 +592,8 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Manual
 
-- [ ] 3.3 Emission pipeline confirmed: every event passes encode → decode, no shortcut path
-- [ ] 3.4 Disconnect semantics match §1.7: offline changes surface only via reconnect snapshot
+- [x] 3.3 Emission pipeline confirmed: every event passes encode → decode, no shortcut path
+- [x] 3.4 Disconnect semantics match §1.7: offline changes surface only via reconnect snapshot
 
 ### Phase 4: Scenario helpers, demo end-to-end, cross-target green
 
@@ -606,5 +606,5 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Manual
 
-- [ ] 4.5 Demo test reads as S-06 documentation; public API sufficient
-- [ ] 4.6 Both capture orders + a castling interleaving exercised in asserted streams
+- [x] 4.5 Demo test reads as S-06 documentation; public API sufficient
+- [x] 4.6 Both capture orders + a castling interleaving exercised in asserted streams

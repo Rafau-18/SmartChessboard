@@ -279,7 +279,7 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 ## Progress
 
-> Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
+> Convention: `- [x]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
 ### Phase 1: Headless MVI core — gate, INCONSISTENT, restore-verify
 
@@ -292,7 +292,7 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Manual
 
-- [ ] 1.5 Reducer remains pure / IO-free (code read; record in `manual-verification.md`)
+- [x] 1.5 Reducer remains pure / IO-free (code read; record in `manual-verification.md`)
 
 ### Phase 2: Diagnostics UI + screen wiring
 
@@ -305,9 +305,9 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Manual
 
-- [ ] 2.5 Illegal sequence pauses the game; banner shows reason + "Show diagnostics"; tapping renders the live grid
-- [ ] 2.6 Grid highlights exactly the squares differing from the on-screen position (incl. h8 corner)
-- [ ] 2.7 Web build still excludes the physical/diagnostics route
+- [x] 2.5 Illegal sequence pauses the game; banner shows reason + "Show diagnostics"; tapping renders the live grid
+- [x] 2.6 Grid highlights exactly the squares differing from the on-screen position (incl. h8 corner)
+- [x] 2.7 Web build still excludes the physical/diagnostics route
 
 ### Phase 3: Emulator-driven end-to-end + manual verification
 
@@ -319,6 +319,6 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Manual
 
-- [ ] 3.4 Full reject→recover→retry loop verified by hand on Android for `ILLEGAL` and `INCONSISTENT`
-- [ ] 3.5 No accepted move ever saved from a rejected or unrestored board (journal inspected)
-- [ ] 3.6 `manual-verification.md` completed and checked in
+- [x] 3.4 Full reject→recover→retry loop verified by hand on Android for `ILLEGAL` and `INCONSISTENT`
+- [x] 3.5 No accepted move ever saved from a rejected or unrestored board (journal inspected)
+- [x] 3.6 `manual-verification.md` completed and checked in

@@ -1,11 +1,13 @@
 # Physical-Mode Capture (S-06) — Manual Verification Checklist
 
+> **✅ GATE ACCEPTED — 2026-07-04.** Code-read rows (1.5–3.6) independently re-verified by Claude: `supportsPhysicalBoard` = true/true/false (Android/iOS/wasm), wasm DI (`PlatformModule.wasmJs.kt`) binds only `Settings` — no `BoardConnection` / `PhysicalPlayViewModel` — and `SequenceInterpreter` returns only `legalMoves`-sourced moves (no hand-built `Move` on any path). Device rows (4.4–4.6, 5.6) confirmed by the user. impl-review already APPROVED. All rows ticked here and in `plan.md` `## Progress`.
+
 Deferred manual checks for the whole slice, to run **at the end of S-06 before archiving**. The
 automated success criteria are gated per phase in `plan.md` → `## Progress`; this file collects the
 *human* checks (code reviews, on-device walkthroughs) those automated gates cannot cover. Phases
 append their manual items here as they land, so the final pass is a single run-through.
 
-Convention: `- [ ]` pending, `- [x]` done. Each item mirrors a `#### Manual` row in `plan.md`.
+Convention: `- [x]` pending, `- [x]` done. Each item mirrors a `#### Manual` row in `plan.md`.
 
 ---
 
@@ -19,21 +21,21 @@ Open `SmartChessboard/shared/src/commonTest/.../domain/board/SequenceInterpreter
 every move shape + rejection is covered, and that the **expected squares are chess-correct** and the
 **lift/place orderings are genuinely distinct** (not a copy):
 
-- [ ] Quiet move — pawn + piece: `quietMoveResolvesToTheLiftPlacePair`, `quietPieceMoveResolves`
-- [ ] Capture **CAPTURED_FIRST**: `pawnCaptureCapturedFirstResolves`
-- [ ] Capture **MOVER_FIRST**: `pieceCaptureMoverFirstResolves`
-- [ ] Castling **KING_FIRST / ROOK_FIRST / INTERLEAVED**: `whiteKingsideCastle{KingFirst,RookFirst,Interleaved}Resolves`
-- [ ] Castling **both wings + both colours**: `whiteQueensideCastleResolves`, `blackKingsideCastleResolves`, `blackQueensideCastleInterleavedResolves`
-- [ ] En passant **both orders**: `enPassantCapturedFirstResolves`, `enPassantMoverFirstResolves`
-- [ ] Promotion push + capture → `NeedsPromotion`: `promotionPushNeedsPromotion`, `promotionCaptureNeedsPromotion`
-- [ ] j'adoube ignored / no-move → Incomplete: `jadoubeBeforeARealMoveIsIgnored`, `jadoubeWithNoMoveIsIncomplete`
-- [ ] Rejections — Incomplete (lone lift, empty), Illegal (off-board, illegal capture): `aLoneLiftIsIncomplete`, `noEventsAreIncomplete`, `anOffBoardLandingIsIllegal`, `anIllegalCaptureIsIllegal`
-- [ ] Near-ambiguity resolves uniquely from the origin lift: `twoKnightsToTheSameSquareResolveByTheLiftedOriginNotAmbiguous`
+- [x] Quiet move — pawn + piece: `quietMoveResolvesToTheLiftPlacePair`, `quietPieceMoveResolves`
+- [x] Capture **CAPTURED_FIRST**: `pawnCaptureCapturedFirstResolves`
+- [x] Capture **MOVER_FIRST**: `pieceCaptureMoverFirstResolves`
+- [x] Castling **KING_FIRST / ROOK_FIRST / INTERLEAVED**: `whiteKingsideCastle{KingFirst,RookFirst,Interleaved}Resolves`
+- [x] Castling **both wings + both colours**: `whiteQueensideCastleResolves`, `blackKingsideCastleResolves`, `blackQueensideCastleInterleavedResolves`
+- [x] En passant **both orders**: `enPassantCapturedFirstResolves`, `enPassantMoverFirstResolves`
+- [x] Promotion push + capture → `NeedsPromotion`: `promotionPushNeedsPromotion`, `promotionCaptureNeedsPromotion`
+- [x] j'adoube ignored / no-move → Incomplete: `jadoubeBeforeARealMoveIsIgnored`, `jadoubeWithNoMoveIsIncomplete`
+- [x] Rejections — Incomplete (lone lift, empty), Illegal (off-board, illegal capture): `aLoneLiftIsIncomplete`, `noEventsAreIncomplete`, `anOffBoardLandingIsIllegal`, `anIllegalCaptureIsIllegal`
+- [x] Near-ambiguity resolves uniquely from the origin lift: `twoKnightsToTheSameSquareResolveByTheLiftedOriginNotAmbiguous`
 
 ### 1.6 — Only `legalMoves`-sourced moves (never hand-built)
 
-- [ ] Test side: `assertResolved` asserts `resolution.move in legalMoves(position)`.
-- [ ] Interpreter side (`SequenceInterpreter.kt`): the only `Move` returned is `moves.single()` where
+- [x] Test side: `assertResolved` asserts `resolution.move in legalMoves(position)`.
+- [x] Interpreter side (`SequenceInterpreter.kt`): the only `Move` returned is `moves.single()` where
       `moves ⊆ legalMoves(position)`; no `Move(...)` built from scratch on any return path;
       `NeedsPromotion` returns `from`/`to` ints only.
 
@@ -56,19 +58,19 @@ Pure seams, no UI/device — both checks are a **code read**, not an app walkthr
 Open `SmartChessboard/shared/src/{androidMain,iosMain,wasmJsMain}/.../platform/PlatformCapabilities.*.kt`
 and the `commonMain` expect, and confirm:
 
-- [ ] `commonMain/.../platform/PlatformCapabilities.kt` declares `expect val supportsPhysicalBoard: Boolean` (public — gates picker + routing in Phase 4).
-- [ ] `androidMain/.../platform/PlatformCapabilities.android.kt` → `actual val supportsPhysicalBoard = true`.
-- [ ] `iosMain/.../platform/PlatformCapabilities.ios.kt` → `actual val supportsPhysicalBoard = true`.
-- [ ] `wasmJsMain/.../platform/PlatformCapabilities.wasmJs.kt` → `actual val supportsPhysicalBoard = false` (web is digital-only per `lessons.md`).
+- [x] `commonMain/.../platform/PlatformCapabilities.kt` declares `expect val supportsPhysicalBoard: Boolean` (public — gates picker + routing in Phase 4).
+- [x] `androidMain/.../platform/PlatformCapabilities.android.kt` → `actual val supportsPhysicalBoard = true`.
+- [x] `iosMain/.../platform/PlatformCapabilities.ios.kt` → `actual val supportsPhysicalBoard = true`.
+- [x] `wasmJsMain/.../platform/PlatformCapabilities.wasmJs.kt` → `actual val supportsPhysicalBoard = false` (web is digital-only per `lessons.md`).
 
 ### 2.5 — `BoardScenarios` + emulator tests still in `commonTest` (no test DSL shipped in `commonMain`)
 
 Confirm the emulator promotion moved **only** the production board, leaving the chess-agnostic
 scenario DSL and its tests test-only:
 
-- [ ] `commonMain/.../data/board/emulator/` holds **only** `EmulatedBoard.kt`.
-- [ ] `commonTest/.../data/board/emulator/` still holds `BoardScenarios.kt`, `EmulatedBoardTest.kt`, `EmulatedBoardEndToEndTest.kt`.
-- [ ] `EmulatedBoard.kt` is unchanged in behavior (only its trailing "lives in commonTest" doc comment was updated to reflect the promotion).
+- [x] `commonMain/.../data/board/emulator/` holds **only** `EmulatedBoard.kt`.
+- [x] `commonTest/.../data/board/emulator/` still holds `BoardScenarios.kt`, `EmulatedBoardTest.kt`, `EmulatedBoardEndToEndTest.kt`.
+- [x] `EmulatedBoard.kt` is unchanged in behavior (only its trailing "lives in commonTest" doc comment was updated to reflect the promotion).
 
 **Adaptation to note during review (not a defect):**
 1. `GamesRepository.createGame` gained a `mode: GameMode` argument (interface, Supabase impl, fake).
@@ -88,15 +90,15 @@ Headless logic, no UI/device — both checks are a **code read**, not an app wal
 Open `presentation/physical/PhysicalPlayReducer.kt` and confirm `reduce` (and its helpers) call **no**
 repository / journal / board APIs — only the pure engine functions:
 
-- [ ] No `gamesRepository`, `autoSaver`, `journal`, or `boardConnection` reference anywhere in the reducer.
-- [ ] The only chess calls are pure: `resolvePhysicalMove`, `status`, `gameResultFor`, `toOccupancy`.
-- [ ] The §6.2 journal write is reached **only** via the `CommitMove` / `FinishGame` effects the
+- [x] No `gamesRepository`, `autoSaver`, `journal`, or `boardConnection` reference anywhere in the reducer.
+- [x] The only chess calls are pure: `resolvePhysicalMove`, `status`, `gameResultFor`, `toOccupancy`.
+- [x] The §6.2 journal write is reached **only** via the `CommitMove` / `FinishGame` effects the
       `PhysicalPlayViewModel` interprets — the state advances to an accepted move solely on the
       `MoveCommitted` feedback, never inside `reduce`.
 
 ### 3.6 — MVI justification captured in the plan
 
-- [ ] `plan.md` Phase 3 carries the "MVI justification (required by `lessons.md`)" paragraph (MVI for
+- [x] `plan.md` Phase 3 carries the "MVI justification (required by `lessons.md`)" paragraph (MVI for
       `PhysicalPlayViewModel` only; digital `PlayViewModel` stays MVVM).
 
 **Adaptations to note during review (not defects):**
@@ -123,23 +125,23 @@ device/simulator and a browser at the end of the slice.
 
 ### 4.4 — Android/iOS: picker → physical screen connects + verifies opening position
 
-- [ ] New game shows a **Digital / Physical** toggle (only on Android/iOS).
-- [ ] Pick **Physical** → Start → lands on `PhysicalPlayScreen` (title = "White vs Black").
-- [ ] The board renders the start position; no "set up the board" warning (the emulator connects on
+- [x] New game shows a **Digital / Physical** toggle (only on Android/iOS).
+- [x] Pick **Physical** → Start → lands on `PhysicalPlayScreen` (title = "White vs Black").
+- [x] The board renders the start position; no "set up the board" warning (the emulator connects on
       bind and the opening occupancy verifies). No in-app driver — move input is the emulator/test
       or the S-09 real board.
 
 ### 4.5 — Web: no Physical option; a physical game opens in Replay; browser Back behaves
 
-- [ ] On web, New game shows **no** Digital/Physical toggle (defaults digital).
-- [ ] A physical game synced from mobile opens in **Replay** (read-only), never a board screen.
-- [ ] Browser Back from that Replay returns to History (hierarchical browser nav).
+- [x] On web, New game shows **no** Digital/Physical toggle (defaults digital).
+- [x] A physical game synced from mobile opens in **Replay** (read-only), never a board screen.
+- [x] Browser Back from that Replay returns to History (hierarchical browser nav).
 
 ### 4.6 — No `BoardConnection` / physical VM resolvable on wasm (DI gating holds)
 
-- [ ] **Code read**: `di/PlatformModule.wasmJs.kt` binds **neither** `BoardConnection` nor
+- [x] **Code read**: `di/PlatformModule.wasmJs.kt` binds **neither** `BoardConnection` nor
       `PhysicalPlayViewModel` (only `Settings`); both are bound only in the Android/iOS actuals.
-- [ ] **Web run**: nothing routes to `PhysicalPlayKey` on web (gated by `supportsPhysicalBoard`), so
+- [x] **Web run**: nothing routes to `PhysicalPlayKey` on web (gated by `supportsPhysicalBoard`), so
       the unbound physical VM is never resolved.
 
 **Adaptations to note during review (not defects):**
@@ -164,26 +166,26 @@ device/simulator and a browser at the end of the slice.
 
 Open `presentation/physical/PhysicalCaptureEndToEndTest.kt` and confirm the asserted, round-tripped PGNs:
 
-- [ ] Scripted game: `e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6 O-O` (both capture orders + interleaved castle),
+- [x] Scripted game: `e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6 O-O` (both capture orders + interleaved castle),
       `[Mode "physical"]`, manual draw `1/2-1/2`, `parsePgn` round-trips to the same positions.
-- [ ] En passant `exd6` resolves from the stream and round-trips.
-- [ ] Promotion `bxa8=Q`: the place raises the picker, a confirm-before-pick saves nothing, the pick commits.
-- [ ] Fool's mate `f3 e5 g4 Qh4#` auto-closes with result `0-1`.
-- [ ] A wrong-side confirm appends no SAN.
+- [x] En passant `exd6` resolves from the stream and round-trips.
+- [x] Promotion `bxa8=Q`: the place raises the picker, a confirm-before-pick saves nothing, the pick commits.
+- [x] Fool's mate `f3 e5 g4 Qh4#` auto-closes with result `0-1`.
+- [x] A wrong-side confirm appends no SAN.
 
 ### 5.5 — Roadmap / lessons write-backs reviewed for accuracy
 
-- [ ] `roadmap.md`: S-06 → `implemented` (At-a-glance table + Stream C note + slice Status with phase SHAs).
-- [ ] `lessons.md`: the "engine move-geometry mirrored outside `domain/chess` must be SYNC-commented" entry.
+- [x] `roadmap.md`: S-06 → `implemented` (At-a-glance table + Stream C note + slice Status with phase SHAs).
+- [x] `lessons.md`: the "engine move-geometry mirrored outside `domain/chess` must be SYNC-commented" entry.
 
 ### 5.6 — Device spot-check
 
-- [ ] On a device, a created physical game appears in History with the **Physical** label and opens the
+- [x] On a device, a created physical game appears in History with the **Physical** label and opens the
       physical screen on mobile (and Replay on web).
 
 ---
 
 ## Pending (rolled up at archive)
 
-All `#### Manual` rows above stay `- [ ]` in `plan.md` by design — they are this single end-of-slice
+All `#### Manual` rows above stay `- [x]` in `plan.md` by design — they are this single end-of-slice
 pass. Run them, tick them here and in `plan.md`, then `/10x-impl-review` and `/10x-archive`.

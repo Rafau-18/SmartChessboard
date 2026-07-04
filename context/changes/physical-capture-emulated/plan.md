@@ -671,7 +671,7 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 ## Progress
 
-> Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
+> Convention: `- [x]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
 ### Phase 1: Sequence Interpreter (pure domain)
 
@@ -684,8 +684,8 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Manual
 
-- [ ] 1.5 Corpus reviewed for all move types, both capture orders, all castling orders, every rejection outcome
-- [ ] 1.6 Confirmed the interpreter only returns `legalMoves`-sourced moves
+- [x] 1.5 Corpus reviewed for all move types, both capture orders, all castling orders, every rejection outcome
+- [x] 1.6 Confirmed the interpreter only returns `legalMoves`-sourced moves
 
 ### Phase 2: Data & Platform Seams
 
@@ -697,8 +697,8 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Manual
 
-- [ ] 2.4 `supportsPhysicalBoard` actuals confirmed (true Android/iOS, false wasm)
-- [ ] 2.5 `BoardScenarios` + emulator tests confirmed still in `commonTest`
+- [x] 2.4 `supportsPhysicalBoard` actuals confirmed (true Android/iOS, false wasm)
+- [x] 2.5 `BoardScenarios` + emulator tests confirmed still in `commonTest`
 
 ### Phase 3: Physical Play State Machine (MVI core, headless)
 
@@ -711,8 +711,8 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Manual
 
-- [ ] 3.5 Reducer reviewed for IO-freedom
-- [ ] 3.6 MVI justification confirmed captured in the plan
+- [x] 3.5 Reducer reviewed for IO-freedom
+- [x] 3.6 MVI justification confirmed captured in the plan
 
 ### Phase 4: Physical Play UI, Navigation & DI
 
@@ -724,9 +724,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Manual
 
-- [ ] 4.4 Android/iOS: picker shows Physical → create → physical screen connects + verifies opening position
-- [ ] 4.5 Web: no Physical option; synced physical game opens in Replay; browser Back behaves
-- [ ] 4.6 Confirmed no `BoardConnection`/physical VM resolvable on wasm
+- [x] 4.4 Android/iOS: picker shows Physical → create → physical screen connects + verifies opening position
+- [x] 4.5 Web: no Physical option; synced physical game opens in Replay; browser Back behaves
+- [x] 4.6 Confirmed no `BoardConnection`/physical VM resolvable on wasm
 
 ### Phase 5: Emulator-Driven End-to-End & Write-Backs
 
@@ -738,6 +738,6 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Manual
 
-- [ ] 5.4 Stored E2E PGN reviewed (legal moves, `[Mode "physical"]`, correct result tag)
-- [ ] 5.5 Roadmap/lessons write-backs reviewed for accuracy
-- [ ] 5.6 Device spot-check: physical game in History with Physical label, opens physical screen on mobile
+- [x] 5.4 Stored E2E PGN reviewed (legal moves, `[Mode "physical"]`, correct result tag)
+- [x] 5.5 Roadmap/lessons write-backs reviewed for accuracy
+- [x] 5.6 Device spot-check: physical game in History with Physical label, opens physical screen on mobile

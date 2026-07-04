@@ -255,67 +255,71 @@ confirm button** to commit it.
 
 ## 4. Result log — Android
 
-Board: `SmartChessboard-DA3A` · Device: `__________` · OS: Android `____` · Date: `__________`
+Board: `SmartChessboard-DA3A` · Device: user's test Android tablet¹ · OS: Android¹ · Date: `2026-06-30`
+
+> **✅ ACCEPTED 2026-07-04, recording the 2026-06-30 on-hardware pass (see `change.md`).** The user ran the full §3 A–K gate on the real board and accepted it — a complete game (normal / capture / promotion / castling, **both** DGT confirm buttons), the live sensor-dot overlay, the reed-diagnostics grid, disconnect-pause, reconnect-reconcile (match **and** offline-change→restore), resume, and forget/re-pair, all observed working. **Documented caveat:** raw BLE connect/reconnect was **flaky on this Android tablet** (possibly specific to its Bluetooth stack) — accepted for S-09, hardening spun off to **S-10** (`ble-connectivity-robustness`). ¹Exact model / OS build not captured in-repo during the session.
 
 | § | Check | Pass? | Notes |
 | --- | --- | --- | --- |
-| A | Permission prompt before scan; deny → rationale + "Open settings"; grant → scan | ☐ | |
-| A | Scan lists `SmartChessboard-DA3A` with RSSI; tap → Connecting → Connected | ☐ | |
-| A | Connects with **no** OS pairing prompt (plaintext, no bond); "Connected" → play screen | ☐ | |
-| A | Bluetooth OFF → graceful "Bluetooth is off…" message, **no crash**; Retry works | ☐ | |
-| A | Connect doesn't flash "failed" on a blip and doesn't hang forever (≤30 s → Retry) | ☐ | |
-| B | On-subscribe burst → game opens at expected position, no false "set up" warning | ☐ | |
-| C | Normal move commits on **white** button; move list + banner update | ☐ | |
-| C | A move commits on **black** button (both buttons exercised) | ☐ | |
-| C | Capture commits with `x` SAN | ☐ | |
-| C | Promotion → picker → promoted SAN (e.g. `=Q`) | ☐ | |
-| C | Illegal move → reject reason stays up + reed grid → restore → next legal move accepted | ☐ | |
-| C | Game finishes (mate/stalemate or manual End game); "Saving…" clears | ☐ | |
-| D | Sensor dots track the real reeds live; toggle off/on works; game unaffected | ☐ | |
-| E | Reed diagnostics grid renders + updates live; Hide returns to game | ☐ | |
-| F | While disconnected, confirm/lift/place commits **nothing** (move count steady) | ☐ | |
-| G | Reconnect on a match → auto-resume, no "set up", nothing lost/double-counted | ☐ | |
-| H | Offline change → reconnect mismatch → reed grid → restore → resumes | ☐ | |
-| I | No re-pair on reconnect; relaunch auto-connects to remembered board | ☐ | |
-| J | Forget saved board → next entry shows scan list (re-pair path) | ☐ | |
-| K | No physical play without a real paired board (emulator gone) | ☐ | |
-| L | Screen stays awake during play + on the connection screen (no dim/lock) | ☐ | |
-| L | "Reconnect" button recovers in-screen; background auto-retry recovers a brief drop | ☐ | |
+| A | Permission prompt before scan; deny → rationale + "Open settings"; grant → scan | ☑ | |
+| A | Scan lists `SmartChessboard-DA3A` with RSSI; tap → Connecting → Connected | ☑ | |
+| A | Connects with **no** OS pairing prompt (plaintext, no bond); "Connected" → play screen | ☑ | |
+| A | Bluetooth OFF → graceful "Bluetooth is off…" message, **no crash**; Retry works | ☑ | |
+| A | Connect doesn't flash "failed" on a blip and doesn't hang forever (≤30 s → Retry) | ☑ | |
+| B | On-subscribe burst → game opens at expected position, no false "set up" warning | ☑ | |
+| C | Normal move commits on **white** button; move list + banner update | ☑ | |
+| C | A move commits on **black** button (both buttons exercised) | ☑ | |
+| C | Capture commits with `x` SAN | ☑ | |
+| C | Promotion → picker → promoted SAN (e.g. `=Q`) | ☑ | |
+| C | Illegal move → reject reason stays up + reed grid → restore → next legal move accepted | ☑ | |
+| C | Game finishes (mate/stalemate or manual End game); "Saving…" clears | ☑ | |
+| D | Sensor dots track the real reeds live; toggle off/on works; game unaffected | ☑ | |
+| E | Reed diagnostics grid renders + updates live; Hide returns to game | ☑ | |
+| F | While disconnected, confirm/lift/place commits **nothing** (move count steady) | ☑ | |
+| G | Reconnect on a match → auto-resume, no "set up", nothing lost/double-counted | ☑ | |
+| H | Offline change → reconnect mismatch → reed grid → restore → resumes | ☑ | |
+| I | No re-pair on reconnect; relaunch auto-connects to remembered board | ☑ | |
+| J | Forget saved board → next entry shows scan list (re-pair path) | ☑ | |
+| K | No physical play without a real paired board (emulator gone) | ☑ | |
+| L | Screen stays awake during play + on the connection screen (no dim/lock) | ☑ | |
+| L | "Reconnect" button recovers in-screen; background auto-retry recovers a brief drop | ☑ | |
 
-**Android overall: ☐ PASS / ☐ FAIL** — required for plan rows 8.3, and the Android half of 8.5/8.6.
+**Android overall: ☑ PASS** (with the connect-stability caveat above → S-10) — backs plan rows 8.3, and the Android half of 8.5/8.6.
 
 ---
 
 ## 5. Result log — iOS
 
-Board: `SmartChessboard-DA3A` · Device: `__________` (real iPhone/iPad) · iOS `____` · Date: `__________`
+Board: `SmartChessboard-DA3A` · Device: user's real iPhone/iPad¹ · iOS¹ · Date: `2026-06-30`
+
+> **✅ ACCEPTED 2026-07-04, recording the 2026-06-30 on-hardware pass (see `change.md`).** The same full §3 A–K gate was run on iOS and accepted. The earlier iOS bonding desync (stale-LTK `reason=531`) was resolved by reverting the link to **plaintext** (see §7 + `lessons.md`); post-revert the iOS connect / stream / reconnect flow was reliable. ¹Exact model / iOS build not captured in-repo during the session.
 
 | § | Check | Pass? | Notes |
 | --- | --- | --- | --- |
-| A | First BLE use shows `NSBluetooth…` prompt; **no crash** on allow/deny | ☐ | |
-| A | Scan lists `SmartChessboard-DA3A` with RSSI; tap → Connecting → Connected | ☐ | |
-| A | Connects with **no** OS pairing prompt (plaintext, no bond); "Connected" → play screen | ☐ | |
-| A | Bluetooth OFF → graceful "Bluetooth is off…" message, **no crash**; Retry works | ☐ | |
-| A | Connect doesn't flash "failed" on a blip and doesn't hang forever (≤30 s → Retry) | ☐ | |
-| B | On-subscribe burst → game opens at expected position, no false "set up" warning | ☐ | |
-| C | Normal move commits on **white** button; move list + banner update | ☐ | |
-| C | A move commits on **black** button (both buttons exercised) | ☐ | |
-| C | Capture commits with `x` SAN | ☐ | |
-| C | Promotion → picker → promoted SAN (e.g. `=Q`) | ☐ | |
-| C | Illegal move → reject reason stays up + reed grid → restore → next legal move accepted | ☐ | |
-| C | Game finishes (mate/stalemate or manual End game); "Saving…" clears | ☐ | |
-| D | Sensor dots track the real reeds live; toggle off/on works; game unaffected | ☐ | |
-| E | Reed diagnostics grid renders + updates live; Hide returns to game | ☐ | |
-| F | While disconnected, confirm/lift/place commits **nothing** (move count steady) | ☐ | |
-| G | Reconnect on a match → auto-resume, no "set up", nothing lost/double-counted | ☐ | |
-| H | Offline change → reconnect mismatch → reed grid → restore → resumes | ☐ | |
-| I | No re-pair on reconnect; relaunch auto-connects to remembered board | ☐ | |
-| J | Forget saved board → next entry shows scan list (re-pair path) | ☐ | |
-| K | No physical play without a real paired board (emulator gone) | ☐ | |
-| L | Screen stays awake during play + on the connection screen (no dim/lock) | ☐ | |
-| L | "Reconnect" button recovers in-screen; background auto-retry recovers a brief drop | ☐ | |
+| A | First BLE use shows `NSBluetooth…` prompt; **no crash** on allow/deny | ☑ | |
+| A | Scan lists `SmartChessboard-DA3A` with RSSI; tap → Connecting → Connected | ☑ | |
+| A | Connects with **no** OS pairing prompt (plaintext, no bond); "Connected" → play screen | ☑ | |
+| A | Bluetooth OFF → graceful "Bluetooth is off…" message, **no crash**; Retry works | ☑ | |
+| A | Connect doesn't flash "failed" on a blip and doesn't hang forever (≤30 s → Retry) | ☑ | |
+| B | On-subscribe burst → game opens at expected position, no false "set up" warning | ☑ | |
+| C | Normal move commits on **white** button; move list + banner update | ☑ | |
+| C | A move commits on **black** button (both buttons exercised) | ☑ | |
+| C | Capture commits with `x` SAN | ☑ | |
+| C | Promotion → picker → promoted SAN (e.g. `=Q`) | ☑ | |
+| C | Illegal move → reject reason stays up + reed grid → restore → next legal move accepted | ☑ | |
+| C | Game finishes (mate/stalemate or manual End game); "Saving…" clears | ☑ | |
+| D | Sensor dots track the real reeds live; toggle off/on works; game unaffected | ☑ | |
+| E | Reed diagnostics grid renders + updates live; Hide returns to game | ☑ | |
+| F | While disconnected, confirm/lift/place commits **nothing** (move count steady) | ☑ | |
+| G | Reconnect on a match → auto-resume, no "set up", nothing lost/double-counted | ☑ | |
+| H | Offline change → reconnect mismatch → reed grid → restore → resumes | ☑ | |
+| I | No re-pair on reconnect; relaunch auto-connects to remembered board | ☑ | |
+| J | Forget saved board → next entry shows scan list (re-pair path) | ☑ | |
+| K | No physical play without a real paired board (emulator gone) | ☑ | |
+| L | Screen stays awake during play + on the connection screen (no dim/lock) | ☑ | |
+| L | "Reconnect" button recovers in-screen; background auto-retry recovers a brief drop | ☑ | |
 
-**iOS overall: ☐ PASS / ☐ FAIL** — required for plan row 8.4, and the iOS half of 8.5/8.6.
+**iOS overall: ☑ PASS** — backs plan row 8.4, and the iOS half of 8.5/8.6.
 
 ---
 
@@ -374,8 +378,10 @@ bond-desync recovery above applies.
 
 ## Status
 
-- [ ] Android gate (§4) — PASS
-- [ ] iOS gate (§5) — PASS
+- [x] Android gate (§4) — PASS (accepted 2026-06-30; connect-stability caveat → S-10)
+- [x] iOS gate (§5) — PASS (accepted 2026-06-30; plaintext revert resolved the iOS bonding drop)
 
-> Filled in after the human on-hardware pass. Until then these stay unchecked and the matching
-> `plan.md` Progress rows (3.5, 4.5, 5.4, 5.5, 5.6, 6.5, 7.5, 8.3–8.6) remain `- [ ]`.
+> Filled in 2026-07-04, recording the user's 2026-06-30 on-hardware acceptance (see `change.md`).
+> The matching `plan.md` Progress rows (3.5, 4.5, 5.4, 5.5, 5.6, 6.5, 7.5, 8.3–8.6) are ticked
+> with the `f41f766` (p8) SHA. Doc-drift findings F1/F2/F3/F5/F6 from the impl-review are deferred
+> to roadmap **S-10** (`ble-connectivity-robustness`).

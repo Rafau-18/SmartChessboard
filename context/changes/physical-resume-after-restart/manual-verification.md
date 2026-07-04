@@ -1,14 +1,16 @@
 # Manual verification — physical-resume-after-restart (S-08 / FR-013)
 
+> **✅ GATE ACCEPTED — 2026-07-04.** User completed the on-device resume pass (match→auto-resume, mismatch→restore→resume, resumable-history affordance; rows 2.4–2.6) and the Phase-1 code-read (1.4). `/10x-impl-review` intentionally skipped per user decision. All rows ticked here and in `plan.md` `## Progress`.
+
 Deferred manual checks collected for an end-of-slice pass, per the team's
 "defer code-read manual items" rule. Automated criteria are flipped in
-`plan.md` `## Progress`; the rows below stay `- [ ]` there until confirmed.
+`plan.md` `## Progress`; the rows below stay `- [x]` there until confirmed.
 
 ## Phase 1 — Resume gating core
 
 ### 1.4 Code-read (deferred to end-of-slice)
 
-- [ ] `acceptanceBlocked` truly blocks acceptance on resume until a matching
+- [x] `acceptanceBlocked` truly blocks acceptance on resume until a matching
   snapshot clears `awaitingResumeConfirm`, and the resume-match path leaves the
   board in GAME mode via the existing `effectsForModeChange` edge —
   `SetMode(GAME)` emitted once when diagnostics had been open (restore path),
@@ -39,16 +41,16 @@ Deferred manual checks collected for an end-of-slice pass, per the team's
 ## Phase 2 — device/on-device manual checks
 
 Device-dependent — collected here for the end-of-slice on-device pass (no device
-in the implementation session). The rows stay `- [ ]` in `plan.md` `## Progress`
+in the implementation session). The rows stay `- [x]` in `plan.md` `## Progress`
 until confirmed on a device/emulator. Automated criteria 2.1–2.3 are flipped and
 committed; these manual rows are what the slice close-out still needs.
 
-- [ ] 2.4 On device: restart mid physical game, tap the in-progress game in
+- [x] 2.4 On device: restart mid physical game, tap the in-progress game in
   History → expected position renders, board matches → auto-resume, play the next
   move, confirm no move was lost.
-- [ ] 2.5 Mismatched board on resume → diagnostics open and acceptance blocked →
+- [x] 2.5 Mismatched board on resume → diagnostics open and acceptance blocked →
   restore the board → play resumes automatically.
-- [ ] 2.6 History clearly presents the in-progress physical game as resumable.
+- [x] 2.6 History clearly presents the in-progress physical game as resumable.
 
 **Automated evidence backing the on-device pass** (the gate is logic the E2E
 already proves; the device pass confirms it on a real screen/board):

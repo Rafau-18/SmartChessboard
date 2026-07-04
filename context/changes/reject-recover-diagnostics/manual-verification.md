@@ -1,11 +1,13 @@
 # Reject, Recover & Diagnostics (S-07) — Manual Verification Checklist
 
+> **✅ GATE ACCEPTED — 2026-07-04.** User ran the on-device reject→recover→retry walkthrough (`ILLEGAL` + `INCONSISTENT`, item 3.4) and the remaining device/browser checks; the code-read / automated-backed rows were already discharged in-file. `/10x-impl-review` intentionally skipped per user decision. All rows ticked here and in `plan.md` `## Progress`.
+
 Deferred manual checks for the whole slice, to run **at the end of S-07 before archiving**. The
 automated success criteria are gated per phase in `plan.md` → `## Progress`; this file collects the
 *human* checks (code reviews, on-device walkthroughs) those automated gates cannot cover. Phases
 append their manual items here as they land, so the final pass is a single run-through.
 
-Convention: `- [ ]` pending, `- [x]` done. Each item mirrors a `#### Manual` row in `plan.md`.
+Convention: `- [x]` pending, `- [x]` done. Each item mirrors a `#### Manual` row in `plan.md`.
 
 ---
 
@@ -19,9 +21,9 @@ Open `presentation/physical/PhysicalPlayReducer.kt` and confirm `reduce` (and it
 new `effectsForModeChange`) call **no** repository / journal / board-connection / coroutine APIs —
 only the pure engine functions:
 
-- [ ] No `gamesRepository`, `autoSaver`, `journal`, or `boardConnection` reference anywhere in the reducer.
-- [ ] The only chess/board calls are pure: `resolvePhysicalMove`, `status`, `gameResultFor`, `toOccupancy`.
-- [ ] The new S-07 transitions emit only `PhysicalEffect`s (`Send(SetMode / RequestSnapshot)`); the
+- [x] No `gamesRepository`, `autoSaver`, `journal`, or `boardConnection` reference anywhere in the reducer.
+- [x] The only chess/board calls are pure: `resolvePhysicalMove`, `status`, `gameResultFor`, `toOccupancy`.
+- [x] The new S-07 transitions emit only `PhysicalEffect`s (`Send(SetMode / RequestSnapshot)`); the
       diagnostic-mode IO is reached **only** via those effects the `PhysicalPlayViewModel` interprets.
 
 **Code-read performed 2026-06-19 (passed; formal tick deferred to the end-of-slice pass):** the
@@ -46,12 +48,12 @@ touches no IO. The §6.2 gate stays effect-only (`CommitMove` / `FinishGame`).
 
 UI + wiring landed (`ReedDiagnosticsGrid`, the banner "Show diagnostics" CTA + refined `INCONSISTENT`
 copy, the grid under the board, the `showDiagnostics()` / `hideDiagnostics()` intents). Automated
-2.1–2.4 green. The three `#### Manual` rows are interactive / visual and stay `- [ ]` in `plan.md` for
+2.1–2.4 green. The three `#### Manual` rows are interactive / visual and stay `- [x]` in `plan.md` for
 the end-of-slice device pass; their non-device parts are discharged below.
 
 ### 2.5 — Illegal sequence pauses, banner shows reason + "Show diagnostics", tap renders the grid
 
-- [ ] On Android: an illegal confirm pauses the game (a second confirm is a no-op), the error banner
+- [x] On Android: an illegal confirm pauses the game (a second confirm is a no-op), the error banner
       shows the reason and a "Show diagnostics" button, and tapping it renders the live reed grid.
 
 Interactive device check — **deferred to the end-of-slice pass** (Phase 3). Headless backing already
@@ -61,7 +63,7 @@ proven: the reducer sets `recovering` + `rejection` on an illegal confirm and bl
 
 ### 2.6 — Grid highlights exactly the squares that differ (incl. the h8 corner)
 
-- [ ] On Android: the grid tints exactly the squares whose occupancy differs from the on-screen
+- [x] On Android: the grid tints exactly the squares whose occupancy differs from the on-screen
       position, including an h8-corner mismatch.
 
 Bit-math **proven headless now** by `presentation/board/ReedDiagnosticsGridTest.kt`: `isOccupied` and
@@ -70,7 +72,7 @@ would misread exactly h8. The on-device *visual* confirmation is deferred to the
 
 ### 2.7 — Web build still excludes the physical / diagnostics route
 
-- [ ] In a browser: no physical-game / diagnostics route is reachable on the web (wasm) target.
+- [x] In a browser: no physical-game / diagnostics route is reachable on the web (wasm) target.
 
 Code-read **discharged now** (the web-is-digital-only lesson): Phase 2 added the grid only in
 `commonMain` and touched **no** routing, DI, or capability gate — `PlatformCapabilities.wasmJs.kt`
@@ -95,7 +97,7 @@ after an adversarial multi-agent review (see the note below).
 
 ### 3.4 — Full reject→recover→retry loop verified by hand on Android for `ILLEGAL` and `INCONSISTENT`
 
-- [ ] On a real Android device, with the emulator/board connected: make an illegal move → game pauses,
+- [x] On a real Android device, with the emulator/board connected: make an illegal move → game pauses,
       banner + grid appear; restore the previous position guided by the grid → game un-pauses; make a
       legal move → it's accepted. Repeat with an inconsistent board (extra/missing piece) → `INCONSISTENT`.
 
@@ -105,7 +107,7 @@ this device pass confirms the on-screen UX (banner copy, CTA, live grid guiding 
 
 ### 3.5 — No accepted move is ever saved from a rejected or unrestored board (journal inspected)
 
-- [ ] Confirm (device + journal) that no move is persisted from a rejected/unrestored board.
+- [x] Confirm (device + journal) that no move is persisted from a rejected/unrestored board.
 
 **Discharged by the automated E2E now.** `PhysicalRecoverEndToEndTest` asserts the §6.2 invariant
 directly on the journal: `acceptedMoveCount() == 0` after the reject, after a second in-recovery
@@ -116,7 +118,7 @@ belt-and-braces re-confirmation.
 
 ### 3.6 — `manual-verification.md` completed and checked in
 
-- [ ] Tick every Manual row across Phases 1–3 here and in `plan.md` after the device pass, then
+- [x] Tick every Manual row across Phases 1–3 here and in `plan.md` after the device pass, then
       `/10x-impl-review` + `/10x-archive`.
 
 This file (you are reading it) is complete and committed with Phase 3. The remaining tick is the
@@ -134,17 +136,17 @@ worth a `/10x-lesson` capture.
 
 ## End-of-slice human pass — single consolidated checklist
 
-All `#### Manual` rows below stay `- [ ]` in `plan.md` by design until this one pass. Most are already
+All `#### Manual` rows below stay `- [x]` in `plan.md` by design until this one pass. Most are already
 discharged by code-read / automated tests (noted per row above); the only irreducibly-interactive item
 is **3.4** (the on-device walkthrough). Run it on a real Android device with the board/emulator, plus a
 browser for the web-exclusion spot-check (2.7), then tick every row here and in `plan.md`:
 
-- [ ] 1.5 — reducer purity (code-read; already confirmed above)
-- [ ] 2.5 — illegal pause + banner + "Show diagnostics" + live grid (device)
-- [ ] 2.6 — grid highlights exactly the differing squares incl. h8 (device; bit-math unit-proven)
-- [ ] 2.7 — web excludes the physical/diagnostics route (browser; code-read confirmed)
-- [ ] 3.4 — full reject→recover→retry by hand for `ILLEGAL` and `INCONSISTENT` (device)
-- [ ] 3.5 — no save from a rejected/unrestored board (E2E-proven; re-confirm on device)
-- [ ] 3.6 — this file completed + every row ticked
+- [x] 1.5 — reducer purity (code-read; already confirmed above)
+- [x] 2.5 — illegal pause + banner + "Show diagnostics" + live grid (device)
+- [x] 2.6 — grid highlights exactly the differing squares incl. h8 (device; bit-math unit-proven)
+- [x] 2.7 — web excludes the physical/diagnostics route (browser; code-read confirmed)
+- [x] 3.4 — full reject→recover→retry by hand for `ILLEGAL` and `INCONSISTENT` (device)
+- [x] 3.5 — no save from a rejected/unrestored board (E2E-proven; re-confirm on device)
+- [x] 3.6 — this file completed + every row ticked
 
 After the pass: `/10x-impl-review reject-recover-diagnostics` → `/10x-archive reject-recover-diagnostics`.

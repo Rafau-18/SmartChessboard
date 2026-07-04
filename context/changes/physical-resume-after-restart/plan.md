@@ -201,7 +201,7 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 ## Progress
 
-> Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
+> Convention: `- [x]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
 ### Phase 1: Resume gating core
 
@@ -213,7 +213,7 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 #### Manual
 
-- [ ] 1.4 Code-read: acceptance blocked on resume until matching snapshot clears `awaitingResumeConfirm`; resume-match leaves board in GAME via `effectsForModeChange` edge — `SetMode(GAME)` once on the restore path, none on a clean match
+- [x] 1.4 Code-read: acceptance blocked on resume until matching snapshot clears `awaitingResumeConfirm`; resume-match leaves board in GAME via `effectsForModeChange` edge — `SetMode(GAME)` once on the restore path, none on a clean match
 
 ### Phase 2: Resume E2E, edge cases & write-backs
 
@@ -225,6 +225,6 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 #### Manual
 
-- [ ] 2.4 On device: restart mid physical game, matching board → auto-resume, next move accepted, no move lost
-- [ ] 2.5 Mismatched board → diagnostics + blocked → restore → play resumes
-- [ ] 2.6 History presents the in-progress physical game as resumable
+- [x] 2.4 On device: restart mid physical game, matching board → auto-resume, next move accepted, no move lost
+- [x] 2.5 Mismatched board → diagnostics + blocked → restore → play resumes
+- [x] 2.6 History presents the in-progress physical game as resumable
