@@ -44,9 +44,9 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-08 | physical-resume-after-restart | resume an in-progress physical game after app restart             | S-07             | FR-013, US-02                                         | done |
 | S-09 | real-board-over-ble           | play the physical flow on the real board over BLE                 | S-06, S-07, F-03 | FR-008, FR-009, FR-010, FR-011, FR-012, US-02         | done |
 | S-10 | ble-connectivity-robustness   | (hardening) reliable BLE connect/reconnect + settle pairing model | S-09             | FR-012, NFR reliability                               | proposed        |
-| S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | ready           |
+| S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | done |
 | S-12 | mobile-landscape-layout       | space-efficient landscape UI across board screens (2-col + control placement) | S-02, S-03, S-04, S-06 | FR-004, FR-008, FR-016, FR-017, FR-019, US-01–US-03   | ready           |
-| S-13 | seed-sample-games-on-signup   | start on a pre-seeded history of 8 famous games (replayable/analyzable/deletable), not an empty list | S-01             | FR-022, FR-015, FR-016, FR-017, FR-021, US-03         | ready           |
+| S-13 | seed-sample-games-on-signup   | start on a pre-seeded history of 8 famous games (replayable/analyzable/deletable), not an empty list | S-01             | FR-022, FR-015, FR-016, FR-017, FR-021, US-03         | done |
 
 ## Streams
 
@@ -332,7 +332,8 @@ Context note (outside the app codebase): firmware status has since advanced well
 ## Done
 
 Archived changes live at `context/archive/<created-date>-<change-id>/` (immutable). The whole
-F-01 → S-09 stream was closed out and archived on **2026-07-04**.
+F-01 → S-09 stream, plus **S-11** (delete a game) and **S-13** (seed sample games), were closed
+out and archived on **2026-07-04**.
 
 | ID   | Change ID                     | Archived   | Close-out notes                                                                                     |
 | ---- | ----------------------------- | ---------- | -------------------------------------------------------------------------------------------------- |
@@ -348,3 +349,5 @@ F-01 → S-09 stream was closed out and archived on **2026-07-04**.
 | S-07 | reject-recover-diagnostics    | 2026-07-04 | Manual reject→recover gate user-confirmed. impl-review intentionally **skipped** per user.          |
 | S-08 | physical-resume-after-restart | 2026-07-04 | Manual on-device resume gate user-confirmed. impl-review intentionally **skipped** per user.        |
 | S-09 | real-board-over-ble           | 2026-07-04 | impl-review NEEDS ATTENTION; F4 evidence log filled (2026-06-30 on-hardware acceptance + flaky-connect caveat). Doc-drift F1/F2/F3/F5/F6 deferred to **S-10**. |
+| S-11 | delete-game-from-history      | 2026-07-04 | Implemented + full manual gate (delete/cancel/offline/cross-device/no-resurrection on 3 surfaces); plan-reviewed. impl-review intentionally **skipped** per user. |
+| S-13 | seed-sample-games-on-signup   | 2026-07-04 | Implemented (first-sign-in seed trigger + 8 verified PGNs); plan + manual-verification complete. impl-review intentionally **skipped** per user. |
