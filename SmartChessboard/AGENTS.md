@@ -23,11 +23,9 @@ what is specific to agents/contributors and not derivable from a single file.
 JVM-only goldens for Compose UI: Robolectric renders (`@GraphicsMode(NATIVE)`),
 Roborazzi compares. Tests live in `shared/src/androidHostTest/kotlin/**/screenshot/`;
 committed goldens in `shared/src/androidHostTest/snapshots/*.png` (lossless PNG via
-the JDK-native `ImageIO` writer, recorded at 0.5 scale). WebP was dropped: the
-`webp-imageio` (luciad) codec non-deterministically wrote files its own reader then
-failed to decode (`ImageIO.read` → null → verify NPE), so a shifting ~40% of goldens
-went unreadable per record. PNG is deterministic and identical across platforms. Wrap
-invocations with inline `ANDROID_HOME` as usual:
+the JDK-native `ImageIO` writer, recorded at 0.5 scale). **PNG, not WebP** — the
+`webp-imageio` codec couldn't reliably read its own output; details in
+`../context/foundation/lessons.md`. Wrap invocations with inline `ANDROID_HOME` as usual:
 
 - Record (refresh goldens): `:shared:recordRoborazziAndroidHostTest`
 - Verify (the gate): `:shared:verifyRoborazziAndroidHostTest`
