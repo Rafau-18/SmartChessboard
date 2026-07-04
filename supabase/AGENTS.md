@@ -1,19 +1,8 @@
 # AGENTS.md
 
-Guidance for AI coding agents working inside `supabase/`. This file is the source of truth for the backend sub-project.
+Guidance for AI coding agents working inside `supabase/`. **What this directory is, its contents, local dev/test commands, and the conventions (append-only migrations, secret handling, region) live in [`README.md`](README.md)** — read that first. This file adds only the rules that specifically bite agents.
 
-## What this dir is — and what it isn't
-
-This directory is **not** a separate backend server. **Supabase Cloud is the backend.** What lives here is the project's Supabase deployment **defined as code**, version-controlled in git:
-
-- `config.toml` — Supabase project config (CLI-managed)
-- `migrations/*.sql` — schema (`games`, `position_evals`), RLS policies, triggers *(arrives during feature work — Module 2+)*
-- `functions/lichess-eval/` — the single Edge Function (Deno + TypeScript) that proxies the Lichess Cloud Eval API *(arrives during feature work — Module 2+)*
-
-There is **no application layer**, no custom HTTP server, no bespoke API. Mobile and web call Supabase **directly**:
-
-- **Auth** — Google OAuth via Supabase Auth (browser/system-browser redirect flow); JWT auto-attached by `supabase-kt` SDK
-- **Game CRUD** — PostgREST (auto-generated REST API over Postgres), scoped per user by RLS on `auth.uid()`
+The one-line summary: **Supabase Cloud is the backend**; this dir is the deployment defined as code (`config.toml` + `migrations/*.sql` + one Edge Function). There is no application layer — clients call Supabase directly (Auth + PostgREST under RLS).
 
 ## Why exactly one Edge Function (and not zero, and not three)
 
@@ -33,18 +22,7 @@ Edit the contract first, then mirror schema/function code. Not the other way rou
 - Google OAuth flow → §4
 - PGN / FEN data model conventions → §5
 
-## Build & test (when work resumes)
+## Agent rules on top of the README conventions
 
-| What | How |
-|---|---|
-| Local full stack | `supabase start` (Docker — Postgres + GoTrue + Storage + Studio); mirrors CI |
-| Schema / RLS tests | `supabase test db` (pgTAP) — RLS bugs cannot be caught by mocks |
-| Edge Function tests | `deno test` from `functions/lichess-eval/` — runs without real Lichess egress |
-| Apply migrations to hosted | `supabase db push` (after `supabase link`) |
-
-## Conventions
-
-- **Migrations are append-only.** Never edit a migration that already shipped to a hosted environment — write a follow-up migration instead.
-- **Secrets** (`LICHESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`) are set via `supabase secrets set ...` — never inline in code, never committed. The mobile/web client only sees `SUPABASE_URL` + `anon key` (both public, RLS protects).
-- **Region**: EU Frankfurt (`eu-central-1`) — see tech-stack.md backend table.
-- **Gitignored** (agents won't see): `.env.local`, `.temp/`.
+- **RLS bugs cannot be caught by mocks** — schema/policy changes must be verified with `supabase test db` (pgTAP), not client-side fakes.
+- Gitignored here (agents won't see them): `.env.local`, `.temp/`.

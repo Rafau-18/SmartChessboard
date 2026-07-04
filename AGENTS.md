@@ -1,32 +1,29 @@
 # AGENTS.md
 
-Guidance for AI coding agents working in this repository. This file is the source of truth; CLAUDE.md is a thin import of it.
+Guidance for AI coding agents working in this repository. This file is the source of truth; CLAUDE.md is a thin import of it. Product overview + feature list: [`README.md`](README.md).
 
 ## What this repo is
 
 Smart Chessboard — a docs-and-context layer over three sibling sub-projects:
 
-- `SmartChessboard/` — Kotlin Multiplatform app (Android + iOS + WasmJS). Package `org.rurbaniak.smartchessboard`.
-- `firmware/` — ESP32 reed-matrix firmware (C++, PlatformIO + ESP-IDF). Software implemented & on-hardware-verified (F-03); board repaired 2026-06-28. **Don't resume unless the task asks for firmware work** — details in [`firmware/AGENTS.md`](firmware/AGENTS.md).
-- `supabase/` — Supabase project defined as code: `config.toml` + (incoming) `migrations/*.sql` + one Edge Function `lichess-eval`. **Supabase Cloud is the backend** — this dir is *not* a separate server. Canon & conventions: [`supabase/AGENTS.md`](supabase/AGENTS.md).
+- `SmartChessboard/` — Kotlin Multiplatform app (Android + iOS + WasmJS). Package `org.rurbaniak.smartchessboard`. Setup/build/run/test: [`SmartChessboard/README.md`](SmartChessboard/README.md); module rules: [`SmartChessboard/AGENTS.md`](SmartChessboard/AGENTS.md).
+- `firmware/` — ESP32 reed-matrix firmware (C++, PlatformIO + ESP-IDF). Software implemented & on-hardware-verified (F-03); board repaired 2026-06-28. **Don't resume unless the task asks for firmware work.** Build/flash/test: [`firmware/README.md`](firmware/README.md); rules & pin-map gotcha: [`firmware/AGENTS.md`](firmware/AGENTS.md).
+- `supabase/` — Supabase project defined as code: `config.toml` + `migrations/*.sql` + one Edge Function `lichess-eval`. **Supabase Cloud is the backend** — this dir is *not* a separate server. Overview & commands: [`supabase/README.md`](supabase/README.md); rules: [`supabase/AGENTS.md`](supabase/AGENTS.md).
 
 Canonical context: `context/foundation/` (`prd.md`, `prd-firmware.md`, `tech-stack.md`) and `docs/` (`bootstrap-verification.md`, `reference/contract-surfaces.md`). Recurring rules live in `context/foundation/lessons.md` — consult it before research, planning, or implementation.
 
 ## Build & test
 
-**Mobile** (`SmartChessboard/`) — the Gradle wrapper needs the Android SDK path, but `local.properties` is gitignored, so pass it inline:
+Commands live in each sub-project's README (linked above). The two mobile gotchas that bite every session:
 
-```bash
-cd SmartChessboard
-ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew <task> --console=plain --no-daemon
-```
+- The Gradle wrapper needs the Android SDK path, but `local.properties` is gitignored — pass it inline:
 
-Use the per-target test tasks (plain `test` does not cover the KMP targets):
-- `testAndroidHostTest` — JVM / Android host
-- `iosSimulatorArm64Test` — iOS simulator (Apple Silicon)
-- `wasmJsTest` — web (headless browser)
+  ```bash
+  cd SmartChessboard
+  ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew <task> --console=plain --no-daemon
+  ```
 
-**Firmware** (`firmware/`) — build `pio run`, flash `pio run -t upload`. PlatformIO manages the ESP-IDF toolchain, so no manual `IDF_PATH`. Full build/flash/pin-map detail: [`firmware/AGENTS.md`](firmware/AGENTS.md).
+- Plain `test` does not cover the KMP targets — use the per-target tasks: `:shared:testAndroidHostTest` (JVM / Android host), `:shared:iosSimulatorArm64Test` (iOS simulator, Apple Silicon), `:shared:wasmJsTest` (web, headless browser).
 
 ## Kotlin formatting
 

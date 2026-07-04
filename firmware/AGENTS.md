@@ -22,26 +22,9 @@ Stack: **PlatformIO + ESP-IDF + NimBLE**, C++. Target board id `esp32dev` (class
 
 ## Build / flash / monitor
 
-Run from this directory. `pio` is the only entry point — it manages the ESP-IDF + xtensa toolchain itself (downloaded into `.pio/` on first `pio run`, several minutes). You do **not** set `IDF_PATH` manually for the `pio` flow (the `$ENV{IDF_PATH}` in `CMakeLists.txt` is only for a direct `idf.py` build, which this project doesn't use).
+Prerequisites and the command set live in [`README.md`](README.md). `pio` is the only entry point — it manages the ESP-IDF + xtensa toolchain itself (downloaded into `.pio/` on first `pio run`); you do **not** set `IDF_PATH` manually for the `pio` flow (the `$ENV{IDF_PATH}` in `CMakeLists.txt` is only for a direct `idf.py` build, which this project doesn't use).
 
-```bash
-pio run                       # build (first run downloads the toolchain)
-pio run -t upload             # build + flash (auto-detects port)
-pio run -t upload -t monitor  # flash, then watch the console
-pio device monitor            # console only, 115200 baud; Ctrl-] to exit
-pio device list               # find the serial port
-```
-
-**Host tests (no hardware).** The pure protocol/debounce logic lives in `lib/` and is unit-tested on the dev machine via a separate `[env:native]` environment — no ESP32, no xtensa toolchain:
-
-```bash
-pio test -e native            # build + run the host unit tests (Unity)
-pio run -e esp32dev           # explicit device build (same as a bare `pio run`)
-```
-
-`pio test -e native` asserts the byte codec against the **same golden vectors** as the Kotlin `BoardWireCodecTest.kt`, plus the debounce and `stable`-diff → square-event logic. Run it before declaring any `lib/` change green — it is fast and is the contract-drift guard between this firmware and the mobile emulator.
-
-Prerequisite: PlatformIO Core is **not** installed by default on this machine — `brew install platformio` (Homebrew, not pipx — system Python 3.14 is unsupported by pio). See `README.md` §0. Always use the `/dev/cu.*` serial node, never `tty.*` (tty can hang flashing).
+Agent rule: run `pio test -e native` before declaring any `lib/` change green — it asserts the byte codec against the **same golden vectors** as the Kotlin `BoardWireCodecTest.kt` (plus debounce and `stable`-diff → square-event logic), so it is the fast contract-drift guard between this firmware and the mobile emulator. `pio run -e esp32dev` is the explicit device build (same as a bare `pio run`).
 
 ## Architecture
 
@@ -73,10 +56,10 @@ Two momentary confirmation buttons (FR-FW-007), **additive to the matrix** — t
 
 ## Critical gotcha: two different pin maps
 
-`src/pins.h` is the **single source of truth for what is actually flashed** — and it intentionally **differs** from the pin table in `README.md`/`PINOUT.md`/`WIRING.md`.
+`src/pins.h` is the **single source of truth for what is actually flashed** — and it intentionally **differs** from the pin tables in `PINOUT.md`/`WIRING.md`.
 
 - `pins.h` = the **reused DevKit V1 prototype harness** (two consecutive header blocks). It is the bringup/test wiring, not hazard-free. Notable: ROW6 is on **GPIO12** (flash-voltage strapping — first suspect if the board ever boot-loops); COL6 was moved off GPIO2 (onboard LED) to GPIO21.
-- `README.md`/`PINOUT.md`/`WIRING.md` = the **hazard-free target** map for a clean build.
+- `PINOUT.md`/`WIRING.md` = the **hazard-free target** map for a clean build.
 
 Do **not** "fix" `pins.h` to match the README — that would break the verified prototype. If you genuinely need to rewire, change `pins.h` and re-verify on hardware.
 
@@ -88,7 +71,7 @@ Do **not** "fix" `pins.h` to match the README — that would break the verified 
 
 ## Docs map
 
-- `README.md` — full bringup/build/flash/test/troubleshooting walkthrough + prerequisites (§0).
+- `README.md` — what the firmware is, prerequisites, build/flash/test commands, code layout, troubleshooting.
 - `HARDWARE.md` — board inventory & comparison; on-hardware verification log; per-board notes; the F-03 confirmation-button pins.
 - `PINOUT.md` — per-board header pinout diagrams (DevKitC V4 + DevKit V1) with matrix pins marked; the F-03 button-pin note.
 - `WIRING.md` — the 16-wire connection list and per-square wiring.

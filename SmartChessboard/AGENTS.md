@@ -3,60 +3,31 @@
 Module-scoped guidance for the Kotlin Multiplatform app. **Monorepo-wide rules live
 in the root [`../AGENTS.md`](../AGENTS.md)** — commit conventions, cross-sub-project
 contracts, the ktlint `PostToolUse` hook, and the reason every Gradle call needs an
-inline `ANDROID_HOME`. This file covers only what is specific to the KMP module and
-not derivable from a single file.
+inline `ANDROID_HOME`. **Module layout, setup (`local.properties` keys), build/run/test
+commands, and web deploy live in [`README.md`](README.md)** — this file covers only
+what is specific to agents/contributors and not derivable from a single file.
 
-## Module layout (actual)
+## Module facts beyond the README
 
-Gradle multi-module — **not** the single `composeApp/` from the old plan (superseded;
-see `../context/SESSION_HANDOFF.md`). `settings.gradle.kts` includes:
-
-- `:shared` — the KMP shared module; all shared code + per-target source sets. iOS
-  framework `baseName = "Shared"` (static). This is where the Clean Architecture
-  layers will live.
-- `:androidApp` — Android application entry point (Compose `MainActivity`); depends
-  on `:shared`.
-- `:webApp` — WasmJS browser executable; depends on `:shared`.
-- `iosApp/` — Xcode SwiftUI entry point (**not** a Gradle module); consumes
-  `Shared.framework`. Open in Xcode, no Gradle run task.
-
-`shared/src/` source sets: `commonMain`, `commonTest`, `androidMain`,
-`androidHostTest`, `iosMain`, `iosTest`, `wasmJsMain`. Package
-`org.rurbaniak.smartchessboard` (shared namespace `…smartchessboard.shared`).
-
-Current `shared/` code is still the KMP-wizard skeleton (`App.kt`, `Greeting*.kt`,
-`Platform*.kt`) — not yet refactored into `domain/` / `data/` / `presentation/`.
-
-## Build & run (module-prefixed)
-
-Wrap every Gradle call as the root AGENTS.md describes (`local.properties` is
-gitignored):
-
-```bash
-ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew <task> --console=plain --no-daemon
-```
-
-- Android debug APK — `:androidApp:assembleDebug`
-- Web dev server (WasmJS) — `:webApp:wasmJsBrowserDevelopmentRun`
-- iOS — open `iosApp/` in Xcode and run
-
-## Test (per-target, on `:shared`)
-
-Plain `test` does **not** cover the KMP targets. Use:
-
-- `:shared:testAndroidHostTest` — JVM / Android host (fastest; pure-logic tests)
-- `:shared:iosSimulatorArm64Test` — iOS simulator (Apple Silicon)
-- `:shared:wasmJsTest` — web (headless browser)
-
-Put tests in `shared/src/commonTest` to run on every target, or a target-specific
-test source set for platform code.
+- Gradle multi-module — **not** the single `composeApp/` from the old plan
+  (superseded; see `../context/SESSION_HANDOFF.md`).
+- iOS framework `baseName = "Shared"` (static).
+- `shared/src/` source sets: `commonMain`, `commonTest`, `androidMain`,
+  `androidHostTest`, `iosMain`, `iosTest`, `wasmJsMain`, `wasmJsTest`. Package
+  `org.rurbaniak.smartchessboard` (shared namespace `…smartchessboard.shared`).
+- Put tests in `shared/src/commonTest` to run on every target, or a target-specific
+  test source set for platform code.
 
 ## Screenshot (golden) tests
 
 JVM-only goldens for Compose UI: Robolectric renders (`@GraphicsMode(NATIVE)`),
 Roborazzi compares. Tests live in `shared/src/androidHostTest/kotlin/**/screenshot/`;
-committed goldens in `shared/src/androidHostTest/snapshots/*.webp` (lossless WebP,
-recorded at 0.5 scale). Wrap invocations with inline `ANDROID_HOME` as usual:
+committed goldens in `shared/src/androidHostTest/snapshots/*.png` (lossless PNG via
+the JDK-native `ImageIO` writer, recorded at 0.5 scale). WebP was dropped: the
+`webp-imageio` (luciad) codec non-deterministically wrote files its own reader then
+failed to decode (`ImageIO.read` → null → verify NPE), so a shifting ~40% of goldens
+went unreadable per record. PNG is deterministic and identical across platforms. Wrap
+invocations with inline `ANDROID_HOME` as usual:
 
 - Record (refresh goldens): `:shared:recordRoborazziAndroidHostTest`
 - Verify (the gate): `:shared:verifyRoborazziAndroidHostTest`
@@ -64,7 +35,7 @@ recorded at 0.5 scale). Wrap invocations with inline `ANDROID_HOME` as usual:
   (or `…verify=true`) — the flags are forwarded into the test JVM by
   `shared/build.gradle.kts`.
 - On a verify failure: triptych diff images land in
-  `shared/build/outputs/roborazzi/*_compare.webp`, HTML report in
+  `shared/build/outputs/roborazzi/*_compare.png`, HTML report in
   `shared/build/reports/roborazzi/androidHostTest/`.
 
 Write every golden through `ScreenshotHarness.golden(...)` — it pins `AppTheme`,
@@ -142,13 +113,15 @@ sub-tree opens in a different IDE:
 - **BLE / physical-board / reed-switch code goes only in `androidMain` + `iosMain`,
   never `wasmJsMain`.** Web ships the digital subset only (pass-and-play, history,
   replay, analysis). Rationale: `../context/foundation/lessons.md`.
-- **Target architecture — Clean Architecture, all primarily in `commonMain`:**
+- **Architecture — Clean Architecture, all primarily in `commonMain`:**
   `domain/` (pure Kotlin — the chess rules engine, entities, use cases, repository
-  interfaces; no Compose/Supabase/Room/BLE deps), `data/` (Supabase / Room / BLE /
-  Lichess-eval implementations), `presentation/` (ViewModels + Compose UI, consumes
-  `domain/` use cases, never imports `data/`). MVVM-vs-MVI and the DI library are
-  still **TBD**. Full rationale: `../context/foundation/tech-stack.md` → "Architecture
-  overview".
+  interfaces; no Compose/Supabase/BLE deps), `data/` (Supabase / journal / BLE /
+  eval implementations), `presentation/` (ViewModels + Compose UI, consumes
+  `domain/` use cases, never imports `data/`). **MVVM by default** (MVI only for
+  genuinely event-heavy screens, with written justification in the change's plan);
+  **DI via Koin** — one `initKoin()` bootstrap per platform entry point (both
+  decided 2026-06-10, S-01; see `../context/foundation/lessons.md`). Full rationale:
+  `../context/foundation/tech-stack.md` → "Architecture overview".
 
 ## Dependencies
 
