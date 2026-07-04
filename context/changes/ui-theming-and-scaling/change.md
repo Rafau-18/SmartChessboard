@@ -1,9 +1,9 @@
 ---
 change_id: ui-theming-and-scaling
 title: UI refresh — dark/light theming (M3 Expressive), scalable board, animations
-status: implemented
+status: impl_reviewed
 created: 2026-06-28
-updated: 2026-06-29
+updated: 2026-07-04
 archived_at: null
 ---
 
@@ -41,3 +41,5 @@ plan.md will phase the work. Worktree: `worktree-ui-theming-and-scaling`.
 
 Key files: `presentation/board/ChessBoardView.kt`, `presentation/replay/EvalComponents.kt`,
 `presentation/replay/ReplayScreen.kt`, `presentation/board/ReedDiagnosticsGrid.kt`, `App.kt`.
+
+- 2026-07-04: **impl-review rescued** from the `pedantic-taussig-cb0635` agent worktree (it was uncommitted there; the worktree was removed during the branch/worktree cleanup). Full-plan review → `reviews/impl-review.md`, verdict **NEEDS ATTENTION** (0 critical, 1 warning, 4 observations; all PENDING). **F1** (warning): `readBoardSize()` is not a total read — `settings.getFloat` throws on wasm for a non-numeric stored `ui.boardSize`, crashing at Koin startup; reachability-gated (the app's own writer always stores a float). Fix = `getFloatOrNull` + a `wasmJsTest`. F2–F5 are observations (a multi-ply animation edge case + three test-coverage gaps). Status `implemented` → `impl_reviewed`. **Not archived** — ui-theming is outside the F-01..S-09 close-out; triage F1 before its own `/10x-archive`.
