@@ -1,0 +1,48 @@
+# Gitleaks configuration for SmartChessboard.
+#
+# Extends the gitleaks default ruleset with project-shaped patterns so the PR
+# gate (.github/workflows/tests.yml :: `gitleaks` job) catches credentials in
+# this stack's specific formats — not just gitleaks' generic rules. The custom
+# rules below cover the two backends that could ever leak a real secret here:
+# Supabase (service key / new secret API key) and Google OAuth.
+#
+# The full rewritten git history scanned clean (0 findings) during the S-14
+# publication rewrite; this config is the *continuous* layer that runs on every
+# PR and push to main. GitHub-native Secret Scanning + Push Protection is the
+# second, complementary layer (rejects known provider patterns at push time).
+
+title = "SmartChessboard gitleaks config"
+
+[extend]
+# Keep every built-in gitleaks rule (JWTs, cloud keys, private keys, …) and add
+# the project rules below on top.
+useDefault = true
+
+[[rules]]
+id = "supabase-secret-api-key"
+description = "Supabase secret API key (sb_secret_...) — server-side, must never be committed"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{24,}\b'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "supabase-service-role-jwt"
+description = "Supabase service_role JWT — bypasses RLS, must never leave the Edge Function env"
+# A three-part JWT appearing near the literal "service_role". The keyword
+# prefilter keeps this off the many docs/SQL comments that mention the *word*
+# service_role without any actual token.
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+keywords = ["service_role"]
+
+[[rules]]
+id = "google-oauth-client-id"
+description = "Google OAuth client ID (project identifier — flagged so it is reviewed, not published by accident)"
+regex = '''\b[0-9]{10,}-[a-z0-9]{16,}\.apps\.googleusercontent\.com\b'''
+keywords = ["apps.googleusercontent.com"]
+
+[allowlist]
+description = "Repo-wide allowlist"
+# Binary PNG goldens can never hold a secret; skipping them keeps scans fast and
+# rules out any base64/entropy false positive on image bytes.
+paths = [
+  '''SmartChessboard/shared/src/androidHostTest/snapshots/.*\.png$''',
+]
