@@ -54,7 +54,7 @@ jobs:
           from collections import defaultdict
 
           files = glob.glob("shared/build/test-results/**/*.xml", recursive=True)
-          per_suite = defaultdict(lambda: [0, 0, 0, 0])  # tests, failures+errors, skipped, (passed derived)
+          per_suite = defaultdict(lambda: [0, 0, 0])  # [tests, failures+errors, skipped]
           for f in files:
               # Group by the Gradle task dir right under test-results/ (e.g. testAndroidHostTest, wasmJsTest)
               parts = f.replace("\\", "/").split("/")
