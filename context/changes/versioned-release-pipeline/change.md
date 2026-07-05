@@ -1,7 +1,7 @@
 ---
 change_id: versioned-release-pipeline
 title: Versioned release pipeline — tag → gated Cloudflare deploy + APK GitHub Release
-status: new
+status: implementing
 created: 2026-07-05
 updated: 2026-07-05
 archived_at: null
