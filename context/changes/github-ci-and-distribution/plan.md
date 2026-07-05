@@ -4,7 +4,7 @@
 
 Move the repository to GitHub and stand up two **manually-triggered** GitHub Actions pipelines — one that builds the WasmJS web bundle and deploys it to the existing Cloudflare Worker, one that builds the Android debug APK and ships it to Firebase App Distribution (FAD). The repo starts **private** so CI can be proven without exposing course material; a final gated phase scrubs selected paths from git history with `git filter-repo` and flips the repo to **public**.
 
-This is infrastructure work — not a product slice. It un-parks the roadmap's "CI pipeline" and the FAD half of "mobile distribution", and realizes the pre-existing sketch in `docs/vacation-workflow-todo.md` (sections A/B/C) against the web-host decision in `context/foundation/infrastructure.md`.
+This is infrastructure work — not a product slice. It un-parks the roadmap's "CI pipeline" and the FAD half of "mobile distribution", and realizes an earlier local CI/distribution planning sketch against the web-host decision in `context/foundation/infrastructure.md`.
 
 ## Current State Analysis
 
@@ -26,7 +26,7 @@ This is infrastructure work — not a product slice. It un-parks the roadmap's "
 - `wrangler.toml` + `_headers` already exist and are proven — web CI only automates the existing `wrangler deploy` (`context/foundation/infrastructure.md` "Getting Started").
 - Supabase creds path is `-P`/env → BuildKonfig (`SmartChessboard/shared/build.gradle.kts:15-33,143-148`); the same injection serves web and Android.
 - FAD does **not** need `google-services.json` — it is a distribution channel, not a Firebase SDK integration. The app just needs to build and be signed with a stable cert.
-- `assembleDebug` with an ephemeral keystore breaks FAD update-installs (each runner signs with a different cert) — a committed debug keystore fixes it (`docs/vacation-workflow-todo.md` "Debug keystore in CI").
+- `assembleDebug` with an ephemeral keystore breaks FAD update-installs (each runner signs with a different cert) — a committed debug keystore fixes it.
 - History rewrite changes every commit SHA from the first touched commit onward — the SHAs recorded in the context docs will no longer resolve (accepted, audit-only).
 
 ## What We're NOT Doing
@@ -264,11 +264,11 @@ Bitbucket is intentionally not force-pushed (kept as pre-scrub backup).
 
 #### 3. Flip visibility + doc reconciliation
 
-**File**: repo visibility + `context/foundation/roadmap.md` + `docs/vacation-workflow-todo.md`
+**File**: repo visibility + `context/foundation/roadmap.md`
 
 **Intent**: Make the repo public and update the docs to reflect that CI + FAD landed and history was scrubbed (noting the SHA-rewrite consequence).
 
-**Contract**: `gh repo edit <user>/smartchessboard --visibility public --accept-visibility-change-consequences`; roadmap `## Parked` "CI pipeline" + "mobile distribution" notes updated to reference this change; `docs/vacation-workflow-todo.md` marked done (or rewritten to `docs/vacation-workflow.md`).
+**Contract**: `gh repo edit <user>/smartchessboard --visibility public --accept-visibility-change-consequences`; roadmap `## Parked` "CI pipeline" + "mobile distribution" notes updated to reference this change.
 
 ### Success Criteria:
 
@@ -282,7 +282,7 @@ Bitbucket is intentionally not force-pushed (kept as pre-scrub backup).
 
 - [ ] User has provided the final removal path list and explicitly approved the destructive rewrite + force-push
 - [ ] Spot-check an old commit on GitHub — the removed paths are gone there too
-- [ ] Docs (roadmap Parked, vacation-workflow-todo) reflect the landed state
+- [ ] Docs (roadmap Parked) reflect the landed state
 
 **Implementation Note**: This phase runs only on explicit user go-ahead with a finalized path list. It rewrites all commit SHAs; recorded SHAs in the context docs will no longer resolve (accepted, audit-only).
 
@@ -311,7 +311,6 @@ Bitbucket is intentionally not force-pushed (kept as pre-scrub backup).
 ## References
 
 - Change identity + locked decisions: `context/changes/github-ci-and-distribution/change.md`
-- CI sketch (sections A/B/C): `docs/vacation-workflow-todo.md`
 - Web host + operational story: `context/foundation/infrastructure.md`
 - Secret-hygiene + COOP/COEP rules: `context/foundation/lessons.md`
 - BuildKonfig injection: `SmartChessboard/shared/build.gradle.kts:15-33,143-148`
@@ -386,4 +385,4 @@ Bitbucket is intentionally not force-pushed (kept as pre-scrub backup).
 
 - [ ] 5.4 User provided final removal list + approved the destructive rewrite/force-push
 - [ ] 5.5 Old commit on GitHub spot-checked — removed paths gone there too
-- [ ] 5.6 Docs (roadmap Parked, vacation-workflow-todo) reconciled
+- [ ] 5.6 Docs (roadmap Parked) reconciled

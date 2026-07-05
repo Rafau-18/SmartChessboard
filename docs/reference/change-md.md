@@ -1,11 +1,9 @@
 # `change.md` — Schema Reference
 
-> Provenance: this document is referenced by `/10x-new` ("See `docs/reference/change-md.md`
-> for the full schema reference") but is **not shipped** by `@przeprogramowani/10x-cli`
-> (verified against manifest v1.8.0, lesson m2l2: the CLI installs only skills, prompts,
-> and configs — nothing under `docs/reference/`). Reconstructed 2026-06-10 from the skill
+> This document reconstructs the `change.md` schema from the change-management skill
 > definitions themselves (`10x-new`, `10x-plan`, `10x-implement`, `10x-impl-review`,
-> `10x-archive`). If a future CLI version ships an official schema doc, replace this file.
+> `10x-archive`), which reference it ("See `docs/reference/change-md.md` for the full
+> schema reference").
 
 `change.md` is the tiny identity file of a change folder (`context/changes/<change-id>/`).
 It is **record-only**: skills read and stamp it, but nothing enforces transitions at

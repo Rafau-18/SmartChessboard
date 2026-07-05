@@ -48,5 +48,5 @@ ktlint is the formatter; rules live in `SmartChessboard/.editorconfig`. Format m
 
 - **Commits**: Conventional Commits with a scope, e.g. `feat(firmware): …`, `docs(bootstrap-verification): …`.
 - **KMP module rules** (web is WasmJS-only; BLE / physical-board code only in `androidMain` + `iosMain`) are canonical in [`SmartChessboard/AGENTS.md`](SmartChessboard/AGENTS.md).
-- **Skills are mirrored** across `.claude/`, `.agents/`, `.kiro/` (multi-tool repo). When adding a skill, install it into the matching dir per tool — don't leave it in only one.
+- **Skills**: the only skill tracked in this repo is `handoff` (`.claude/skills/handoff/`, project-specific). Workflow and vendor skills live at the user level (`~/.claude/skills`) so every session and worktree sees them; `.agents/` and `.kiro/` are local-only tool mirrors (untracked). Install new shared skills at user level, not into the repo.
 - Local files agents won't see (all gitignored): `SmartChessboard/local.properties`, `firmware/sdkconfig`, `supabase/.env.local`.

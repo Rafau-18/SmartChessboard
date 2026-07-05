@@ -155,6 +155,6 @@ Concrete first steps for this exact stack. (The actual first deploy is the M1L5 
 
 The following were not evaluated in this research:
 - Docker image configuration (not applicable to a static bundle).
-- CI/CD pipeline authoring — the GitHub Actions `web-deploy.yml` workflow is tracked separately in [`docs/vacation-workflow-todo.md`](../../docs/vacation-workflow-todo.md).
+- CI/CD pipeline authoring — the GitHub Actions `web-deploy.yml` workflow is tracked separately in the [`github-ci-and-distribution`](../changes/github-ci-and-distribution/plan.md) change.
 - Production-scale architecture (multi-region HA, DR, SLA tiers).
 - Mobile (Android/iOS) distribution and the Supabase backend platform — both already decided elsewhere (see "Scope of this decision").

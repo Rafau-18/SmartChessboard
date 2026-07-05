@@ -117,3 +117,18 @@ and contributors.
 All MVP roadmap slices are implemented and verified on real hardware, including
 physical play over BLE. See the [roadmap](context/foundation/roadmap.md) for
 per-slice status and what remains (BLE connectivity hardening).
+
+## License
+
+Copyright © 2026 Rafał Urbaniak.
+
+The source code in this repository is licensed under the
+[Apache License 2.0](LICENSE) — you may use, modify, and distribute it (including
+commercially) provided you retain the copyright and license notices and state any
+changes you make, per the license terms. It is provided "as is", without warranty.
+
+**Exception — chess-piece artwork:** the 12 chess-piece vector drawables
+(`SmartChessboard/shared/src/commonMain/composeResources/drawable/piece_*.xml`) are
+derived from Colin M.L. Burnett's SVG set and remain under
+[CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) — **not** Apache-2.0.
+See [`docs/attributions.md`](docs/attributions.md) for full attribution and terms.

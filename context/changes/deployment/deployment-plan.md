@@ -17,7 +17,7 @@
 **What this plan changes.** It closes part of the gap: a production Supabase project with a minimal, domain-real schema; `supabase-kt` wired into `commonMain`; the anon key injected into the bundle via BuildKonfig; and the web app performing a real PostgREST read that proves connectivity. Room/OPFS persistence and Google OAuth remain **Module 2**.
 
 **Decisions confirmed with the user:**
-1. **Scope = manual first deploy only.** Local `wrangler`, human-gated. CI (`web-deploy.yml`) stays out of scope — tracked in `docs/vacation-workflow-todo.md`.
+1. **Scope = manual first deploy only.** Local `wrangler`, human-gated. CI (`web-deploy.yml`) stays out of scope — tracked in the `github-ci-and-distribution` change.
 2. **COOP/COEP = set up now**, on both surfaces. Safe today: the shell + Supabase `fetch` calls don't trip `COEP: require-corp` (COEP blocks embedded cross-origin subresources, **not** `fetch`/XHR).
 3. **Address = `*.workers.dev`.** Custom domain is a later human-gated step.
 4. **`wrangler` installed globally** (`npm i -g wrangler`) and authenticated via **`wrangler login`** (OAuth), not `npx`.
@@ -102,7 +102,7 @@ wrangler whoami            # confirms account + lists account IDs
 
 ### E. GitHub — not needed for this deploy
 
-Manual deploy was chosen → no GitHub Actions, repo secrets, or push required. CI (`web-deploy.yml`) is tracked in `docs/vacation-workflow-todo.md`.
+Manual deploy was chosen → no GitHub Actions, repo secrets, or push required. CI (`web-deploy.yml`) is tracked in the `github-ci-and-distribution` change.
 
 ### F. Preflight — confirm you're ready
 
@@ -286,7 +286,7 @@ Tracked with checkboxes. Order: **Backend (A) → Web wiring (B) → Build/heade
 - [x] `wrangler deployments list` → active deployment is version `04ecd258` at 100% (the `wrangler rollback` target).
 
 #### Phase C6 — Record follow-ups (Module 2 / CI)
-- [x] Out-of-scope follow-ups recorded (here + `docs/vacation-workflow-todo.md`): CI `web-deploy.yml` (injects creds + scoped CF token); custom domain; **Google OAuth** (Google Cloud OAuth client + Supabase provider + redirect-URL allowlist incl. the workers.dev URL); the **`games` table + owner RLS + index + trigger** and reading own games; **Room/OPFS** persistence (then the COOP/COEP "save a game, reload" test becomes real); the **`lichess-eval`** edge function; and a CI secret-scan that no service-role key appears in `productionExecutable/` (`lessons.md` #3/#4).
+- [x] Out-of-scope follow-ups recorded (here + the `github-ci-and-distribution` change): CI `web-deploy.yml` (injects creds + scoped CF token); custom domain; **Google OAuth** (Google Cloud OAuth client + Supabase provider + redirect-URL allowlist incl. the workers.dev URL); the **`games` table + owner RLS + index + trigger** and reading own games; **Room/OPFS** persistence (then the COOP/COEP "save a game, reload" test becomes real); the **`lichess-eval`** edge function; and a CI secret-scan that no service-role key appears in `productionExecutable/` (`lessons.md` #3/#4).
 - [ ] **Open (housekeeping):** `tech-stack.md` + `supabase/AGENTS.md` still say region "Frankfurt"; actual project is West EU (Ireland). Update when convenient (not deploy-blocking).
 
 ---
