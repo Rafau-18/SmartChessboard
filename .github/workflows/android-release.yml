@@ -1,0 +1,85 @@
+# Android release: on a v* tag, build the stably-signed APK with tag-derived
+# versionName/versionCode and publish the GitHub Release for the tag with the
+# APK attached. Ungated — runs to completion automatically on tag push.
+#
+# Secrets (repo-level, public-by-design build credentials; lessons.md §37):
+#   SUPABASE_URL, SUPABASE_ANON_KEY, GOOGLE_SERVER_CLIENT_ID
+#
+# Release creation uses the default GITHUB_TOKEN (contents: write) — no PAT,
+# and a Release is not a push to main, so the main-pr-gate ruleset is untouched.
+# This workflow triggers on tags only — never pull_request — so it cannot enter
+# the required-check set (contract-surfaces.md §7).
+name: Android release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  android-release:
+    name: Build APK + publish Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: SmartChessboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # versionName = tag minus the leading "v" (pre-release suffix kept);
+      # versionCode = MAJOR*10000 + MINOR*100 + PATCH from the core semver
+      # (suffix stripped). Constraint: MINOR and PATCH must stay < 100 so the
+      # code is monotonic across releases. Two pre-releases of the same core
+      # version share a versionCode — acceptable for RC testing.
+      - name: Derive version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          NAME="${TAG#v}"
+          CORE="${NAME%%-*}"
+          IFS=. read -r MAJOR MINOR PATCH <<< "$CORE"
+          for part in "$MAJOR" "$MINOR" "$PATCH"; do
+            case "$part" in
+              ''|*[!0-9]*) echo "::error::Tag '$TAG' is not v<MAJOR>.<MINOR>.<PATCH>[-suffix]"; exit 1 ;;
+            esac
+          done
+          if [ "$MINOR" -ge 100 ] || [ "$PATCH" -ge 100 ]; then
+            echo "::error::MINOR and PATCH must be < 100 for the versionCode scheme"; exit 1
+          fi
+          CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          echo "APP_VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "APP_VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "versionName=$NAME versionCode=$CODE"
+
+      # Functional release APK: Supabase/Google creds injected via BuildKonfig;
+      # signing uses the committed debug.keystore (stable signature → releases
+      # install update-in-place).
+      - name: Assemble release APK
+        run: >
+          ./gradlew :androidApp:assembleDebug --console=plain
+          -PappVersionName="$APP_VERSION_NAME"
+          -PappVersionCode="$APP_VERSION_CODE"
+          -PSUPABASE_URL='${{ secrets.SUPABASE_URL }}'
+          -PSUPABASE_ANON_KEY='${{ secrets.SUPABASE_ANON_KEY }}'
+          -PGOOGLE_SERVER_CLIENT_ID='${{ secrets.GOOGLE_SERVER_CLIENT_ID }}'
+
+      - name: Publish GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: SmartChessboard/androidApp/build/outputs/apk/debug/*.apk
+          fail_on_unmatched_files: true

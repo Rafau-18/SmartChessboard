@@ -40,8 +40,21 @@ android {
             libs.versions.android.targetSdk
                 .get()
                 .toInt()
-        versionCode = 1
-        versionName = "1.0"
+        // Release CI injects tag-derived values (-PappVersionName/-PappVersionCode);
+        // local and PR-gate builds fall back to the historical constants.
+        versionCode = (project.findProperty("appVersionCode") as String?)?.toInt() ?: 1
+        versionName = (project.findProperty("appVersionName") as String?) ?: "1.0"
+    }
+    signingConfigs {
+        // Committed throwaway keystore (standard Android debug conventions,
+        // password "android" — non-secret by design) so every CI runner signs
+        // with the same key and release APKs install update-in-place.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
     packaging {
         resources {

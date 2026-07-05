@@ -3,11 +3,18 @@ change_id: github-ci-and-distribution
 title: Public GitHub + CI — web→Cloudflare and Android→Firebase App Distribution
 status: planned
 created: 2026-07-02
-updated: 2026-07-02
+updated: 2026-07-05
 archived_at: null
 ---
 
 ## Notes
+
+> **SUPERSEDED (2026-07-05) by [`versioned-release-pipeline`](../versioned-release-pipeline/change.md).**
+> Never implemented. Its go-public + history-scrub half is now owned by `public-repo-and-pr-gate`
+> (S-14); its web→Cloudflare `wrangler deploy` + Android-artifact half is replaced by
+> `versioned-release-pipeline` (tag-triggered, gated deploy + downloadable APK GitHub Release
+> instead of Firebase App Distribution). Firebase App Distribution is carried over as an
+> **optional final phase** of the new change. Left here as a planning record; may be `/10x-archive`d.
 
 Infrastructure change (CI/CD + distribution) — **not** a vertical product slice, so it is intentionally not an `S-NN` in the roadmap (no PRD FR/US trace). It **un-parks** two roadmap `## Parked` items — "CI pipeline (build/test/deploy workflows)" and the CI half of "Store/TestFlight mobile distribution" (Firebase App Distribution only, not app stores). Builds on an earlier local CI/distribution planning sketch (not published) and the web-host decision in `context/foundation/infrastructure.md` (Cloudflare Workers Static Assets).
 
