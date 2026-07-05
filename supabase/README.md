@@ -28,9 +28,15 @@ Mobile and web clients call Supabase directly:
 | What | How |
 | --- | --- |
 | Local full stack (Docker) | `supabase start` — Postgres + Auth + Studio |
+| DB only (faster — enough for schema/RLS work) | `supabase db start` |
 | Schema / RLS tests (pgTAP) | `supabase test db` |
 | Edge Function tests | `deno test` in `functions/lichess-eval/` (no real egress) |
 | Apply migrations to hosted | `supabase db push` (after `supabase link`) |
+
+CI runs the pgTAP and Edge Function rows above on every manual dispatch of
+[`build.yml`](../.github/workflows/build.yml) against a migrations-only database — the
+same one two grants migrations (2026-07-05) exist to keep in parity with Supabase
+Cloud's platform-default privileges (fresh CI databases lack them by default).
 
 ## Conventions
 

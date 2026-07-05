@@ -63,8 +63,13 @@ rasterize differently, so Mac-recorded goldens fail CI verify. Never commit them
 CI test workflows (`.github/workflows/`): `tests.yml` — PR/main gate, JVM suite with
 golden verify + wasm suite, uploads the Roborazzi diff report as artifact on failure;
 `record-goldens.yml` — dispatch-only golden refresh (above); `ios-tests.yml` —
-nightly + dispatch iOS simulator suite on macOS (deliberately not a PR gate, ×10
-minutes billing).
+nightly + dispatch iOS simulator suite on macOS, pinned to a fixed runner image
+(`macos-26`) after a `macos-latest` image-rollover flake, and gated to skip the
+nightly cron on an inactive `main` (a manual dispatch always runs regardless);
+`build.yml` — manual-dispatch-only artifact build (Android debug APK, web wasm
+bundle) that also runs the firmware and Supabase sub-project suites the PR gate
+doesn't cover (see the root [`../AGENTS.md`](../AGENTS.md) and
+[`../supabase/AGENTS.md`](../supabase/AGENTS.md)).
 
 Expectations baked into the golden set:
 

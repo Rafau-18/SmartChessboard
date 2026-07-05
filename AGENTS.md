@@ -25,6 +25,8 @@ Commands live in each sub-project's README (linked above). The two mobile gotcha
 
 - Plain `test` does not cover the KMP targets — use the per-target tasks: `:shared:testAndroidHostTest` (JVM / Android host), `:shared:iosSimulatorArm64Test` (iOS simulator, Apple Silicon), `:shared:wasmJsTest` (web, headless browser).
 
+CI (`.github/workflows/`) runs the same commands: `tests.yml` gates PRs/`main` (JVM + wasm suites); `build.yml` is a manual-dispatch workflow that additionally builds firmware (`pio run -e esp32dev` + `pio test -e native`) and runs the Supabase suites (`deno test`, `supabase test db`) — the one place all three sub-projects are exercised together. Per-workflow detail: [`SmartChessboard/AGENTS.md`](SmartChessboard/AGENTS.md).
+
 ## Kotlin formatting
 
 ktlint is the formatter; rules live in `SmartChessboard/.editorconfig`. Format manually with `ktlint -F` from `SmartChessboard/`. (In Claude Code a `PostToolUse` hook also auto-formats `*.kt`/`*.kts` on edit.)
