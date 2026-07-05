@@ -42,6 +42,58 @@ jobs:
       - name: wasm suite (headless Chrome)
         run: ./gradlew :shared:wasmJsTest --console=plain
 
+      # Per-run test count in the Actions summary: "✅ N passed / X failed / Y skipped"
+      # plus a per-suite table. Self-contained (stdlib Python, no third-party action);
+      # `if: always()` so it renders on green AND red runs. Parses the JUnit XML that
+      # every Gradle test task writes under build/test-results/<task>/TEST-*.xml.
+      - name: Test-count summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, os, xml.etree.ElementTree as ET
+          from collections import defaultdict
+
+          files = glob.glob("shared/build/test-results/**/*.xml", recursive=True)
+          per_suite = defaultdict(lambda: [0, 0, 0])  # [tests, failures+errors, skipped]
+          for f in files:
+              # Group by the Gradle task dir right under test-results/ (e.g. testAndroidHostTest, wasmJsTest)
+              parts = f.replace("\\", "/").split("/")
+              try:
+                  task = parts[parts.index("test-results") + 1]
+              except (ValueError, IndexError):
+                  task = "other"
+              try:
+                  root = ET.parse(f).getroot()
+              except ET.ParseError:
+                  continue
+              suites = root.iter("testsuite")
+              for s in suites:
+                  t = int(s.get("tests", 0))
+                  fa = int(s.get("failures", 0)) + int(s.get("errors", 0))
+                  sk = int(s.get("skipped", 0))
+                  per_suite[task][0] += t
+                  per_suite[task][1] += fa
+                  per_suite[task][2] += sk
+
+          tot_t = sum(v[0] for v in per_suite.values())
+          tot_f = sum(v[1] for v in per_suite.values())
+          tot_s = sum(v[2] for v in per_suite.values())
+          tot_p = tot_t - tot_f - tot_s
+          icon = "✅" if tot_f == 0 else "❌"
+
+          out = os.environ["GITHUB_STEP_SUMMARY"]
+          with open(out, "a") as fh:
+              if not files:
+                  fh.write("### Test results\n\n_No JUnit XML found (build failed before tests ran)._\n")
+              else:
+                  fh.write(f"### {icon} {tot_p} passed / {tot_f} failed / {tot_s} skipped\n\n")
+                  fh.write("| Suite | Passed | Failed | Skipped | Total |\n")
+                  fh.write("|---|---:|---:|---:|---:|\n")
+                  for task in sorted(per_suite):
+                      t, fa, sk = per_suite[task]
+                      fh.write(f"| {task} | {t - fa - sk} | {fa} | {sk} | {t} |\n")
+          PY
+
       # On a golden failure the triptych diff images (Reference | Diff | New) and the
       # HTML report are the review surface — surfaced as a downloadable artifact.
       - name: Upload Roborazzi diff report
@@ -54,3 +106,37 @@ jobs:
             SmartChessboard/shared/build/reports/roborazzi/
             SmartChessboard/shared/build/reports/tests/
           if-no-files-found: ignore
+
+  # Continuous secret scan: full git history on every PR/push. Complements
+  # GitHub-native Secret Scanning + Push Protection (which rejects known provider
+  # patterns at push time). Secret-free and fork-safe — no repository secrets used.
+  # The job name below is a string contract: the main ruleset requires "gitleaks"
+  # byte-for-byte, so do not rename this job without updating the ruleset.
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Pin the gitleaks CLI by version AND sha256 (MIT, direct release download —
+      # no third-party action in the trust boundary). Bump both together deliberately.
+      - name: Install pinned gitleaks
+        run: |
+          set -euo pipefail
+          VERSION=8.30.1
+          SHA256=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          curl -sSL -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz"
+          echo "${SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      # Full-history scan with the repo config. --redact keeps any finding's secret
+      # out of the public logs; a non-zero exit fails the check.
+      - name: Scan full history
+        run: gitleaks git . --config .gitleaks.toml --redact --no-banner --exit-code 1
