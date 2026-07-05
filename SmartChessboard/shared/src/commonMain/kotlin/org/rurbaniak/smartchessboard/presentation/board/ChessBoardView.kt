@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
@@ -50,6 +52,7 @@ import org.rurbaniak.smartchessboard.domain.chess.Position
 import org.rurbaniak.smartchessboard.domain.chess.fileOf
 import org.rurbaniak.smartchessboard.domain.chess.rankOf
 import org.rurbaniak.smartchessboard.domain.chess.squareOf
+import org.rurbaniak.smartchessboard.presentation.theme.ChessColors
 import org.rurbaniak.smartchessboard.presentation.theme.LocalChessColors
 import smartchessboard.shared.generated.resources.Res
 import smartchessboard.shared.generated.resources.piece_bb
@@ -174,6 +177,18 @@ fun ChessBoardView(
     // piece (incl. a promotion) when [slide] clears.
     val suppressed: Set<Int> = slide?.moves?.mapTo(HashSet()) { it.to } ?: emptySet()
 
+    // Inside-coordinate labels (lichess style): file letters a–h along the bottom edge, rank numbers
+    // 1–8 along the right edge, sized as a fraction of the cell so they scale with the board. The size
+    // is derived from the measured [boardSizePx] (0 on the very first layout pass → labels sit out that
+    // one frame, like the slide overlay's own boardSizePx guard), so no hardcoded sp goes stale on a
+    // small (side-pane) or large (full-screen) board.
+    val coordFontSize =
+        if (boardSizePx > 0) {
+            with(LocalDensity.current) { (boardSizePx / 8f * 0.24f).toSp() }
+        } else {
+            null
+        }
+
     // testTag: the squares are anonymous clickable cells (no per-square semantics), so UI tests
     // address the board as one node and tap square centers via computed offsets (AppTestHarness).
     Box(modifier = modifier.aspectRatio(1f).testTag("chess-board").onSizeChanged { boardSizePx = it.width }) {
@@ -249,6 +264,36 @@ fun ChessBoardView(
                                         .clip(CircleShape)
                                         .background(chess.occupancyDot),
                                 )
+                            }
+                            // Inside coordinates, orientation-aware because [square] already accounts for
+                            // it: the bottom row carries its file letter (bottom-left), the right column
+                            // its rank number (top-right). Both derive from the real square, so a flipped
+                            // board reads h→a / 8→1 exactly like a physical board turned around.
+                            if (coordFontSize != null) {
+                                if (rowFromTop == 7) {
+                                    Text(
+                                        text = ('a' + fileOf(square)).toString(),
+                                        color = coordinateLabelColor(square, chess),
+                                        fontSize = coordFontSize,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.BottomStart)
+                                                .padding(start = 2.dp, bottom = 1.dp),
+                                    )
+                                }
+                                if (column == 7) {
+                                    Text(
+                                        text = (rankOf(square) + 1).toString(),
+                                        color = coordinateLabelColor(square, chess),
+                                        fontSize = coordFontSize,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(end = 2.dp, top = 1.dp),
+                                    )
+                                }
                             }
                         }
                     }
@@ -430,6 +475,16 @@ internal fun squareAt(
 
 /** a1-dark convention: squares whose file+rank parity is even are dark. */
 internal fun isDarkSquare(square: Int): Boolean = (fileOf(square) + rankOf(square)) % 2 == 0
+
+/**
+ * An inside-coordinate label paints in the *opposite* square color (a dark square gets the light-wood
+ * hue, a light square the dark-wood hue), so the letter/number always reads against its own cell — the
+ * classic lichess look, and it reuses the existing wood tokens rather than adding a new one.
+ */
+private fun coordinateLabelColor(
+    square: Int,
+    chess: ChessColors,
+): Color = if (isDarkSquare(square)) chess.lightSquare else chess.darkSquare
 
 /**
  * Whether the live reed-matrix overlay (S-09) draws a sensed dot on [square]: only when [occupancyDots]

@@ -40,6 +40,21 @@ Commands live in each sub-project's README (linked above). The two mobile gotcha
 
 CI (`.github/workflows/`) runs the same commands: `tests.yml` gates PRs/`main` (JVM + wasm suites); `build.yml` is a manual-dispatch workflow that additionally builds firmware (`pio run -e esp32dev` + `pio test -e native`) and runs the Supabase suites (`deno test`, `supabase test db`) — the one place all three sub-projects are exercised together. Per-workflow detail: [`SmartChessboard/AGENTS.md`](SmartChessboard/AGENTS.md).
 
+## Contributing (PR flow)
+
+`main` is a **public, PR-gated branch** — the `main-pr-gate` ruleset allows no direct
+pushes and no bypass. Every change (including each `/10x-implement` phase) lands the same way:
+
+- **Branch → PR → green → merge.** Never commit to `main` directly; it is rejected server-side.
+- **Required checks must be green and the branch up-to-date** before merge. The two required
+  contexts are exact job-name strings: **`JVM goldens + wasm smokes`** and **`gitleaks`** — see
+  [`docs/reference/contract-surfaces.md`](docs/reference/contract-surfaces.md) §7 for the contract
+  (renaming a job without updating the ruleset silently disarms the gate).
+- **Visual changes re-record goldens on CI, not locally** (Mac fonts ≠ ubuntu): verify-red →
+  `gh workflow run record-goldens.yml --ref <branch>` → review the bot's golden diff → green →
+  merge. Full ritual in [`SmartChessboard/AGENTS.md`](SmartChessboard/AGENTS.md).
+- No secrets are needed for CI (fork-safe); GitHub Secret Scanning + Push Protection is enabled.
+
 ## Kotlin formatting
 
 ktlint is the formatter; rules live in `SmartChessboard/.editorconfig`. Format manually with `ktlint -F` from `SmartChessboard/`. (In Claude Code a `PostToolUse` hook also auto-formats `*.kt`/`*.kts` on edit.)
