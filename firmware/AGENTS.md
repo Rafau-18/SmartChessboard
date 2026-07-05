@@ -12,13 +12,9 @@ On-hardware verification of F-03 (advertising, bonding, the on-subscribe burst, 
 
 ## What this is
 
-The ESP32 **game firmware** for the smart chessboard: a BLE peripheral that scans an 8×8 reed-switch matrix, debounces it, and streams board events to the mobile app over the `../docs/reference/contract-surfaces.md` §1 BLE protocol. It exposes one GATT service (`board_event` notify + `mobile_command` write), encodes `BOARD_SNAPSHOT` / `SQUARE_EVENT` / `BUTTON_EVENT` / `DEVICE_STATUS`, handles `SET_MODE` / `REQUEST_SNAPSHOT` / `REQUEST_STATUS`, reads two physical confirmation buttons, and survives disconnect/reconnect cycles.
+**The one-paragraph "what it is", the dumb-sensor contract, the stack, and square indexing are in [`README.md`](README.md).** This section keeps only the history that explains the current code shape.
 
 It grew from the earlier **diagnostic-only** bringup (8×8 scan → live serial occupancy render), whose sole purpose was to prove the physical wiring and pin map on hardware before any game/BLE logic existed. That scan/debounce core (~50 Hz scan, ~80 ms 4-scan debounce, `index = file + 8*rank`) is reused unchanged; F-03 layered on the BLE radio, the byte codec, the buttons, diagnostic mode, and the connection lifecycle. The serial `render()` survives as a local debug aid, orthogonal to the BLE contract path.
-
-The board is a **"dumb" sensor** — it reports raw square lift/place transitions and button presses only; the mobile re-derives moves. There is no chess logic on the firmware (no promotion/castling/en-passant awareness, no move validation, no turn tracking).
-
-Stack: **PlatformIO + ESP-IDF + NimBLE**, C++. Target board id `esp32dev` (classic ESP32-WROOM-32).
 
 ## Build / flash / monitor
 
