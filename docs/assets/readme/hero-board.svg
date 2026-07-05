@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 700" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <rect width="1600" height="700" rx="20" fill="#22272e"/>
-  <rect x="14" y="14" width="1572" height="672" rx="14" fill="none" stroke="#768390" stroke-width="3" stroke-dasharray="16 12"/>
-  <text x="800" y="300" text-anchor="middle" font-size="110">📷</text>
-  <text x="800" y="390" text-anchor="middle" font-size="44" font-weight="700" fill="#cdd9e5">Hero shot</text>
-  <text x="800" y="440" text-anchor="middle" font-size="26" fill="#909dab">the wooden board mid-game, phone with the app running next to it</text>
-  <text x="800" y="650" text-anchor="middle" font-size="20" fill="#636e7b">placeholder — drop your photo in as docs/assets/readme/hero-board.jpg and update the README link</text>
-</svg>

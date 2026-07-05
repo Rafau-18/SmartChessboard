@@ -10,19 +10,14 @@
 [![Bluetooth LE](https://img.shields.io/badge/Bluetooth_LE-custom_GATT-0082FC?logo=bluetooth&logoColor=white)](docs/reference/contract-surfaces.md)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres_·_Auth_·_Edge_Fn-3FCF8E?logo=supabase&logoColor=white)](supabase/README.md)
 
-<!-- HERO PHOTO: the wooden board mid-game with the phone running the app next to it.
-     Drop the photo in as docs/assets/readme/hero-board.jpg and change the src below. -->
-<img src="docs/assets/readme/hero-board.svg" alt="The Smart Chessboard: a wooden reed-switch board with the companion app running next to it" width="100%">
+<img src="docs/assets/readme/hero-board.jpg" alt="The Smart Chessboard: a wooden reed-switch board with the companion app running next to it" width="100%">
 
 *A hand-built reed-switch board, an ESP32, and one Kotlin codebase that turns
 casual over-the-board games into a permanent, analyzable chess archive.*
 
 ## ▶️ See it in action
 
-<!-- DEMO VIDEO: once the YouTube link is known, replace the block below with:
-     [![Smart Chessboard — demo](https://img.youtube.com/vi/YOUTUBE_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=YOUTUBE_ID)
-     (swap YOUTUBE_ID in both URLs) -->
-[<img src="docs/assets/readme/video-cover.svg" alt="Demo video: a move played on the real board appears in the app, then gets replayed and analyzed" width="80%">](https://www.youtube.com/watch?v=YOUTUBE_ID)
+[<img src="https://i.ytimg.com/vi/VK6KRTdRXM8/hqdefault.jpg" alt="Demo video: a move played on the real board appears in the app, then gets replayed and analyzed" width="60%">](https://www.youtube.com/watch?v=VK6KRTdRXM8)
 
 </div>
 
@@ -49,18 +44,18 @@ input channel, not a special case.
 
 ## Gallery
 
-<!-- HARDWARE PHOTOS: replace the two SVG placeholders with real photos
-     (same file names, .jpg — then update the extensions here). -->
 <p align="center">
-  <img src="docs/assets/readme/hw-internals.svg" alt="Board interior: 8×8 reed-switch matrix, anti-ghosting diodes, wiring loom" width="49%">
-  <img src="docs/assets/readme/hw-esp32-clock.svg" alt="The ESP32 controller and the repurposed DGT chess clock used for move confirmation" width="49%">
+  <img src="docs/assets/readme/hw-internals.jpg" alt="Board interior: 8×8 reed-switch matrix, anti-ghosting diodes, wiring loom" width="85%">
 </p>
 
-<!-- APP SCREENSHOTS: replace with real captures (same file names, .png). -->
 <p align="center">
-  <img src="docs/assets/readme/app-physical.svg" alt="Physical mode with the live reed-matrix overlay" width="32%">
-  <img src="docs/assets/readme/app-replay.svg" alt="Replay with engine analysis: eval bar and best-move arrow" width="32%">
-  <img src="docs/assets/readme/app-history.svg" alt="Private game history, seeded with famous historical games" width="32%">
+  <img src="docs/assets/readme/hw-esp32-clock.jpg" alt="Inside the repurposed DGT chess clock: the button PCB wired out for move confirmation" width="35%">
+</p>
+
+<p align="center">
+  <img src="docs/assets/readme/app-physical.png" alt="Physical mode: a board-mismatch banner and live reed-switch diagnostics guiding a fix" width="32%">
+  <img src="docs/assets/readme/app-replay.png" alt="Replay with engine analysis: eval bar and best-move arrow" width="32%">
+  <img src="docs/assets/readme/app-history.png" alt="Private game history, seeded with famous historical games" width="32%">
 </p>
 
 ## Features
