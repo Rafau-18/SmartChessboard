@@ -45,8 +45,11 @@ input channel, not a special case.
 ## Gallery
 
 <p align="center">
-  <img src="docs/assets/readme/hw-internals.jpg" alt="Board interior: 8×8 reed-switch matrix, anti-ghosting diodes, wiring loom" width="49%">
-  <img src="docs/assets/readme/hw-esp32-clock.jpg" alt="Inside the repurposed DGT chess clock: the button PCB wired out for move confirmation" width="49%">
+  <img src="docs/assets/readme/hw-internals.jpg" alt="Board interior: 8×8 reed-switch matrix, anti-ghosting diodes, wiring loom" width="85%">
+</p>
+
+<p align="center">
+  <img src="docs/assets/readme/hw-esp32-clock.jpg" alt="Inside the repurposed DGT chess clock: the button PCB wired out for move confirmation" width="35%">
 </p>
 
 <p align="center">
