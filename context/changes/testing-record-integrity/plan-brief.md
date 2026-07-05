@@ -69,7 +69,7 @@ occupancy-diff property (the SYNC-comment coupling made mechanical).
 | --- | --- | --- |
 | 1. Cloud-handoff durability (W5+W6+W3) | Zero-row guard, reconcile/sync split, guarded digital writes | Reconcile split must keep the finished-flush backstop |
 | 2. Physical finish integrity (W2) | §6.2 restored on finish, banner+Retry, load self-heal | Largest reducer/VM rework; existing E2E assumes instant freeze |
-| 3. Record-integrity oracle (G1+G2) | Hand PGN + occupancy invariant + geometry property + kitchen-sink | Fixtures must be genuinely external, not `writePgn` output |
+| 3. Record-integrity oracle (G1+G2) | Reuse `PgnFixtures` (Opera game) as kitchen-sink + occupancy invariant + geometry property + hand PGN for promotion/en passant | Famous games lack promotion/en passant — those two shapes stay on hand-written short scenarios |
 | 4. Adversarial streams (G3+G4) | Phantom/bit-flip/gap scenarios → visible rejection or no-op | Virtual-time discipline around the armed diagnostic stream |
 | 5. Kill-window + floor + docs (W7/G9+G10) | Partial-write + floor tests, test-plan/roadmap/lessons/cookbook | Keep it documentation, not a transactional-journal expansion |
 

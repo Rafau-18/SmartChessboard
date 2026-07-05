@@ -47,6 +47,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | done |
 | S-12 | mobile-landscape-layout       | space-efficient landscape UI across board screens (2-col + control placement) | S-02, S-03, S-04, S-06 | FR-004, FR-008, FR-016, FR-017, FR-019, US-01–US-03   | ready           |
 | S-13 | seed-sample-games-on-signup   | start on a pre-seeded history of 8 famous games (replayable/analyzable/deletable), not an empty list | S-01             | FR-022, FR-015, FR-016, FR-017, FR-021, US-03         | done |
+| S-14 | public-repo-and-pr-gate       | (hardening) go public + PR-gated `main`: no merge without green tests; per-run test counts visible in CI | — (best after testing-record-integrity) | NFR process / repo hygiene (no new FR)     | proposed        |
 
 ## Streams
 
@@ -285,6 +286,24 @@ Context note (outside the app codebase): firmware status has since advanced well
 - **Risk:** Small backend-only slice; the backend and delete path already exist (S-01 `games` schema + RLS `games_delete_own`, S-11 delete). Residual risk: the trigger must run as the table owner / bypass RLS correctly and fire once-only (INSERT, not per-login) so seeds neither fail on RLS nor resurrect after delete; the chosen PGNs must pass the existing parser + legality engine (fixture parity, as the two current seed PGNs already do).
 - **Status:** ready — Prerequisite S-01 (auth + history + `games` schema) is implemented; the manual `supabase/cloud-seed-replay-games.sql` is a proven starting point. Plannable now via `/10x-plan seed-sample-games-on-signup`.
 
+### S-14: Public repo + PR-gated main
+
+- **Outcome:** The repository is public and `main` is protected: every change lands through a pull request whose CI must be **green before merge is allowed**, and each CI run surfaces a **visible test-count summary** ("✅ N tests passed / 0 failed") in the run's GitHub summary. A reviewer opening a PR sees the full pipeline broken into steps and exactly which tests ran before merge — the artifact the course certification asks for, and the professional-hygiene baseline for sharing the repo.
+- **Change ID:** public-repo-and-pr-gate
+- **PRD refs:** none — a process / repo-hygiene enabler (no new FR). Unlocks: a credible, demonstrable quality gate and a shareable public repo (certification / portfolio); protects the freshly-added `testing-record-integrity` fault-injection suite from silent regression.
+- **Prerequisites:** none hard. **Best sequenced after `testing-record-integrity`** (test-plan Phase 2) so the gate protects the full suite the moment it is enforced.
+- **Parallel with:** everything — touches CI workflows, repo settings, and docs; no production-code change beyond one small demo UI tweak used to exercise the gate.
+- **Blockers:**
+  - **Branch protection requires a public repo (free) or GitHub Pro** — confirmed 2026-07-05: classic branch protection **and** rulesets both return 403 "Upgrade to GitHub Pro or make this repository public" on the current private/free plan. The go-public decision is therefore the gate for the "hard block on merge" part (the visible PR pipeline itself already works without it — `tests.yml` runs on `pull_request`).
+- **Unknowns / decisions for `/10x-plan`:**
+  - **Pre-publication cleanup scope** — audit for secrets and cruft **across the whole git history, not just HEAD** (a secret ever committed and later removed is still exposed once public); TEAM_ID / local-config leakage (`Config.xcconfig`, `local.properties`, `.env*` are gitignored — verify none slipped into history); temp/working files at repo root; README / docs polish for a public audience. Owner: user/team. Block: yes for go-public.
+  - **Secret scanning (two layers)** — (a) **pre-publication, one-shot, hard go-public gate:** run `gitleaks` (and/or `trufflehog`) over the **full git history**; anything found ⇒ rotate the secret **and** scrub history (`git filter-repo` / BFG) *before* publishing — GitHub-native scanning only catches a secret once the repo is already public, i.e. after it's exposed, so the history scan must happen first. (b) **continuous, in CI:** a `gitleaks` step on `pull_request` (run the MIT CLI binary directly to sidestep the action's org-licensing) blocks a new secret from entering; plus enable **GitHub-native Secret Scanning + Push Protection** (free + automatic on public repos) as the belt-and-braces layer. Custom patterns worth adding: Supabase URL / anon-key shape, Google OAuth client secrets, `SUPABASE_SERVICE_ROLE`. Owner: team. Block: (a) yes for go-public; (b) no.
+  - **iOS in the PR gate?** — `ios-tests.yml` is macOS (×10 billing) and currently nightly + dispatch only, deliberately off the PR path. Leading option: keep it off the required set (required check = `tests.yml` "JVM goldens + wasm smokes" only); iOS stays nightly. Owner: team. Block: no.
+  - **Test-count summary mechanism** — a self-contained step parsing JUnit XML into `$GITHUB_STEP_SUMMARY` (zero third-party actions in a trusted pipeline) vs a ready-made action (e.g. mikepenz/EnricoMi). Leading: self-contained step. Owner: team. Block: no.
+  - **Golden re-record in the PR flow** — the existing verify-red → `record-goldens.yml` → review-diff → green ritual (`SmartChessboard/AGENTS.md`) becomes the documented path for any visual change under the gate; decide whether to leave it manual-dispatch or streamline. Owner: team. Block: no.
+- **Risk:** Process/CI configuration, not product logic — low code-regression risk. The load-bearing risks are (1) **going public exposes git history** — the secret/cruft audit MUST cover history, not just the working tree; (2) the required-check name must exactly match the CI job name or the gate silently never blocks; (3) goldens are environment-dependent (Mac fonts ≠ ubuntu) so any UI change re-records on CI, never locally. A small deliberate UI tweak (user has one in mind) is the demo vehicle to prove the gate end-to-end, including the golden re-record path.
+- **Status:** proposed — plannable via `/10x-new public-repo-and-pr-gate` then `/10x-plan` in a fresh session; gated on the user's go-public decision.
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                     | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                   |
@@ -304,6 +323,7 @@ Context note (outside the app codebase): firmware status has since advanced well
 | S-11       | delete-game-from-history      | Delete a game from history (hard delete, all surfaces)             | yes                   | Run `/10x-plan delete-game-from-history` |
 | S-12       | mobile-landscape-layout       | Landscape UI: two-column + control placement across board screens  | yes                   | Run `/10x-plan mobile-landscape-layout` |
 | S-13       | seed-sample-games-on-signup   | Seed ≥5 famous games on first sign-in (non-empty new-user history)  | yes                   | Run `/10x-plan seed-sample-games-on-signup` |
+| S-14       | public-repo-and-pr-gate       | Go public + PR-gated `main`: cleanup, branch protection, CI test-count summary | yes\*   | \*Gated on go-public decision. Run `/10x-plan public-repo-and-pr-gate` |
 
 ## Open Roadmap Questions
 

@@ -15,7 +15,7 @@ the worktree — BuildKonfig empty); full `:shared:testAndroidHostTest` green.
 
 Pending confirmation (code read):
 
-- [ ] 3.6 `DigitalPlaySmokeTest` reads as product-flow documentation: the steps and naming mirror
+- [x] 3.6 `DigitalPlaySmokeTest` reads as product-flow documentation: the steps and naming mirror
   the real flow (History → New game → names → Start → 1. e4 → move list → End game → White wins →
   confirm → Analyse/Back to history → History row "White won").
   File: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/uitest/DigitalPlaySmokeTest.kt`
@@ -28,7 +28,7 @@ credentials anywhere in the worktree.
 
 Pending confirmation (code read):
 
-- [ ] 4.4 `HistoryReplayDeleteSmokeTest` reads correctly as the product flow, and the delete
+- [x] 4.4 `HistoryReplayDeleteSmokeTest` reads correctly as the product flow, and the delete
   confirmation copy asserted in the test ("Delete game?", "This permanently deletes <matchup>…")
   matches the real dialog in `HistoryScreen.kt` (`DeleteGameDialog`).
   File: `SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/uitest/HistoryReplayDeleteSmokeTest.kt`
@@ -51,11 +51,11 @@ dependency, re-recorded canonically on CI (`3693aec`), merged (`62e7015`). See
 
 Pending confirmation (needs a human look, not just a code read):
 
-- [ ] 5.6 Review the Roborazzi diff-report artifact end-to-end and confirm the triptych
+- [x] 5.6 Review the Roborazzi diff-report artifact end-to-end and confirm the triptych
   (Reference | Diff | New) format is readable as the ongoing visual-regression review surface.
   Fetch a fresh one from any `tests.yml` run: `gh run download <run-id> -n roborazzi-report -D <dir>`,
   open `reports/roborazzi/androidHostTest/index.html`.
-- [ ] 5.6b Review the golden-refresh diff in bot commit
+- [x] 5.6b Review the golden-refresh diff in bot commit
   [`3693aec`](https://github.com/Rafau-18/SmartChessboard/commit/3693aec) (PNG, canonical) —
   confirm every changed `board_*.png` shows only antialiasing-level pixel drift, no
   structural/color change.

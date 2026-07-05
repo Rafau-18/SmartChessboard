@@ -37,7 +37,7 @@ diff-image artifacts. The agent drives and verifies the loop with `gh`.
 | Screenshot tool | Roborazzi 1.64.0 on JVM (`androidHostTest`) | Mature, device-free, coexists with Robolectric-based uiTest; common UI compiles into the Android target so JVM goldens are the community-standard CMP proxy |
 | Golden scope | ChessBoardView states + adaptive scaffolds + panel components; **no ReedDiagnosticsGrid** | User selection: highest-value visuals incl. the fresh landscape work |
 | Variant matrix | Full matrix × light/dark (~44 goldens) | User chose max coverage, accepting the re-record discipline documented in AGENTS.md |
-| Golden environment | Record **on CI** (dispatch workflow commits to branch); goldens in plain git as WebP | Mac↔Linux font rasterization drift; record-where-you-verify; Phases 1–2 record locally as provisional, Phase 5 re-records once |
+| Golden environment | Record **on CI** (dispatch workflow commits to branch); goldens in plain git as PNG | Mac↔Linux font rasterization drift; record-where-you-verify; Phases 1–2 record locally as provisional, Phase 5 re-records once. Format was WebP until a post-merge fix (2026-07-05) — its codec non-deterministically failed to read its own writes; see `lessons.md` |
 | Smoke flows | Digital happy path + History→Replay+delete | User selection; auth & physical flows out |
 | Smoke harness | Real `App()` root + Koin repository overrides (existing fakes) | Tests real Nav3+DI integration; suite must pass with no Supabase credentials |
 | CI shape | PR gate on ubuntu (host tests + goldens + wasm); iOS nightly/manual on macOS | Free-tier friendly (macOS ×10); iOS regressions surface next morning, not on PR |
@@ -63,7 +63,7 @@ ViewModels; auth/physical smoke flows; distribution CI
 Two test layers over one philosophy, then a CI roof. Goldens: Robolectric
 Native Graphics renders common composables on the JVM; a harness pins
 `AppTheme` + `LocalWindowSizeClass` (its 0×0 default is a landscape trap) +
-shot size; goldens live in `shared/src/androidHostTest/snapshots/` as WebP.
+shot size; goldens live in `shared/src/androidHostTest/snapshots/` as PNG.
 Smokes: v2 `runComposeUiTest` composes the production `App()` with fake
 repositories via Koin (lazy DI keeps `SupabaseClient` unconstructed), drives
 flows by semantics + board-tap offsets. CI: `tests.yml` (PR, ubuntu),

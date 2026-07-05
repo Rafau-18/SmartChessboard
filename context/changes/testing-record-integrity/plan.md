@@ -97,6 +97,12 @@ red when its fix is reverted.
 - `reconcile` has exactly two call sites: `PlayViewModel.load` (`:150`) and
   `PhysicalPlayViewModel.load` (`:152`). Both must launch the background flush after the
   reconcile/sync split.
+- A curated published-PGN corpus already exists: `internal object PgnFixtures`
+  (`commonTest/.../domain/chess/pgn/PgnFixtures.kt`, added by the seed slice, parser-legality
+  verified in `PgnParserTest`) — 8 famous games (Opera, Immortal, Evergreen, Game of the
+  Century, …). Reuse it as the Phase-3 external oracle. Caveat: **none of the famous games
+  contains a promotion or an en-passant capture**, so those two shapes stay covered by the
+  short hand-written scenarios (`PhysicalCaptureEndToEndTest` already scripts both).
 
 ## What We're NOT Doing
 
@@ -433,31 +439,38 @@ positions); assert footprint sets == `toOccupancy(position)` XOR `toOccupancy(ap
 decomposed into vacated/arrived (+ the en-passant/castle-rook captured square). `applyMove`
 is `internal` — same-module commonTest sees it.
 
-#### 4. Hand-written PGN fixtures on existing scenarios
+#### 4. Independent-oracle expectations on the short scenarios (esp. promotion + en passant)
 
 **Files**: `shared/src/commonTest/.../presentation/physical/PhysicalCaptureEndToEndTest.kt`
-(and siblings), `shared/src/commonTest/.../fixtures/RecordFixtures.kt` (new)
+(and siblings), `shared/src/commonTest/.../fixtures/RecordFixtures.kt` (new — only for shapes
+`PgnFixtures` doesn't cover)
 
-**Intent**: assert the persisted PGN against a hand-written expectation (author-as-oracle),
-not against `writePgn`'s own output, and run the occupancy invariant per move.
+**Intent**: assert the persisted PGN against an expectation **not** produced by `writePgn`, and
+run the occupancy invariant per move. The famous-game corpus (`PgnFixtures`, reused in #5)
+covers castling/disambiguation/mate/captures on a long chain; this step covers the two shapes
+the corpus lacks — **promotion (incl. the promoted piece) and en passant** — plus captures in
+both lift orderings, via short hand-written expected PGN.
 
-**Contract**: expected-PGN constants (captures both orderings, interleaved castle, en passant,
-promotion incl. piece, mating move + result token) written by hand; each scripted scenario
-asserts `journaled PGN == fixture` and calls the occupancy-invariant driver after every accept.
+**Contract**: hand-written expected-PGN constants in `RecordFixtures.kt` for the promotion and
+en-passant scenarios (and any capture ordering not otherwise asserted against a `PgnFixtures`
+game); each scripted scenario asserts `journaled PGN == fixture` and calls the occupancy-invariant
+driver after every accept. Do **not** re-derive the expectation from `writePgn` output.
 
-#### 5. Kitchen-sink game
+#### 5. Kitchen-sink game (reuse `PgnFixtures`)
 
 **File**: `shared/src/commonTest/.../presentation/physical/PhysicalKitchenSinkEndToEndTest.kt` (new)
 
-**Intent**: the strongest single anti-drift proof — a published game rich in special moves,
-played move-by-move through the full pipeline (sensors → resolve → accept → journal), whose
-persisted PGN must equal the published text exactly, with the occupancy invariant after every
-move.
+**Intent**: the strongest single anti-drift proof — a **published** game played move-by-move
+through the full pipeline (sensors → resolve → accept → journal), whose persisted PGN must equal
+the published text exactly, with the occupancy invariant after every move.
 
-**Contract**: pick a public-domain game with castling, en passant, promotion, and many
-captures; drive it via `BoardScenarios` (extend the DSL if a move shape is missing); assert
-character-exact PGN equality + per-move occupancy invariant. Longest test in the suite —
-budget accordingly.
+**Contract**: drive `PgnFixtures.OPERA_GAME` (33 plies: queenside castling `O-O-O`, the `Nbd7`
+file disambiguation, check suffixes, mate — the most special-move-dense of the short famous
+games) via `BoardScenarios` (extend the DSL if a move shape is missing); assert character-exact
+equality against the `PgnFixtures` constant (a genuinely external oracle — verified in
+`PgnParserTest`, byte-parity with `seed.sql`) + per-move occupancy invariant. **Promotion and
+en passant are absent from every famous game** — they are covered by the short scenarios in #4,
+not here. Longest test in the suite — budget accordingly.
 
 ### Success Criteria
 
@@ -471,8 +484,9 @@ budget accordingly.
 
 #### Manual Verification
 
-- Review the kitchen-sink fixture PGN against its published source to confirm the expectation
-  is genuinely external (not copied from `writePgn` output)
+- Review the hand-written promotion + en-passant expected PGN (step #4) against a trusted
+  source to confirm the expectation is genuinely external (not copied from `writePgn` output).
+  The kitchen-sink game reuses `PgnFixtures.OPERA_GAME`, already externally verified.
 
 **Implementation Note**: Pause for manual confirmation after automated verification.
 
@@ -645,8 +659,9 @@ The reconcile/sync contract change is internal to the app (no schema/API change)
 - Test plan: `context/foundation/test-plan.md` (§2 risks #1/#2, §3 Phase 2, §6.5 cookbook)
 - Lessons: `context/foundation/lessons.md` (terminal flush retry; catch(Throwable) at wasm
   sites; SYNC-comment geometry; mid-game resume `runCurrent` discipline)
-- Durability spine: `context/changes/digital-pass-and-play/plan.md` (§6.2), `game-end-and-result/plan.md`
-  (offline-safe finish), `physical-resume-after-restart/` (resume gate, occupancy injection)
+- Durability spine (archived 2026-07-04): `context/archive/2026-06-12-digital-pass-and-play/plan.md` (§6.2),
+  `context/archive/2026-06-13-game-end-and-result/plan.md` (offline-safe finish),
+  `context/archive/2026-06-19-physical-resume-after-restart/` (resume gate, occupancy injection)
 - Zero-row spike: postgrest-kt 3.6.0 `PostgrestQueryBuilder.update` + `PostgrestResult.decodeList`
 
 ## Open Risks & Assumptions
@@ -709,7 +724,7 @@ The reconcile/sync contract change is internal to the app (no schema/API change)
 
 #### Manual
 
-- [ ] 3.6 Kitchen-sink fixture PGN reviewed against its published source (genuinely external)
+- [ ] 3.6 Hand-written promotion + en-passant expected PGN reviewed against a trusted source (genuinely external; kitchen-sink reuses the already-verified `PgnFixtures.OPERA_GAME`)
 
 ### Phase 4: Adversarial Board Streams (G3 + G4)
 

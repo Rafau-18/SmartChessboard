@@ -682,7 +682,7 @@ section updated to say so.
 
 #### Manual
 
-- [ ] 3.6 Smoke test reads as product-flow documentation
+- [x] 3.6 Smoke test reads as product-flow documentation
 
 ### Phase 4: History → Replay + delete smoke
 
@@ -694,7 +694,7 @@ section updated to say so.
 
 #### Manual
 
-- [ ] 4.4 Flow/copy matches the real delete dialog
+- [x] 4.4 Flow/copy matches the real delete dialog
 
 ### Phase 5: CI workflows on GitHub Actions
 
@@ -708,5 +708,5 @@ section updated to say so.
 
 #### Manual
 
-- [ ] 5.6 Diff-report artifact reviewed and readable
+- [x] 5.6 Diff-report artifact reviewed and readable
 - [ ] 5.7 Actions minutes checked inside free tier after first week

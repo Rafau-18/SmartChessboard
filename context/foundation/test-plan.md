@@ -71,7 +71,7 @@ orchestrator updates Status as artifacts appear on disk.
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|---|---|---|---|---|---|
 | 1 | UI visual & smoke layer | Freeze the visual surface and core flows behind a CI gate | UI regression (pre-dates this guide) | JVM golden tests, compose.uiTest smoke, CI workflows | complete | context/changes/ui-test-layer/ |
-| 2 | Physical-record integrity | Prove no accepted sequence is ever silently mis-recorded and no crash loses accepted moves | #1, #2 | adversarial scenario unit, fault-injected integration, round-trip invariants | researched | context/changes/testing-record-integrity/ |
+| 2 | Physical-record integrity | Prove no accepted sequence is ever silently mis-recorded and no crash loses accepted moves | #1, #2 | adversarial scenario unit, fault-injected integration, round-trip invariants | planned | context/changes/testing-record-integrity/ |
 | 3 | BLE resilience floor | Make the connection state machine un-hangable and ship the manual device-matrix protocol for the radio layer | #3 | fault-injection at seams, manual test protocol artifact | not started | — |
 | 4 | Backend & contract gates | Lock RLS against abuse and future migrations, share the wire contract vectors, wire DB/function tests into CI | #4, #5, #6 | negative pgTAP, contract vectors, CI wiring, egress canary | not started | — |
 
