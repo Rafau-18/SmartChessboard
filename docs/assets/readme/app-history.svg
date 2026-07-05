@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 880" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <rect width="420" height="880" rx="28" fill="#22272e"/>
-  <rect x="10" y="10" width="400" height="860" rx="22" fill="none" stroke="#768390" stroke-width="3" stroke-dasharray="12 9"/>
-  <text x="210" y="360" text-anchor="middle" font-size="64">📜</text>
-  <text x="210" y="430" text-anchor="middle" font-size="26" font-weight="700" fill="#cdd9e5">Game history</text>
-  <text x="210" y="466" text-anchor="middle" font-size="16" fill="#909dab">private, per-user PGN records</text>
-  <text x="210" y="490" text-anchor="middle" font-size="16" fill="#909dab">seeded with famous games</text>
-  <text x="210" y="840" text-anchor="middle" font-size="12" fill="#636e7b">replace with docs/assets/readme/app-history.png</text>
-</svg>
