@@ -1,7 +1,7 @@
 ---
 date: 2026-07-03T00:07:43+0200
 researcher: Rafał Urbaniak
-git_commit: 7c8c365a94a942c584cefe43ff275cfcad0ca080
+git_commit: 9368d6810db9f1eaa5587bf96b70e92d52b57174
 branch: worktree-mobile-landscape-layout
 repository: smartchessboard (bitbucket: <user>/smartchessboard)
 topic: "Mobile landscape layout — one coherent adaptive layout system for phone landscape, tablets, and wide web windows, across all screens"
@@ -16,7 +16,7 @@ last_updated_note: "Follow-up: web research on CMP adaptive best practices, Nav3
 
 **Date**: 2026-07-03T00:07:43+0200
 **Researcher**: Rafał Urbaniak
-**Git Commit**: 7c8c365a94a942c584cefe43ff275cfcad0ca080
+**Git Commit**: 9368d6810db9f1eaa5587bf96b70e92d52b57174
 **Branch**: worktree-mobile-landscape-layout
 **Repository**: smartchessboard (Bitbucket `<user>/smartchessboard`; remote not up to date — no permalinks, paths below are repo-relative)
 
@@ -26,7 +26,7 @@ Path shorthand: `<pkg>` = `SmartChessboard/shared/src/commonMain/kotlin/org/rurb
 
 How should the app introduce **one coherent adaptive layout system** covering (a) phones rotated to landscape, (b) tablets, and (c) wide web browser windows — across **all** screens? What exists today (orientation config, adaptive machinery, state survival on rotation), what actually breaks in landscape, and which constraints and prior decisions bound the implementation plan?
 
-**Scope decisions taken at kickoff (2026-07-02):** all screens in scope (not just board screens); targets = phones + tablets + web treated as one adaptive system; the change worktree was fast-forwarded to local `main` (`7c8c365`) before research so findings match the code the change will be built on.
+**Scope decisions taken at kickoff (2026-07-02):** all screens in scope (not just board screens); targets = phones + tablets + web treated as one adaptive system; the change worktree was fast-forwarded to local `main` (`9368d68`) before research so findings match the code the change will be built on.
 
 ## Summary
 
@@ -128,10 +128,10 @@ UX quirk worth a decision: `effectiveMoveListMode` defaults flip INLINE↔TABLE 
 
 ### 7. Collisions & sequencing
 
-- **`delete-game-from-history`** (in flight, p1 merged on main `7c8c365`): HistoryScreen kebab menu + dialog — row-level affordance, no layout restructure. Low collision; if both land, a trivial merge in HistoryScreen imports at worst.
+- **`delete-game-from-history`** (in flight, p1 merged on main `9368d68`): HistoryScreen kebab menu + dialog — row-level affordance, no layout restructure. Low collision; if both land, a trivial merge in HistoryScreen imports at worst.
 - **S-10 `ble-connectivity-robustness`** (proposed, research seeded): multi-device BLE testing, no layout code. No collision; note S-10's device matrix (several Android + iOS devices) is also the natural fleet for landscape manual verification — potential shared manual pass.
 - **`ui-theming-and-scaling`**: `impl_reviewed`, awaiting archive — no code in flight.
-- This change's worktree is at `main@7c8c365` (fast-forwarded 2026-07-03), which already includes delete-game p1.
+- This change's worktree is at `main@9368d68` (fast-forwarded 2026-07-03), which already includes delete-game p1.
 
 ### 8. Contract surfaces & testing
 

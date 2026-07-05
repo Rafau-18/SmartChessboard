@@ -1,7 +1,7 @@
 ---
 date: 2026-06-19T18:03:24+0200
 researcher: claude (4 parallel codebase-research agents)
-git_commit: 0750746ea850974f1c0c02b3c11651d328ea1e98
+git_commit: c9442c7802b69d68ec2728ac1b976757d2aa30f1
 branch: main
 repository: smartchessboard
 change_id: reject-recover-diagnostics
@@ -16,7 +16,7 @@ last_updated_by: claude
 
 **Date**: 2026-06-19T18:03:24+0200
 **Researcher**: claude (4 parallel codebase-research agents)
-**Git Commit**: 0750746ea850974f1c0c02b3c11651d328ea1e98
+**Git Commit**: c9442c7802b69d68ec2728ac1b976757d2aa30f1
 **Branch**: main
 **Repository**: smartchessboard
 

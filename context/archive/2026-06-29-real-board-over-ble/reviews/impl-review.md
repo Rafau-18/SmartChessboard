@@ -104,11 +104,11 @@ intent across all 8 phases, all guardrails held, and all core invariants verifie
 - **Dimension**: Success Criteria
 - **Location**: context/changes/real-board-over-ble/plan.md:660-668 + manual-verification.md §4/§5/§Status
 - **Detail**: plan.md rows 8.1–8.6 are `[x]`, but (a) unlike every other phase they carry no ` — <sha>`
-  (p8 did land as `f41f766` — the SHA exists, just not written back), and (b) the manual-verification.md
+  (p8 did land as `e109913` — the SHA exists, just not written back), and (b) the manual-verification.md
   result logs (§4 Android, §5 iOS) are entirely empty (all ☐, blank device/OS/date) with §Status unchecked.
   change.md records the user ran + accepted the on-hardware gate, so this is a traceability / write-back gap,
   NOT a fabricated pass — but the designated evidence artifact for the slice's hard blocking gate is blank.
-- **Fix**: Write `f41f766` onto rows 8.1–8.6 and fill manual-verification.md's result log (device/OS/date +
+- **Fix**: Write `e109913` onto rows 8.1–8.6 and fill manual-verification.md's result log (device/OS/date +
   the accepted flaky-BLE caveat from change.md) / tick §Status, so the gate has a real evidence trail before
   `/10x-archive`.
 - **Decision**: PENDING

@@ -19,7 +19,7 @@ send in S-09.
 - **No board/BLE/transport code exists anywhere in the app** — pure greenfield. The only §1.3
   artifact in code is the square convention in
   [Square.kt](SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/chess/Square.kt)
-  (`index = file + 8 * rank`, a1 = 0), landed by F-01 Phase 1 (commit 211fd2c) and verified on
+  (`index = file + 8 * rank`, a1 = 0), landed by F-01 Phase 1 (commit 928210b) and verified on
   physical hardware by the firmware bringup.
 - **Firmware emits no messages today.** The parked bringup firmware
   ([main.cpp](firmware/src/main.cpp)) implements scan + debounce (~80 ms, 50 Hz) with
@@ -563,20 +563,20 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain` — 42ee77b
-- [x] 1.2 Formatting clean: `ktlint -F` — 42ee77b
+- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain` — 8c16c1a
+- [x] 1.2 Formatting clean: `ktlint -F` — 8c16c1a
 
 #### Manual
 
-- [x] 1.3 Public types read as a consumable contract for S-06 / plausible S-09 target, no chess vocabulary — 42ee77b
-- [x] 1.4 Event/command vocabulary maps 1:1 onto §1.3/§1.4 — 42ee77b
+- [x] 1.3 Public types read as a consumable contract for S-06 / plausible S-09 target, no chess vocabulary — 8c16c1a
+- [x] 1.4 Event/command vocabulary maps 1:1 onto §1.3/§1.4 — 8c16c1a
 
 ### Phase 2: Wire codec & golden frames
 
 #### Automated
 
-- [x] 2.1 Codec + golden-frame tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test` — f3bd9d1
-- [x] 2.2 Formatting clean: `ktlint -F` — f3bd9d1
+- [x] 2.1 Codec + golden-frame tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test` — ed7fdf9
+- [x] 2.2 Formatting clean: `ktlint -F` — ed7fdf9
 
 #### Manual
 
@@ -587,8 +587,8 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [x] 3.1 Emulator behavior tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test` — 465f5d7
-- [x] 3.2 Formatting clean: `ktlint -F` — 465f5d7
+- [x] 3.1 Emulator behavior tests pass on host + iOS-sim: `:shared:testAndroidHostTest` + `:shared:iosSimulatorArm64Test` — 7d8dcb7
+- [x] 3.2 Formatting clean: `ktlint -F` — 7d8dcb7
 
 #### Manual
 
@@ -599,10 +599,10 @@ minimal dated Implementation-Decisions line, no user-facing impact).
 
 #### Automated
 
-- [x] 4.1 Full suite green on host: `:shared:testAndroidHostTest` — 7f78e6f
-- [x] 4.2 Green on iOS sim: `:shared:iosSimulatorArm64Test` — 7f78e6f
-- [x] 4.3 Green on WasmJS: `:shared:wasmJsTest` — 7f78e6f
-- [x] 4.4 Formatting clean: `ktlint -F` — 7f78e6f
+- [x] 4.1 Full suite green on host: `:shared:testAndroidHostTest` — 540cc69
+- [x] 4.2 Green on iOS sim: `:shared:iosSimulatorArm64Test` — 540cc69
+- [x] 4.3 Green on WasmJS: `:shared:wasmJsTest` — 540cc69
+- [x] 4.4 Formatting clean: `ktlint -F` — 540cc69
 
 #### Manual
 

@@ -25,7 +25,7 @@ The §6.2 durability spine is implemented and already covered by ~40 focused tes
 A move is "accepted" only after a synchronous journal write returns; the UI advances
 on that success; cloud sync is asynchronous best-effort. The exposure is **not** missing
 scenario coverage — it is five concrete defects and an oracle gap, all code-verified at
-commit `d7cee0c` (research §5):
+commit `014b03f` (research §5):
 
 - **W5 (zero-row false success)** — `updatePgn`/`finishGame` are bare PostgREST UPDATEs
   filtered `eq("id", id)` with no affected-row check (`SupabaseGamesRepository.kt:106-135`).
@@ -60,7 +60,7 @@ a mechanical property.
 The per-target test suites (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`,
 `:shared:wasmJsTest`) carry new fault-injection and record-integrity tests that:
 
-- were **red** against the code at `d7cee0c` for each of W5/W6/W2/W3 and are **green**
+- were **red** against the code at `014b03f` for each of W5/W6/W2/W3 and are **green**
   after the minimal fix;
 - prove for a corpus of physical games (incl. one long "kitchen-sink" game from
   published PGN) that the persisted PGN equals a **hand-written** expectation and that the

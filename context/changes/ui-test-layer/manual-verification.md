@@ -35,19 +35,19 @@ Pending confirmation (code read):
 
 ## Phase 5 — CI workflows on GitHub Actions
 
-Automated (done, merged to main `c8a7441`): `tests.yml` (PR/main gate, JVM golden verify + wasm)
+Automated (done, merged to main `bc907a1`): `tests.yml` (PR/main gate, JVM golden verify + wasm)
 green via `gh`; `record-goldens.yml` dispatched on `ui-test-layer-ci`, produced bot commit
-`dd6ced7` refreshing 10 board goldens; `tests.yml` green against the refreshed goldens;
+`0000000` refreshing 10 board goldens; `tests.yml` green against the refreshed goldens;
 deliberate-break demo on scratch branch `ci-break-demo` (deleted after use) — verify failed,
 `roborazzi-report` artifact downloaded and inspected, revert turned it green again;
 `ios-tests.yml` green both via manual dispatch and its own nightly cron; all three workflow
-files pass `actionlint` 1.7.12. Merged `ui-test-layer-ci` → `main` at `c8a7441`.
+files pass `actionlint` 1.7.12. Merged `ui-test-layer-ci` → `main` at `bc907a1`.
 
 **Post-merge codec fix (2026-07-05)**: the golden gate on `main` briefly went red for an
 unrelated reason — the WebP codec (`webp-imageio`) non-deterministically failed to read files
 it had itself written. Switched goldens to PNG (JDK-native `ImageIO`), dropped the WebP
-dependency, re-recorded canonically on CI (`3693aec`), merged (`62e7015`). See
-`context/foundation/lessons.md` for the full incident. Superseded the `dd6ced7` reference below.
+dependency, re-recorded canonically on CI (`86050d3`), merged (`607aca3`). See
+`context/foundation/lessons.md` for the full incident. Superseded the `0000000` reference below.
 
 Pending confirmation (needs a human look, not just a code read):
 
@@ -56,7 +56,7 @@ Pending confirmation (needs a human look, not just a code read):
   Fetch a fresh one from any `tests.yml` run: `gh run download <run-id> -n roborazzi-report -D <dir>`,
   open `reports/roborazzi/androidHostTest/index.html`.
 - [x] 5.6b Review the golden-refresh diff in bot commit
-  [`3693aec`](https://github.com/Rafau-18/SmartChessboard/commit/3693aec) (PNG, canonical) —
+  [`86050d3`](https://github.com/Rafau-18/SmartChessboard/commit/86050d3) (PNG, canonical) —
   confirm every changed `board_*.png` shows only antialiasing-level pixel drift, no
   structural/color change.
 - [ ] 5.7 Check Actions minutes consumption after the first full week (from 2026-07-05, so on or

@@ -79,7 +79,7 @@ Flash with `pio run -t upload` from `firmware/`, connect + subscribe to
 
 Status: **CONFIRMED on-hardware 2026-06-29** (nRF Connect, board `SmartChessboard-DA3A`).
 3.4 lift/place decode to the right squares (`02 0C` lift e2 / `02 5C` place e4, etc.);
-3.5 `03 00` white / `03 01` black (the DGT-clock buttons via ADC1 GPIO34/35, `7bb2a12`);
+3.5 `03 00` white / `03 01` black (the DGT-clock buttons via ADC1 GPIO34/35, `74c7477`);
 3.6 `81 01` starts the ~10 Hz `BOARD_SNAPSHOT` stream, `81 00` stops it; 3.7 `82`→one
 `BOARD_SNAPSHOT`, `83`→one `DEVICE_STATUS`; 3.8 `DEVICE_STATUS` ~every 30 s with monotonic
 uptime (no resets across the whole session); 3.9 offline change reflected in the reconnect

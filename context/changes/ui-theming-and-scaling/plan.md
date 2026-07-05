@@ -485,11 +485,11 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 1.1 Theme-mode persistence unit test passes (`:shared:testAndroidHostTest`) — 8f31e97
-- [x] 1.2 Pure units pass on Native (`:shared:iosSimulatorArm64Test`) — 8f31e97
-- [x] 1.3 Web compiles/tests (`:shared:wasmJsTest`) — 8f31e97
-- [x] 1.4 Android app builds (`:androidApp:assembleDebug`) — 8f31e97
-- [x] 1.5 ktlint clean — 8f31e97
+- [x] 1.1 Theme-mode persistence unit test passes (`:shared:testAndroidHostTest`) — 82ff24a
+- [x] 1.2 Pure units pass on Native (`:shared:iosSimulatorArm64Test`) — 82ff24a
+- [x] 1.3 Web compiles/tests (`:shared:wasmJsTest`) — 82ff24a
+- [x] 1.4 Android app builds (`:androidApp:assembleDebug`) — 82ff24a
+- [x] 1.5 ktlint clean — 82ff24a
 
 #### Manual
 
@@ -501,9 +501,9 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 2.1 `clampBoardSize` boundary unit test passes (`:shared:testAndroidHostTest`) — 5ce7104
-- [x] 2.2 Board-size persistence round-trip passes (host + `:shared:iosSimulatorArm64Test`) — 5ce7104
-- [x] 2.3 All targets compile (`:androidApp:assembleDebug`, `:webApp`), ktlint clean — 5ce7104
+- [x] 2.1 `clampBoardSize` boundary unit test passes (`:shared:testAndroidHostTest`) — 98a38d8
+- [x] 2.2 Board-size persistence round-trip passes (host + `:shared:iosSimulatorArm64Test`) — 98a38d8
+- [x] 2.3 All targets compile (`:androidApp:assembleDebug`, `:webApp`), ktlint clean — 98a38d8
 
 #### Manual
 
@@ -515,8 +515,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 3.1 Hold-last fraction/score unit test passes (host + `:shared:iosSimulatorArm64Test`) — 1e84936
-- [x] 3.2 `whiteBarFraction(0,null)==0.5` regression intact; web compiles — 1e84936
+- [x] 3.1 Hold-last fraction/score unit test passes (host + `:shared:iosSimulatorArm64Test`) — 56dba61
+- [x] 3.2 `whiteBarFraction(0,null)==0.5` regression intact; web compiles — 56dba61
 
 #### Manual
 
@@ -528,7 +528,7 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 4.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble), ktlint clean — 3d290ba
+- [x] 4.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble), ktlint clean — a35bcb7
 
 #### Manual
 
@@ -540,8 +540,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 5.1 Move-diff helper unit-tested (normal/capture/castle/en-passant/promotion/none), host + iOS sim — 2f24b64
-- [x] 5.2 All targets compile; ktlint clean — 2f24b64
+- [x] 5.1 Move-diff helper unit-tested (normal/capture/castle/en-passant/promotion/none), host + iOS sim — efa36b1
+- [x] 5.2 All targets compile; ktlint clean — efa36b1
 
 #### Manual
 
@@ -553,8 +553,8 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 6.1 `effectiveMoveListMode` + move-list-mode persistence unit tests pass (host + `:shared:iosSimulatorArm64Test`) — 15f06af
-- [x] 6.2 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean — 15f06af
+- [x] 6.1 `effectiveMoveListMode` + move-list-mode persistence unit tests pass (host + `:shared:iosSimulatorArm64Test`) — 458507b
+- [x] 6.2 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean — 458507b
 
 #### Manual
 
@@ -569,7 +569,7 @@ schema/contract change. Removing `BOARD_MAX_WIDTH` is internal.
 
 #### Automated
 
-- [x] 7.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean — 4d8a52c
+- [x] 7.1 All targets compile, existing tests green (host, iOS sim, wasm, android assemble); ktlint clean — 2a36a13
 
 #### Manual
 

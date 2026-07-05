@@ -207,9 +207,9 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 #### Automated
 
-- [x] 1.1 Reducer unit tests pass on Android host (`:shared:testAndroidHostTest`) — 6ab630c
-- [x] 1.2 Shared module compiles for all targets, no physical leak to web (`compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64`) — 6ab630c
-- [x] 1.3 ktlint formatting clean (`ktlint -F`) — 6ab630c
+- [x] 1.1 Reducer unit tests pass on Android host (`:shared:testAndroidHostTest`) — b78a7a3
+- [x] 1.2 Shared module compiles for all targets, no physical leak to web (`compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64`) — b78a7a3
+- [x] 1.3 ktlint formatting clean (`ktlint -F`) — b78a7a3
 
 #### Manual
 
@@ -219,9 +219,9 @@ No data migration. The journal schema (PGN/`dirty`/`result`) is unchanged; the n
 
 #### Automated
 
-- [x] 2.1 Resume E2E passes on Android host (`:shared:testAndroidHostTest`) — 7331af0
-- [x] 2.2 Resume E2E passes on iOS simulator (`:shared:iosSimulatorArm64Test`) — 7331af0
-- [x] 2.3 Full shared build green across targets + ktlint clean — 7331af0
+- [x] 2.1 Resume E2E passes on Android host (`:shared:testAndroidHostTest`) — a30d43a
+- [x] 2.2 Resume E2E passes on iOS simulator (`:shared:iosSimulatorArm64Test`) — a30d43a
+- [x] 2.3 Full shared build green across targets + ktlint clean — a30d43a
 
 #### Manual
 

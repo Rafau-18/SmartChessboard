@@ -395,65 +395,65 @@ None material in this slice: one list query (indexed by `(user_id, created_at de
 
 #### Automated
 
-- [x] 1.1 Migrations apply cleanly: `supabase db reset` — 58f59f6
-- [x] 1.2 pgTAP suite passes: `supabase test db` — 58f59f6
+- [x] 1.1 Migrations apply cleanly: `supabase db reset` — 9d159ba
+- [x] 1.2 pgTAP suite passes: `supabase test db` — 9d159ba
 
 #### Manual
 
-- [x] 1.3 Migration pushed to cloud (`supabase db push`); table + 4 policies visible in Dashboard — 58f59f6
+- [x] 1.3 Migration pushed to cloud (`supabase db push`); table + 4 policies visible in Dashboard — 9d159ba
 
 ### Phase 2: Provider configuration (manual console gates)
 
 #### Manual
 
-- [x] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud) — 95eff2c
-- [x] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080 — 95eff2c
-- [x] 2.3 `supabase/.env.local` holds Google client credentials for local stack — 95eff2c
-- [x] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing) — 95eff2c
-- [x] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls` — 95eff2c
+- [x] 2.1 Google provider enabled in Supabase Dashboard (Client ID + Secret from Google Cloud) — b53644d
+- [x] 2.2 Redirect allowlist: deep link + workers.dev + localhost:8080 — b53644d
+- [x] 2.3 `supabase/.env.local` holds Google client credentials for local stack — b53644d
+- [x] 2.4 OAuth consent screen configured (+ both privacy-check accounts as test users while in Testing) — b53644d
+- [x] 2.5 `config.toml`: `[auth.external.google]` block + extended `additional_redirect_urls` — b53644d
 
 ### Phase 3: Shared auth core — Koin, Auth plugin, repositories, ViewModels, tests
 
 #### Automated
 
-- [x] 3.1 `:shared:testAndroidHostTest` green — 1420877
-- [x] 3.2 `:shared:wasmJsTest` green — 1420877
-- [x] 3.3 `:shared:iosSimulatorArm64Test` green — 1420877
-- [x] 3.4 ktlint clean — 1420877
+- [x] 3.1 `:shared:testAndroidHostTest` green — d67e73a
+- [x] 3.2 `:shared:wasmJsTest` green — d67e73a
+- [x] 3.3 `:shared:iosSimulatorArm64Test` green — d67e73a
+- [x] 3.4 ktlint clean — d67e73a
 
 ### Phase 4: UI + platform wiring — screens, deep links, web redirect, E2E
 
 #### Automated
 
-- [x] 4.1 Phase 3 test tasks still green — 84020fa
-- [x] 4.2 `:androidApp:assembleDebug` builds — 84020fa
-- [x] 4.3 `:webApp:wasmJsBrowserDistribution` builds — 84020fa
-- [x] 4.10 iosApp compiles via `xcodebuild` (iphonesimulator) — 84020fa
+- [x] 4.1 Phase 3 test tasks still green — 481ae60
+- [x] 4.2 `:androidApp:assembleDebug` builds — 481ae60
+- [x] 4.3 `:webApp:wasmJsBrowserDistribution` builds — 481ae60
+- [x] 4.10 iosApp compiles via `xcodebuild` (iphonesimulator) — 481ae60
 
 #### Manual
 
-- [x] 4.4 Android round trip (sign-in → history → restart persistence → sign-out) — 84020fa
-- [x] 4.5 iOS round trip (same checklist) — 84020fa
-- [x] 4.6 Web dev-server round trip incl. reload persistence — 84020fa
-- [x] 4.7 Deployed web round trip after manual `wrangler deploy` — 84020fa
-- [x] 4.8 Two-account privacy check with seeded row — 84020fa
-- [x] 4.9 OAuth cancel → friendly retry state — 84020fa
+- [x] 4.4 Android round trip (sign-in → history → restart persistence → sign-out) — 481ae60
+- [x] 4.5 iOS round trip (same checklist) — 481ae60
+- [x] 4.6 Web dev-server round trip incl. reload persistence — 481ae60
+- [x] 4.7 Deployed web round trip after manual `wrangler deploy` — 481ae60
+- [x] 4.8 Two-account privacy check with seeded row — 481ae60
+- [x] 4.9 OAuth cancel → friendly retry state — 481ae60
 
 ### Phase 5: Decision records & contract write-back
 
 #### Manual
 
-- [x] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended — f165d02
-- [x] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated) — f165d02
-- [x] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump — f165d02
-- [x] 5.4 prd.md Implementation Decisions: dated change-control rationale line — f165d02
+- [x] 5.1 lessons.md: MVVM-default/MVI-complex rule + Koin rule appended — 2d95a3c
+- [x] 5.2 tech-stack.md: two TBD rows resolved (+ deferred-decisions list updated) — 2d95a3c
+- [x] 5.3 contract-surfaces.md §4 write-back (scheme, web origins, session storage) + `updated` bump — 2d95a3c
+- [x] 5.4 prd.md Implementation Decisions: dated change-control rationale line — 2d95a3c
 
 ### Phase 6 (OPTIONAL): Native Google one-tap on Android
 
 #### Automated
 
-- [x] 6.1 Test + build tasks green after compose-auth — df643f0
+- [x] 6.1 Test + build tasks green after compose-auth — 72511e5
 
 #### Manual
 
-- [x] 6.2 Native account sheet on Android with graceful fallback — df643f0
+- [x] 6.2 Native account sheet on Android with graceful fallback — 72511e5

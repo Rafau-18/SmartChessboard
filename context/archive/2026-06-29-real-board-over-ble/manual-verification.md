@@ -383,5 +383,5 @@ bond-desync recovery above applies.
 
 > Filled in 2026-07-04, recording the user's 2026-06-30 on-hardware acceptance (see `change.md`).
 > The matching `plan.md` Progress rows (3.5, 4.5, 5.4, 5.5, 5.6, 6.5, 7.5, 8.3–8.6) are ticked
-> with the `f41f766` (p8) SHA. Doc-drift findings F1/F2/F3/F5/F6 from the impl-review are deferred
+> with the `e109913` (p8) SHA. Doc-drift findings F1/F2/F3/F5/F6 from the impl-review are deferred
 > to roadmap **S-10** (`ble-connectivity-robustness`).

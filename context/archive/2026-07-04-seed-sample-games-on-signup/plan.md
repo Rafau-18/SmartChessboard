@@ -326,11 +326,11 @@ Negligible: 8 single-row inserts fire once per account creation. No hot path, no
 
 #### Automated
 
-- [x] 1.1 `PgnFixtures.kt` contains 8 fixtures; the 6 new ones added — cbd10ad
-- [x] 1.2 Parser suite passes on JVM host (`:shared:testAndroidHostTest`) — cbd10ad
-- [x] 1.3 Parser suite passes on iOS Native (`:shared:iosSimulatorArm64Test`) — cbd10ad
-- [x] 1.4 Parser suite passes on wasm (`:shared:wasmJsTest`) — cbd10ad
-- [x] 1.5 ktlint clean — cbd10ad
+- [x] 1.1 `PgnFixtures.kt` contains 8 fixtures; the 6 new ones added — 9162707
+- [x] 1.2 Parser suite passes on JVM host (`:shared:testAndroidHostTest`) — 9162707
+- [x] 1.3 Parser suite passes on iOS Native (`:shared:iosSimulatorArm64Test`) — 9162707
+- [x] 1.4 Parser suite passes on wasm (`:shared:wasmJsTest`) — 9162707
+- [x] 1.5 ktlint clean — 9162707
 
 #### Manual
 
@@ -341,16 +341,16 @@ Negligible: 8 single-row inserts fire once per account creation. No hot path, no
 
 #### Automated
 
-- [x] 2.1 Migration applies cleanly (`supabase db reset`) — afdd8ed
-- [x] 2.2 pgTAP green incl. new `seed_on_signup.test.sql` (`supabase test db`) — afdd8ed
-- [x] 2.3 Fixture-parity + full JVM suite green (`:shared:testAndroidHostTest`) — afdd8ed
-- [x] 2.4 Each seed user has exactly 8 finished games + retained edge rows after reset — afdd8ed
-- [x] 2.5 `cloud-seed-replay-games.sql` deleted; no dangling references — afdd8ed
-- [x] 2.6 `contract-surfaces.md` §2.6 registers the function + trigger names — afdd8ed
+- [x] 2.1 Migration applies cleanly (`supabase db reset`) — 8866895
+- [x] 2.2 pgTAP green incl. new `seed_on_signup.test.sql` (`supabase test db`) — 8866895
+- [x] 2.3 Fixture-parity + full JVM suite green (`:shared:testAndroidHostTest`) — 8866895
+- [x] 2.4 Each seed user has exactly 8 finished games + retained edge rows after reset — 8866895
+- [x] 2.5 `cloud-seed-replay-games.sql` deleted; no dangling references — 8866895
+- [x] 2.6 `contract-surfaces.md` §2.6 registers the function + trigger names — 8866895
 
 #### Manual
 
-- [x] 2.7 Fresh sign-in → history shows 8 games chronologically (FR-015) — afdd8ed
-- [x] 2.8 Seeded game replays with controls (FR-016) and evaluates (FR-017) — afdd8ed
-- [x] 2.9 Delete a seeded game (FR-021) → stays deleted; re-login does not re-seed (fire-once) — afdd8ed
-- [x] 2.10 Broken-PGN scratch test → sign-up still succeeds, WARNING logged (error isolation) — afdd8ed
+- [x] 2.7 Fresh sign-in → history shows 8 games chronologically (FR-015) — 8866895
+- [x] 2.8 Seeded game replays with controls (FR-016) and evaluates (FR-017) — 8866895
+- [x] 2.9 Delete a seeded game (FR-021) → stays deleted; re-login does not re-seed (fire-once) — 8866895
+- [x] 2.10 Broken-PGN scratch test → sign-up still succeeds, WARNING logged (error isolation) — 8866895

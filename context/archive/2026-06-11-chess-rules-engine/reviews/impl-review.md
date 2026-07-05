@@ -20,7 +20,7 @@
 
 Success-criteria evidence: `:shared:testAndroidHostTest` green (re-run post-commit),
 `:shared:iosSimulatorArm64Test` and `:shared:wasmJsTest` green (same session, code identical
-at bb83ff1), ktlint exit 0. Perft assertions independently verified against Chess Programming
+at 3af67ee), ktlint exit 0. Perft assertions independently verified against Chess Programming
 Wiki values: start 20 / 400 / 8 902 / 197 281 (opt-in 4 865 609), Kiwipete 48 / 2 039 / 97 862.
 All Manual Progress rows carry SHAs and were confirmed at their phase gates.
 

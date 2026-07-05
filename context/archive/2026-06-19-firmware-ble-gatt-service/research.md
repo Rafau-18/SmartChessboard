@@ -1,7 +1,7 @@
 ---
 date: 2026-06-19T17:16:07+0200
 researcher: Rafał Urbaniak
-git_commit: 0750746ea850974f1c0c02b3c11651d328ea1e98
+git_commit: c9442c7802b69d68ec2728ac1b976757d2aa30f1
 branch: main
 repository: smartchessboard (bitbucket: <user>/smartchessboard)
 topic: "Firmware BLE GATT service (F-03) — implementing the §1 board contract on ESP32"
@@ -15,7 +15,7 @@ last_updated_by: Rafał Urbaniak
 
 **Date**: 2026-06-19T17:16:07+0200
 **Researcher**: Rafał Urbaniak
-**Git Commit**: 0750746ea850974f1c0c02b3c11651d328ea1e98
+**Git Commit**: c9442c7802b69d68ec2728ac1b976757d2aa30f1
 **Branch**: main
 **Repository**: smartchessboard (Bitbucket `<user>/smartchessboard`; not pushed at this commit, so no public permalinks)
 

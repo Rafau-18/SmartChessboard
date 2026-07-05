@@ -48,7 +48,7 @@ implementer needs.
   remote was Bitbucket (`git@bitbucket.org:<user>/smartchessboard.git`).
 - `tech-stack.md` had already declared `runComposeUiTest` + fakes-first;
   this change implements that declaration.
-- `mobile-landscape-layout` (merged 2026-07-04, `5dac931`) introduced
+- `mobile-landscape-layout` (merged 2026-07-04, `3aec475`) introduced
   `WindowSizeClass` via `LocalWindowSizeClass` + pure policy functions
   (`screenChrome`, `boardArrangement`, `boardResizeEnabled`) and
   `BoardScreenScaffold` — layout *logic* is unit-tested, pixels are not; its

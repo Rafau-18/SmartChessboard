@@ -677,10 +677,10 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 1.1 Interpreter suite passes on JVM host (`:shared:testAndroidHostTest`) — b969215
-- [x] 1.2 Interpreter suite passes on iOS sim (`:shared:iosSimulatorArm64Test`) — b969215
-- [x] 1.3 Interpreter suite passes on web (`:shared:wasmJsTest`) — b969215
-- [x] 1.4 ktlint clean — b969215
+- [x] 1.1 Interpreter suite passes on JVM host (`:shared:testAndroidHostTest`) — 3dbf1cf
+- [x] 1.2 Interpreter suite passes on iOS sim (`:shared:iosSimulatorArm64Test`) — 3dbf1cf
+- [x] 1.3 Interpreter suite passes on web (`:shared:wasmJsTest`) — 3dbf1cf
+- [x] 1.4 ktlint clean — 3dbf1cf
 
 #### Manual
 
@@ -691,9 +691,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 2.1 Three target suites pass (incl. emulator tests still green after the move) — d76337a
-- [x] 2.2 Test asserts `createGame(..., PHYSICAL)` → `GameRecord.mode == PHYSICAL` and DTO column `"physical"` — d76337a
-- [x] 2.3 ktlint clean — d76337a
+- [x] 2.1 Three target suites pass (incl. emulator tests still green after the move) — 9dd55cf
+- [x] 2.2 Test asserts `createGame(..., PHYSICAL)` → `GameRecord.mode == PHYSICAL` and DTO column `"physical"` — 9dd55cf
+- [x] 2.3 ktlint clean — 9dd55cf
 
 #### Manual
 
@@ -704,10 +704,10 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 3.1 Reducer + VM suites pass on all three targets — 0b3db69
-- [x] 3.2 §6.2 gate test: forced journal-write failure → `MoveRejected`, state does not advance — 0b3db69
-- [x] 3.3 Wrong-side button no-op and confirm-before-promotion-pick save nothing (tested) — 0b3db69
-- [x] 3.4 ktlint clean — 0b3db69
+- [x] 3.1 Reducer + VM suites pass on all three targets — dc9656b
+- [x] 3.2 §6.2 gate test: forced journal-write failure → `MoveRejected`, state does not advance — dc9656b
+- [x] 3.3 Wrong-side button no-op and confirm-before-promotion-pick save nothing (tested) — dc9656b
+- [x] 3.4 ktlint clean — dc9656b
 
 #### Manual
 
@@ -718,9 +718,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 4.1 Three target suites green; `NewGameViewModel` covers `create(..., PHYSICAL)` — aa7b001
-- [x] 4.2 App compiles on Android, iOS, and wasm — aa7b001
-- [x] 4.3 ktlint clean — aa7b001
+- [x] 4.1 Three target suites green; `NewGameViewModel` covers `create(..., PHYSICAL)` — 440077d
+- [x] 4.2 App compiles on Android, iOS, and wasm — 440077d
+- [x] 4.3 ktlint clean — 440077d
 
 #### Manual
 
@@ -732,9 +732,9 @@ creation); RLS and the `user_id` default are unchanged. The only schema-adjacent
 
 #### Automated
 
-- [x] 5.1 E2E test green on all three targets — fdf174a
-- [x] 5.2 Full `:shared` suite green on all three targets — fdf174a
-- [x] 5.3 ktlint clean — fdf174a
+- [x] 5.1 E2E test green on all three targets — f8903b5
+- [x] 5.2 Full `:shared` suite green on all three targets — f8903b5
+- [x] 5.3 ktlint clean — f8903b5
 
 #### Manual
 

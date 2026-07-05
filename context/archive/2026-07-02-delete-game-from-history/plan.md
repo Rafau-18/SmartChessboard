@@ -234,24 +234,24 @@ No schema or data migration. Stale journal entries from games deleted *before* t
 
 #### Automated
 
-- [x] 1.1 JVM tests pass (`:shared:testAndroidHostTest`) — 7c8c365
-- [x] 1.2 iOS tests pass (`:shared:iosSimulatorArm64Test`) — 7c8c365
-- [x] 1.3 Web tests pass (`:shared:wasmJsTest`) — 7c8c365
-- [x] 1.4 ktlint clean on touched files — 7c8c365
+- [x] 1.1 JVM tests pass (`:shared:testAndroidHostTest`) — 9368d68
+- [x] 1.2 iOS tests pass (`:shared:iosSimulatorArm64Test`) — 9368d68
+- [x] 1.3 Web tests pass (`:shared:wasmJsTest`) — 9368d68
+- [x] 1.4 ktlint clean on touched files — 9368d68
 
 ### Phase 2: History presentation — kebab menu, confirmation dialog, delete state
 
 #### Automated
 
-- [x] 2.1 JVM tests pass (`:shared:testAndroidHostTest`) — da84c35
-- [x] 2.2 iOS tests pass (`:shared:iosSimulatorArm64Test`) — da84c35
-- [x] 2.3 Web tests pass (`:shared:wasmJsTest`) — da84c35
-- [x] 2.4 ktlint clean on touched files — da84c35
+- [x] 2.1 JVM tests pass (`:shared:testAndroidHostTest`) — 3ea29b8
+- [x] 2.2 iOS tests pass (`:shared:iosSimulatorArm64Test`) — 3ea29b8
+- [x] 2.3 Web tests pass (`:shared:wasmJsTest`) — 3ea29b8
+- [x] 2.4 ktlint clean on touched files — 3ea29b8
 
 #### Manual
 
-- [x] 2.5 Android: delete finished + in-progress, cancel, offline error + retry — da84c35
-- [x] 2.6 iOS: delete finished + in-progress, cancel, offline error + retry — da84c35
-- [x] 2.7 Web: full flow with mouse; offline failure degrades gracefully (no crash) — da84c35
-- [x] 2.8 Cross-device: deleted game absent on second device after refresh — da84c35
-- [x] 2.9 No resurrection: delete in-progress game with unsynced local moves, restart app, game stays gone — da84c35
+- [x] 2.5 Android: delete finished + in-progress, cancel, offline error + retry — 3ea29b8
+- [x] 2.6 iOS: delete finished + in-progress, cancel, offline error + retry — 3ea29b8
+- [x] 2.7 Web: full flow with mouse; offline failure degrades gracefully (no crash) — 3ea29b8
+- [x] 2.8 Cross-device: deleted game absent on second device after refresh — 3ea29b8
+- [x] 2.9 No resurrection: delete in-progress game with unsynced local moves, restart app, game stays gone — 3ea29b8

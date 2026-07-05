@@ -40,4 +40,4 @@ Automated success criteria re-run at review time: `:shared:compileKotlinWasmJs` 
   callers; weighed against the local `Square.kt` `require` precedent.
 - **Fix**: Add `require(isValidSquare(square))` (reusing Square.kt) at the top of `isOccupied`,
   matching the Square.kt index-helper convention.
-- **Decision**: FIXED — added `require(isValidSquare(square))` to `isOccupied`; recompiled green on all three targets, ktlint clean. Folded into the phase-1 commit via amend (42ee77b).
+- **Decision**: FIXED — added `require(isValidSquare(square))` to `isOccupied`; recompiled green on all three targets, ktlint clean. Folded into the phase-1 commit via amend (8c16c1a).

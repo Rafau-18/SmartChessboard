@@ -13,7 +13,7 @@ missing proofs, test-first (red → green).
 
 ## Starting Point
 
-The §6.2 durability spine is implemented and well-tested (~40 tests). But at commit `d7cee0c`:
+The §6.2 durability spine is implemented and well-tested (~40 tests). But at commit `014b03f`:
 a zero-row cloud UPDATE returns 2xx and destroys the only copy (W5); `reconcile` awaits the
 flush inline so an offline finished game hangs the load screen (W6); the physical finish path
 shows "finished" **before** it saves, unguarded, and nothing re-closes it on next load (W2);

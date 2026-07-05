@@ -4,7 +4,7 @@
 - **Plan**: context/changes/physical-capture-emulated/plan.md
 - **Scope**: Phase 1 of 5 (Sequence Interpreter — pure domain)
 - **Date**: 2026-06-19
-- **Commit reviewed**: b969215
+- **Commit reviewed**: 3dbf1cf
 - **Verdict**: APPROVED
 - **Findings**: 0 critical · 1 warning · 2 observations
 - **Triage**: all 3 findings FIXED (comment-only / doc changes; behaviour unchanged)
@@ -20,7 +20,7 @@
 | Pattern Consistency | PASS (sealed-interface + KDoc, requireNotNull style, test style all match siblings) |
 | Success Criteria | PASS (automated 4/4 re-verified green; 1 observation, F2; manual 1.5/1.6 deferred to end-of-slice) |
 
-### Automated verification (re-run during this review, commit b969215 + triage edits)
+### Automated verification (re-run during this review, commit 3dbf1cf + triage edits)
 
 - `:shared:testAndroidHostTest` — BUILD SUCCESSFUL
 - `:shared:iosSimulatorArm64Test` — BUILD SUCCESSFUL (Native target — mandated by lessons.md "JVM-pass proves nothing about iOS")
@@ -75,4 +75,4 @@ Manual items 1.5 (corpus coverage) and 1.6 (interpreter returns only `legalMoves
 ## Notes
 
 - Status of `change.md` intentionally left at `implementing` (not flipped to `impl_reviewed`): this is a single-phase review of phase 1 of 5; phases 2–5 are not yet implemented.
-- All triage edits are comment-only / documentation; no production logic changed, so the three-target green state from b969215 holds without a re-run.
+- All triage edits are comment-only / documentation; no production logic changed, so the three-target green state from 3dbf1cf holds without a re-run.

@@ -3,13 +3,13 @@
 
 - **Plan**: context/changes/physical-capture-emulated/plan.md
 - **Zakres**: Fazy 1–5 z 5 (pełny plan)
-- **Commity objęte przeglądem**: b969215..0750746 (p1–p5 + epilog)
+- **Commity objęte przeglądem**: 3dbf1cf..c9442c7 (p1–p5 + epilog)
 - **Data**: 2026-06-19
 - **Werdykt**: ZATWIERDZONY
 - **Znaleziska**: 0 krytycznych · 1 ostrzeżenie · 0 obserwacji
 - **Triażowanie**: F1 NAPRAWIONE (2026-06-19 — wyłącznie komentarz `TODO(S-09)` na obu powiązaniach `BoardConnection`)
 
-> Faza 1 (b969215) została zrecenzowana oddzielnie w `impl-review-phase-1.md`
+> Faza 1 (3dbf1cf) została zrecenzowana oddzielnie w `impl-review-phase-1.md`
 > (ZATWIERDZONO; F1/F2/F3 wszystkie NAPRAWIONE — wyłącznie komentarze/doc).
 > Niniejszy pełny przegląd obejmuje fazy 1–5 całościowo i nie otwiera ponownie
 > rozwiązanych znalezisk z fazy 1.
@@ -27,11 +27,11 @@
 
 **Ogólnie: ZATWIERDZONY** — wszystkie wymiary PASS, jedno niskopoziomowe ostrzeżenie perspektywiczne (naprawa to wyłącznie komentarz).
 
-### Weryfikacja na żywo (niniejszy przegląd, drzewo przy 0750746)
+### Weryfikacja na żywo (niniejszy przegląd, drzewo przy c9442c7)
 
 - `:shared:testAndroidHostTest` — BUILD SUCCESSFUL (pokrywa interpreter, reducer, VM i E2E — wszystkie żyją w `commonTest`).
 - ktlint — czysty na wszystkich nowych plikach S-06 (`presentation/physical/**`, `domain/board/{Occupancy,Resolution,SequenceInterpreter}.kt`).
-- iOS / wasm — bazuję na zarejestrowanym zielonym z fazy 5 (`fdf174a` uruchomił pełny `:shared` suite na `:shared:iosSimulatorArm64Test` i `:shared:wasmJsTest`); jedyny commit od tamtego czasu to epilog wyłącznie dokumentacyjny (`0750746`).
+- iOS / wasm — bazuję na zarejestrowanym zielonym z fazy 5 (`f8903b5` uruchomił pełny `:shared` suite na `:shared:iosSimulatorArm64Test` i `:shared:wasmJsTest`); jedyny commit od tamtego czasu to epilog wyłącznie dokumentacyjny (`c9442c7`).
 
 ## Zweryfikowane obszary fokusowe (zgodnie z żądaniem)
 

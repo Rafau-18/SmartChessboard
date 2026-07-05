@@ -593,54 +593,54 @@ rule (e.g. journal durability semantics) via the lessons format.
 
 #### Automated
 
-- [x] 1.1 Host JVM suite passes (`:shared:testAndroidHostTest`) — 5a44423
-- [x] 1.2 Native suite passes (`:shared:iosSimulatorArm64Test`) — 5a44423
-- [x] 1.3 Web suite passes (`:shared:wasmJsTest`) — 5a44423
+- [x] 1.1 Host JVM suite passes (`:shared:testAndroidHostTest`) — 5c6b327
+- [x] 1.2 Native suite passes (`:shared:iosSimulatorArm64Test`) — 5c6b327
+- [x] 1.3 Web suite passes (`:shared:wasmJsTest`) — 5c6b327
 
 ### Phase 2: Write Path & Local Journal (Data)
 
 #### Automated
 
-- [x] 2.1 Local stack migrates + pgTAP green (`supabase db reset && supabase test db`) — 09dcd1b
-- [x] 2.2 All three per-target suites green incl. GameAutoSaver tests — 09dcd1b
-- [x] 2.3 yarn.lock actualized if wasmJs dep required it; clean `:shared:wasmJsTest` — 09dcd1b
+- [x] 2.1 Local stack migrates + pgTAP green (`supabase db reset && supabase test db`) — 10d502f
+- [x] 2.2 All three per-target suites green incl. GameAutoSaver tests — 10d502f
+- [x] 2.3 yarn.lock actualized if wasmJs dep required it; clean `:shared:wasmJsTest` — 10d502f
 
 #### Manual
 
-- [x] 2.4 Cloud migration applied to hosted project (`supabase db push`) — 09dcd1b
+- [x] 2.4 Cloud migration applied to hosted project (`supabase db push`) — 10d502f
 
 ### Phase 3: Interactive Board & Promotion Picker (UI)
 
 #### Automated
 
-- [x] 3.1 All three per-target suites green incl. orientation-mapping tests — 95842bf
+- [x] 3.1 All three per-target suites green incl. orientation-mapping tests — 9b613ea
 
 #### Manual
 
-- [x] 3.2 Previews show selection, targets, flip, and promotion picker correctly — 95842bf
+- [x] 3.2 Previews show selection, targets, flip, and promotion picker correctly — 9b613ea
 
 ### Phase 4: Play & New-Game Screens + Navigation
 
 #### Automated
 
-- [x] 4.1 All three per-target suites green incl. PlayViewModel/NewGameViewModel tests — 29dc82d
+- [x] 4.1 All three per-target suites green incl. PlayViewModel/NewGameViewModel tests — 407ab2f
 
 #### Manual
 
-- [x] 4.2 Android: create → play → promote → flip → kill app → resume at last move — 29dc82d
-- [x] 4.3 Airplane mode: play continues, sync-pending shows, reconnect flushes to Supabase — 29dc82d
-- [x] 4.4 Web dev server: create → play flow; browser Back/Forward sane — 29dc82d
-- [x] 4.5 Checkmate → banner, input blocked, record stays in_progress — 29dc82d
+- [x] 4.2 Android: create → play → promote → flip → kill app → resume at last move — 407ab2f
+- [x] 4.3 Airplane mode: play continues, sync-pending shows, reconnect flushes to Supabase — 407ab2f
+- [x] 4.4 Web dev server: create → play flow; browser Back/Forward sane — 407ab2f
+- [x] 4.5 Checkmate → banner, input blocked, record stays in_progress — 407ab2f
 
 ### Phase 5: Resume Hardening, Three-Surface E2E & Write-backs
 
 #### Automated
 
-- [x] 5.1 Full per-target suites green (regression) — 85295e5
-- [x] 5.2 Supabase reset + pgTAP green (regression) — 85295e5
+- [x] 5.1 Full per-target suites green (regression) — 9724eae
+- [x] 5.2 Supabase reset + pgTAP green (regression) — 9724eae
 
 #### Manual
 
-- [x] 5.3 E2E passes on Android, iOS, and web against hosted backend — 85295e5
-- [x] 5.4 Cross-surface check: game played on one surface replays on another — 85295e5
-- [x] 5.5 Roadmap/lessons/change.md write-backs reviewed — 85295e5
+- [x] 5.3 E2E passes on Android, iOS, and web against hosted backend — 9724eae
+- [x] 5.4 Cross-surface check: game played on one surface replays on another — 9724eae
+- [x] 5.5 Roadmap/lessons/change.md write-backs reviewed — 9724eae

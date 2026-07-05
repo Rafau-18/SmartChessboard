@@ -574,60 +574,60 @@ existence.
 
 #### Automated
 
-- [x] 1.1 Parser suite green on JVM host (`:shared:testAndroidHostTest`) — 3b007e6
-- [x] 1.2 Parser suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 3b007e6
-- [x] 1.3 Parser suite green on wasm (`:shared:wasmJsTest`) — 3b007e6
-- [x] 1.4 ktlint clean — 3b007e6
+- [x] 1.1 Parser suite green on JVM host (`:shared:testAndroidHostTest`) — 200385c
+- [x] 1.2 Parser suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 200385c
+- [x] 1.3 Parser suite green on wasm (`:shared:wasmJsTest`) — 200385c
+- [x] 1.4 ktlint clean — 200385c
 
 ### Phase 2: Seeded Records & Single-Game Read
 
 #### Automated
 
-- [x] 2.1 `supabase db reset` applies migrations + seeds cleanly — 1701d68
-- [x] 2.2 Existing pgTAP suite still green (`supabase test db`) — 1701d68
-- [x] 2.3 Shared tests green on JVM host (`:shared:testAndroidHostTest`) — 1701d68
+- [x] 2.1 `supabase db reset` applies migrations + seeds cleanly — 4c8bbfb
+- [x] 2.2 Existing pgTAP suite still green (`supabase test db`) — 4c8bbfb
+- [x] 2.3 Shared tests green on JVM host (`:shared:testAndroidHostTest`) — 4c8bbfb
 
 #### Manual
 
-- [x] 2.4 Seeded rows visible for both test users locally; PGNs match Phase 1 fixtures — 1701d68
+- [x] 2.4 Seeded rows visible for both test users locally; PGNs match Phase 1 fixtures — 4c8bbfb
 
 ### Phase 3: Chessboard View & Piece Assets
 
 #### Automated
 
-- [x] 3.1 Square-mapping unit tests green on JVM host — 17317d2
-- [x] 3.2 All targets compile (`:androidApp:assembleDebug`, `:shared:wasmJsBrowserDistribution`) — 17317d2
-- [x] 3.3 ktlint clean — 17317d2
+- [x] 3.1 Square-mapping unit tests green on JVM host — c4bcec0
+- [x] 3.2 All targets compile (`:androidApp:assembleDebug`, `:shared:wasmJsBrowserDistribution`) — c4bcec0
+- [x] 3.3 ktlint clean — c4bcec0
 
 #### Manual
 
-- [x] 3.4 Start position renders correctly on Android (a1 dark, white at bottom, crisp pieces) — 17317d2
-- [x] 3.5 Same board renders crisp on web (`:webApp:wasmJsBrowserDevelopmentRun`) — vector conversion undistorted — 17317d2
+- [x] 3.4 Start position renders correctly on Android (a1 dark, white at bottom, crisp pieces) — c4bcec0
+- [x] 3.5 Same board renders crisp on web (`:webApp:wasmJsBrowserDevelopmentRun`) — vector conversion undistorted — c4bcec0
 
 ### Phase 4: Navigation 3 & Replay Screen
 
 #### Automated
 
-- [x] 4.1 Full shared suite green on JVM host (`:shared:testAndroidHostTest`) — 94ba848
-- [x] 4.2 Full shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 94ba848
-- [x] 4.3 Full shared suite green on wasm (`:shared:wasmJsTest`) — 94ba848
-- [x] 4.4 ktlint clean — 94ba848
+- [x] 4.1 Full shared suite green on JVM host (`:shared:testAndroidHostTest`) — 1dabbad
+- [x] 4.2 Full shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 1dabbad
+- [x] 4.3 Full shared suite green on wasm (`:shared:wasmJsTest`) — 1dabbad
+- [x] 4.4 ktlint clean — 1dabbad
 
 #### Manual
 
-- [x] 4.5 Android: history tap → replay with working controls, move list, system back — 94ba848
-- [x] 4.6 ReplayScreen preview with a hand-built corrupted ReplayGame shows the truncation banner; nav clamps to truncated range — 94ba848
-- [x] 4.7 Web (local dev server): browser Back/Forward maps to the nav stack (Replay ↔ History), not off-site — 94ba848
+- [x] 4.5 Android: history tap → replay with working controls, move list, system back — 1dabbad
+- [x] 4.6 ReplayScreen preview with a hand-built corrupted ReplayGame shows the truncation banner; nav clamps to truncated range — 1dabbad
+- [x] 4.7 Web (local dev server): browser Back/Forward maps to the nav stack (Replay ↔ History), not off-site — 1dabbad
 
 ### Phase 5: Cloud Seeding, E2E & Decision Write-backs
 
 #### Automated
 
-- [x] 5.1 Regression: all three per-target test tasks green — 76d38af
+- [x] 5.1 Regression: all three per-target test tasks green — 36d9e75
 
 #### Manual
 
-- [x] 5.2 Android vs cloud: seeded games listed and replay to known final position — 76d38af
-- [x] 5.3 iOS simulator: same flow — 76d38af
-- [x] 5.4 Web: same flow; browser Back pops Replay → History (not off-site), route in URL fragment — 76d38af
-- [x] 5.5 lessons.md / roadmap.md / attributions write-backs reviewed — 76d38af
+- [x] 5.2 Android vs cloud: seeded games listed and replay to known final position — 36d9e75
+- [x] 5.3 iOS simulator: same flow — 36d9e75
+- [x] 5.4 Web: same flow; browser Back pops Replay → History (not off-site), route in URL fragment — 36d9e75
+- [x] 5.5 lessons.md / roadmap.md / attributions write-backs reviewed — 36d9e75

@@ -15,7 +15,7 @@ ReplayScreen on wide windows.
 
 - **Replay (S-02) is complete**: `ReplayViewModel` (MVVM, `Loaded(game, currentPly)`,
   `position = game.positions[currentPly]`) and `ReplayScreen` (board capped at 480dp, transport
-  controls, move list, truncation banner) shipped through commit `76d38af`
+  controls, move list, truncation banner) shipped through commit `36d9e75`
   (`presentation/replay/ReplayViewModel.kt`, `ReplayScreen.kt`).
 - **The engine carries everything FEN needs**: `domain/chess/Position.kt` stores board, side to
   move, castling rights, en passant target, halfmove clock, fullmove number — the comment at
@@ -611,62 +611,62 @@ schema.
 
 #### Automated
 
-- [x] 1.1 `supabase db reset` applies the widening migration cleanly — aa30597
-- [x] 1.2 `supabase test db` green incl. new `position_evals.test.sql` — aa30597
+- [x] 1.1 `supabase db reset` applies the widening migration cleanly — e2bfa69
+- [x] 1.2 `supabase test db` green incl. new `position_evals.test.sql` — e2bfa69
 
 #### Manual
 
-- [x] 1.3 Contract + PRD amendments read and approved — aa30597
+- [x] 1.3 Contract + PRD amendments read and approved — e2bfa69
 
 ### Phase 2: Edge Function `lichess-eval`
 
 #### Automated
 
-- [x] 2.1 `deno test` green (mocked providers, full chain) — 46bd258
-- [x] 2.2 `supabase test db` still green — 46bd258
+- [x] 2.1 `deno test` green (mocked providers, full chain) — 0b216ee
+- [x] 2.2 `supabase test db` still green — 0b216ee
 
 #### Manual
 
-- [x] 2.3 Local-serve smoke with real egress: lichess / chess-api / cache paths observed; row lands in local `position_evals` — 46bd258
-- [x] 2.4 Mate sign convention verified for Black-mates on both providers; mapping matches White-POV contract — 46bd258
+- [x] 2.3 Local-serve smoke with real egress: lichess / chess-api / cache paths observed; row lands in local `position_evals` — 0b216ee
+- [x] 2.4 Mate sign convention verified for Black-mates on both providers; mapping matches White-POV contract — 0b216ee
 
 ### Phase 3: FEN Serialization & Eval Data Layer
 
 #### Automated
 
-- [x] 3.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`) — 48e909c
-- [x] 3.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 48e909c
-- [x] 3.3 Shared suite green on wasm (`:shared:wasmJsTest`) — 48e909c
-- [x] 3.4 ktlint clean — 48e909c
+- [x] 3.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`) — 1c05b09
+- [x] 3.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 1c05b09
+- [x] 3.3 Shared suite green on wasm (`:shared:wasmJsTest`) — 1c05b09
+- [x] 3.4 ktlint clean — 1c05b09
 
 ### Phase 4: Replay Analysis UI & Adaptive Layout
 
 #### Automated
 
-- [x] 4.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`) — dfe2afc
-- [x] 4.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — dfe2afc
-- [x] 4.3 Shared suite green on wasm (`:shared:wasmJsTest`) — dfe2afc
-- [x] 4.4 ktlint clean — dfe2afc
+- [x] 4.1 Shared suite green on JVM host (`:shared:testAndroidHostTest`) — 500d9aa
+- [x] 4.2 Shared suite green on iOS simulator (`:shared:iosSimulatorArm64Test`) — 500d9aa
+- [x] 4.3 Shared suite green on wasm (`:shared:wasmJsTest`) — 500d9aa
+- [x] 4.4 ktlint clean — 500d9aa
 
 #### Manual
 
-- [x] 4.5 Android + local stack E2E: toggle, bar/panel/arrow, per-ply fetch, instant revisit, terminal label, airplane-mode Retry — dfe2afc
-- [x] 4.6 Web: same flow; two panes at desktop width, single column narrow; browser Back unaffected — dfe2afc
-- [x] 4.7 Local `position_evals` rows show expected `source` values — dfe2afc
+- [x] 4.5 Android + local stack E2E: toggle, bar/panel/arrow, per-ply fetch, instant revisit, terminal label, airplane-mode Retry — 500d9aa
+- [x] 4.6 Web: same flow; two panes at desktop width, single column narrow; browser Back unaffected — 500d9aa
+- [x] 4.7 Local `position_evals` rows show expected `source` values — 500d9aa
 
 ### Phase 5: Deploy, Cloud E2E & Write-backs
 
 #### Automated
 
-- [x] 5.1 Regression: all three per-target Gradle suites green — b8350c6
-- [x] 5.2 Backend regression: `deno test` + `supabase test db` green — b8350c6
+- [x] 5.1 Regression: all three per-target Gradle suites green — fe5bd82
+- [x] 5.2 Backend regression: `deno test` + `supabase test db` green — fe5bd82
 
 #### Manual
 
-- [x] 5.3 `supabase db push` + `supabase functions deploy lichess-eval` applied to hosted project — b8350c6
-- [x] 5.4 `LICHESS_TOKEN` secret set by user — b8350c6
-- [x] 5.5 Android vs cloud: analysis works on seeded game — b8350c6
-- [x] 5.6 iOS simulator vs cloud: same flow — b8350c6
-- [x] 5.7 Web vs cloud: same flow incl. two-pane desktop layout — b8350c6
-- [x] 5.8 Hosted `position_evals` accumulates rows with expected sources — b8350c6
-- [x] 5.9 Roadmap / lessons / change.md write-backs reviewed — b8350c6
+- [x] 5.3 `supabase db push` + `supabase functions deploy lichess-eval` applied to hosted project — fe5bd82
+- [x] 5.4 `LICHESS_TOKEN` secret set by user — fe5bd82
+- [x] 5.5 Android vs cloud: analysis works on seeded game — fe5bd82
+- [x] 5.6 iOS simulator vs cloud: same flow — fe5bd82
+- [x] 5.7 Web vs cloud: same flow incl. two-pane desktop layout — fe5bd82
+- [x] 5.8 Hosted `position_evals` accumulates rows with expected sources — fe5bd82
+- [x] 5.9 Roadmap / lessons / change.md write-backs reviewed — fe5bd82

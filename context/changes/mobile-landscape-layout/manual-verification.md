@@ -199,7 +199,7 @@ Manual checks (deferred to the end-of-slice pass):
 ### Round-1 findings from the fleet pass (2026-07-03) — fixed
 
 The first fleet pass (web wide + Android/iPhone landscape) surfaced four UX findings; all
-fixed on top of `d390c91`:
+fixed on top of `b2ea64d`:
 
 1. **Board pane vertically centered while the panel is top-aligned** (visible on web/desktop
    wide) — the scaffold's board pane now top-aligns (`Alignment.TopCenter`), matching the

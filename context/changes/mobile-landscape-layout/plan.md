@@ -419,8 +419,8 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 1.1 All targets compile and existing tests stay green (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`, `assembleDebug`) — 0c9e1cc
-- [x] 1.2 ktlint clean — 0c9e1cc
+- [x] 1.1 All targets compile and existing tests stay green (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`, `assembleDebug`) — 61b529c
+- [x] 1.2 ktlint clean — 61b529c
 
 #### Manual
 
@@ -433,11 +433,11 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 2.1 Dependency spike: chosen ladder rung compiles on all three targets; outcome recorded — 60eb658
-- [x] 2.2 Policy-function unit tests green on host + iOS simulator (479/480, 839/840, 600/900) — 60eb658
-- [x] 2.3 Updated `MoveListModeTest` green on host + iOS simulator — 60eb658
-- [x] 2.4 Token grep: one 480 declaration site; `VERTICAL_CHROME` symbol gone — 60eb658
-- [x] 2.5 All targets compile; wasm tests green; ktlint clean — 60eb658
+- [x] 2.1 Dependency spike: chosen ladder rung compiles on all three targets; outcome recorded — b291b82
+- [x] 2.2 Policy-function unit tests green on host + iOS simulator (479/480, 839/840, 600/900) — b291b82
+- [x] 2.3 Updated `MoveListModeTest` green on host + iOS simulator — b291b82
+- [x] 2.4 Token grep: one 480 declaration site; `VERTICAL_CHROME` symbol gone — b291b82
+- [x] 2.5 All targets compile; wasm tests green; ktlint clean — b291b82
 
 #### Manual
 
@@ -447,7 +447,7 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 3.1 All targets compile and tests stay green; ktlint clean — 9b4e9ef
+- [x] 3.1 All targets compile and tests stay green; ktlint clean — 4debfb8
 
 #### Manual
 
@@ -459,7 +459,7 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 4.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean — 0c62e2b
+- [x] 4.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean — 0b4877d
 
 #### Manual
 
@@ -472,7 +472,7 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 5.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean — 59a8d7d
+- [x] 5.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug; ktlint clean — 044d559
 
 #### Manual
 
@@ -485,8 +485,8 @@ No data or schema migration. Persisted keys unchanged (`ui.boardSize`, `ui.moveL
 
 #### Automated
 
-- [x] 6.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug (previews); ktlint clean — d390c91
-- [x] 6.2 Grep: `TWO_PANE_MIN_WIDTH` gone; breakpoint literals only in the policy layer — d390c91
+- [x] 6.1 All targets compile; host + iOS-sim + wasm tests green; assembleDebug (previews); ktlint clean — b2ea64d
+- [x] 6.2 Grep: `TWO_PANE_MIN_WIDTH` gone; breakpoint literals only in the policy layer — b2ea64d
 
 #### Manual
 

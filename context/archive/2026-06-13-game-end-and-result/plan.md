@@ -537,25 +537,25 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 
 #### Automated
 
-- [x] 1.1 Mapping + round-trip tests pass on Android host (`:shared:testAndroidHostTest`) — e266455
-- [x] 1.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — e266455
-- [x] 1.3 Pass on web (`:shared:wasmJsTest`) — e266455
-- [x] 1.4 ktlint clean — e266455
+- [x] 1.1 Mapping + round-trip tests pass on Android host (`:shared:testAndroidHostTest`) — a7a14e1
+- [x] 1.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — a7a14e1
+- [x] 1.3 Pass on web (`:shared:wasmJsTest`) — a7a14e1
+- [x] 1.4 ktlint clean — a7a14e1
 
 #### Manual
 
-- [x] 1.5 Serialised mate game reads `[Result "1-0"]`, final move `#`, terminator `1-0` — e266455
-- [x] 1.6 Serialised 0-move manual draw reads `[Result "1/2-1/2"]` + bare `1/2-1/2` terminator — e266455
+- [x] 1.5 Serialised mate game reads `[Result "1-0"]`, final move `#`, terminator `1-0` — a7a14e1
+- [x] 1.6 Serialised 0-move manual draw reads `[Result "1/2-1/2"]` + bare `1/2-1/2` terminator — a7a14e1
 
 ### Phase 2: Finalization persistence (repository + offline-safe journal)
 
 #### Automated
 
-- [x] 2.1 Auto-saver/journal/repo tests pass on Android host (`:shared:testAndroidHostTest`) — bbedd14
-- [x] 2.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — bbedd14
-- [x] 2.3 Pass on web (`:shared:wasmJsTest`) — bbedd14
-- [x] 2.4 Tests cover finish flush, offline re-flush, cleanup-after-confirm, reconcile re-flush, in-progress path unchanged — bbedd14
-- [x] 2.5 ktlint clean — bbedd14
+- [x] 2.1 Auto-saver/journal/repo tests pass on Android host (`:shared:testAndroidHostTest`) — 82c63ec
+- [x] 2.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — 82c63ec
+- [x] 2.3 Pass on web (`:shared:wasmJsTest`) — 82c63ec
+- [x] 2.4 Tests cover finish flush, offline re-flush, cleanup-after-confirm, reconcile re-flush, in-progress path unchanged — 82c63ec
+- [x] 2.5 ktlint clean — 82c63ec
 
 #### Manual
 
@@ -563,26 +563,26 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 > finish against the hosted backend, so they are exercised in Phase 5's three-surface E2E (the
 > offline-finish flush scenario covers both). They stay `- [ ]` until then.
 
-- [x] 2.6 Hosted row sets `status='finished'` + `result` + `pgn` in one update — c0e26a0
-- [x] 2.7 Offline finish then reconnect updates the hosted row without a lost result — c0e26a0
+- [x] 2.6 Hosted row sets `status='finished'` + `result` + `pgn` in one update — 60a16b5
+- [x] 2.7 Offline finish then reconnect updates the hosted row without a lost result — 60a16b5
 
 ### Phase 3: PlayViewModel finalization (auto + manual)
 
 #### Automated
 
-- [x] 3.1 ViewModel tests pass on Android host (`:shared:testAndroidHostTest`) — 18df392
-- [x] 3.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — 18df392
-- [x] 3.3 Pass on web (`:shared:wasmJsTest`) — 18df392
-- [x] 3.4 Tests cover auto-finish results+PGN, manual request→pick→confirm, cancel, input-blocked, single-fire, finished-on-load — 18df392
-- [x] 3.5 ktlint clean — 18df392
+- [x] 3.1 ViewModel tests pass on Android host (`:shared:testAndroidHostTest`) — 5759078
+- [x] 3.2 Pass on iOS / Native (`:shared:iosSimulatorArm64Test`) — 5759078
+- [x] 3.3 Pass on web (`:shared:wasmJsTest`) — 5759078
+- [x] 3.4 Tests cover auto-finish results+PGN, manual request→pick→confirm, cancel, input-blocked, single-fire, finished-on-load — 5759078
+- [x] 3.5 ktlint clean — 5759078
 
 ### Phase 4: End-game UI & navigation
 
 #### Automated
 
-- [x] 4.1 `:shared` + apps build on all three targets — b1e8a95
-- [x] 4.2 Per-target test suites still green — b1e8a95
-- [x] 4.3 ktlint clean — b1e8a95
+- [x] 4.1 `:shared` + apps build on all three targets — a37a9dd
+- [x] 4.2 Per-target test suites still green — a37a9dd
+- [x] 4.3 ktlint clean — a37a9dd
 
 #### Manual
 
@@ -592,16 +592,16 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 > surface. Driving them needs an authenticated session the build/test gate can't perform. The Phase
 > 4 automated gate (4.1–4.3) passed. They stay `- [ ]` until Phase 5.
 
-- [x] 4.4 End-game button visible only while in progress; picker opens; confirm finalizes; cancel keeps game playable — c0e26a0
-- [x] 4.5 Manual finish: final banner, frozen board, Analyse→Replay (correct result), Back→History (finished) — c0e26a0
-- [x] 4.6 Checkmate/stalemate: banner becomes final result automatically, same actions available — c0e26a0
+- [x] 4.4 End-game button visible only while in progress; picker opens; confirm finalizes; cancel keeps game playable — 60a16b5
+- [x] 4.5 Manual finish: final banner, frozen board, Analyse→Replay (correct result), Back→History (finished) — 60a16b5
+- [x] 4.6 Checkmate/stalemate: banner becomes final result automatically, same actions available — 60a16b5
 
 ### Phase 5: Three-surface E2E & write-backs
 
 #### Automated
 
-- [x] 5.1 Full per-target suites green (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`) — c0e26a0
-- [x] 5.2 Web production build succeeds; ktlint clean — c0e26a0
+- [x] 5.1 Full per-target suites green (`:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`) — 60a16b5
+- [x] 5.2 Web production build succeeds; ktlint clean — 60a16b5
 
 #### Manual
 
@@ -609,6 +609,6 @@ No schema change. `games.status` and `games.result` (with CHECK constraints) alr
 > UPDATE) and 2.7 (offline finish then reconnect, no lost result). The offline-finish flush in 5.3
 > exercises both.
 
-- [x] 5.3 E2E (auto-mate, manual draw, offline-finish flush, finished→Replay) passes on Android, iOS, and web — c0e26a0
-- [x] 5.4 `parsePgn(stored_pgn).result` matches row `result`; Replay `PlayerLine` shows the outcome — c0e26a0
-- [x] 5.5 Roadmap, contract-surfaces §3.2, and change.md write-backs present and accurate — c0e26a0
+- [x] 5.3 E2E (auto-mate, manual draw, offline-finish flush, finished→Replay) passes on Android, iOS, and web — 60a16b5
+- [x] 5.4 `parsePgn(stored_pgn).result` matches row `result`; Replay `PlayerLine` shows the outcome — 60a16b5
+- [x] 5.5 Roadmap, contract-surfaces §3.2, and change.md write-backs present and accurate — 60a16b5

@@ -356,9 +356,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 1.1 Host tests pass: `pio test -e native` — c3d3665
-- [x] 1.2 Device build still compiles: `pio run -e esp32dev` — c3d3665
-- [x] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes — c3d3665
+- [x] 1.1 Host tests pass: `pio test -e native` — 3a6724e
+- [x] 1.2 Device build still compiles: `pio run -e esp32dev` — 3a6724e
+- [x] 1.3 `firmware/lib/` contains no ESP-IDF / Arduino / GPIO includes — 3a6724e
 
 #### Manual
 
@@ -368,9 +368,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 2.1 Device build links with NimBLE: `pio run -e esp32dev` — e3c594a
-- [x] 2.2 Host tests still pass: `pio test -e native` — e3c594a
-- [x] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date — e3c594a
+- [x] 2.1 Device build links with NimBLE: `pio run -e esp32dev` — 2804656
+- [x] 2.2 Host tests still pass: `pio test -e native` — 2804656
+- [x] 2.3 `contract-surfaces.md` §1.2 contains all three UUIDs + updated date — 2804656
 
 #### Manual
 
@@ -383,9 +383,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 3.1 Device build compiles and links: `pio run -e esp32dev` — e5bfcb9
-- [x] 3.2 Host tests still pass: `pio test -e native` — e5bfcb9
-- [x] 3.3 `stable`-diff → square-event derivation has a native test (if extracted to `lib/`) — e5bfcb9
+- [x] 3.1 Device build compiles and links: `pio run -e esp32dev` — 584c754
+- [x] 3.2 Host tests still pass: `pio test -e native` — 584c754
+- [x] 3.3 `stable`-diff → square-event derivation has a native test (if extracted to `lib/`) — 584c754
 
 #### Manual
 
@@ -401,9 +401,9 @@ Record what F-03 built and resolve the open questions this change settles. (The 
 
 #### Automated
 
-- [x] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked — d64e2d8
-- [x] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added — d64e2d8
-- [x] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native` — d64e2d8
+- [x] 4.1 `firmware/AGENTS.md` no longer presents the firmware software as parked — 8f9d53f
+- [x] 4.2 `prd-firmware.md` OQ-2/OQ-4/OQ-5 carry dated resolutions; `prd.md` §1.2 UUID mirror note added — 8f9d53f
+- [x] 4.3 No build/test regression: `pio run -e esp32dev && pio test -e native` — 8f9d53f
 
 #### Manual
 

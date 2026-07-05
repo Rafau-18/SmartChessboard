@@ -185,7 +185,7 @@ Per-profile canonical install location:
 
 | Profile | Canonical path | Committed |
 |---|---|---|
-| `claude/` | `.claude/skills/` | ✅ `728573d` |
+| `claude/` | `.claude/skills/` | ✅ `0000000` |
 | `codex/` | `.agents/skills/` | ✅ `5c01794` |
 | `antigravity/` | `.agents/skills/` | ✅ `084f99e` |
 | `kiro-experiments/` | `.kiro/skills/` | ✅ `906fc94` |

@@ -285,10 +285,10 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [x] 1.1 Reducer/contract compiles (`:shared:compileKotlinAndroid`) — fc962d2
-- [x] 1.2 Reducer unit tests pass (`:shared:testAndroidHostTest`, extends `PhysicalPlayReducerTest.kt`) — fc962d2
-- [x] 1.3 iOS + wasm targets green (`:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`) — fc962d2
-- [x] 1.4 ktlint clean (`ktlint -F`) — fc962d2
+- [x] 1.1 Reducer/contract compiles (`:shared:compileKotlinAndroid`) — f5cbf16
+- [x] 1.2 Reducer unit tests pass (`:shared:testAndroidHostTest`, extends `PhysicalPlayReducerTest.kt`) — f5cbf16
+- [x] 1.3 iOS + wasm targets green (`:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest`) — f5cbf16
+- [x] 1.4 ktlint clean (`ktlint -F`) — f5cbf16
 
 #### Manual
 
@@ -298,10 +298,10 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [x] 2.1 App compiles for all targets (`:shared:compileKotlinAndroid`, `:webApp:compileKotlinWasmJs`) — 7ba6c6a
-- [x] 2.2 Android debug APK assembles (`:androidApp:assembleDebug`) — 7ba6c6a
-- [x] 2.3 Existing presentation tests still pass (`:shared:testAndroidHostTest`) — 7ba6c6a
-- [x] 2.4 ktlint clean (`ktlint -F`) — 7ba6c6a
+- [x] 2.1 App compiles for all targets (`:shared:compileKotlinAndroid`, `:webApp:compileKotlinWasmJs`) — 780b6c2
+- [x] 2.2 Android debug APK assembles (`:androidApp:assembleDebug`) — 780b6c2
+- [x] 2.3 Existing presentation tests still pass (`:shared:testAndroidHostTest`) — 780b6c2
+- [x] 2.4 ktlint clean (`ktlint -F`) — 780b6c2
 
 #### Manual
 
@@ -313,9 +313,9 @@ Pure additive change to the S-06 MVI — no data, schema, or persisted-format ch
 
 #### Automated
 
-- [x] 3.1 End-to-end recover test passes on all three targets (`PhysicalRecoverEndToEndTest`) — 48d6a8d
-- [x] 3.2 Full shared test suite green — no regressions (`:shared:testAndroidHostTest`) — 48d6a8d
-- [x] 3.3 ktlint clean (`ktlint -F`) — 48d6a8d
+- [x] 3.1 End-to-end recover test passes on all three targets (`PhysicalRecoverEndToEndTest`) — fa1f868
+- [x] 3.2 Full shared test suite green — no regressions (`:shared:testAndroidHostTest`) — fa1f868
+- [x] 3.3 ktlint clean (`ktlint -F`) — fa1f868
 
 #### Manual
 

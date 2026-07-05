@@ -2,7 +2,7 @@
 # Implementation Review: Replay Seeded Games (S-02)
 
 - **Plan**: context/changes/replay-seeded-games/plan.md
-- **Scope**: Phase 4 of 5 (commit 94ba848)
+- **Scope**: Phase 4 of 5 (commit 1dabbad)
 - **Date**: 2026-06-12
 - **Verdict**: NEEDS ATTENTION
 - **Findings**: 0 critical, 3 warnings, 2 observations
@@ -25,7 +25,7 @@
 - Automated criteria re-verified at review time: `:shared:testAndroidHostTest`, `:shared:iosSimulatorArm64Test`, `:shared:wasmJsTest` — BUILD SUCCESSFUL. ktlint: 0 violations in handwritten sources (see F5 for the generated-code nuance).
 - yarn.lock prior (lessons.md): verified clean — terrakok artifact is pure Kotlin/Wasm (no npm deps); committed lock byte-identical to regenerated.
 - Manual 4.6 has direct diff evidence (ReplayScreenPreviews.kt cites §4.6 in its KDoc). 4.5/4.7 are unverifiable-by-diff manual claims — accepted.
-- Pattern compliance: ReplayViewModel/ReplayScreen/ReplayViewModelTest/AppModules all consistent with History siblings (StateFlow + asStateFlow, sealed UiState, keyed koinViewModel, StandardTestDispatcher, shared FakeGamesRepository extended in Phase 2 commit 1701d68). BrowserNavigation is the module's first expect/actual; platform-suffix convention is standard KMP.
+- Pattern compliance: ReplayViewModel/ReplayScreen/ReplayViewModelTest/AppModules all consistent with History siblings (StateFlow + asStateFlow, sealed UiState, keyed koinViewModel, StandardTestDispatcher, shared FakeGamesRepository extended in Phase 2 commit 4c8bbfb). BrowserNavigation is the module's first expect/actual; platform-suffix convention is standard KMP.
 
 ## Findings
 

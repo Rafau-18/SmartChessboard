@@ -11,9 +11,9 @@
 
 | Check | Result |
 |-------|--------|
-| `:shared:testAndroidHostTest` | BUILD SUCCESSFUL at Phase 5 head (45aeb82); new GameAutoSaverTest + HistoryViewModelTest cases green |
+| `:shared:testAndroidHostTest` | BUILD SUCCESSFUL at Phase 5 head (eadd326); new GameAutoSaverTest + HistoryViewModelTest cases green |
 | ktlint (source files) | clean — the 115 reported hits were all under `build/generated/*` |
-| `:shared:iosSimulatorArm64Test` / `:shared:wasmJsTest` | not re-run; recorded green at commit SHAs (e266455, bbedd14, 18df392, b1e8a95, then through Phase 5: 64937c7, 653b013, 8c00bac, 7f541ab) |
+| `:shared:iosSimulatorArm64Test` / `:shared:wasmJsTest` | not re-run; recorded green at commit SHAs (a7a14e1, 82c63ec, 5759078, a37a9dd, then through Phase 5: f0e7b04, 1b1c6a5, 7fcc3ff, 803cdc3) |
 
 ## Verdicts
 
@@ -36,7 +36,7 @@ All five critical-attention items from the plan were verified correct:
 4. **reconcile journal-ahead FINISHED path** — correctly re-closes the cloud copy; cloud-wins branch unchanged (LWW per §3.4).
 5. **"What We're NOT Doing" guardrails** — no violations (no migration/schema/pgTAP, no draw-by-rule auto-detection, no un-finish/resume, no resignation/termination tag, no physical-mode code, no deletion/takeback/animations). Through Phase 4 the only cross-surface touch was `App.kt` routing; Phase 5's three-surface E2E then landed bounded, test-covered fixes that the plan pre-authorized ("fixes land where they belong if found") in History, Auth, NewGame, Play, Replay, and wasm BrowserNavigation — none of which crosses a NOT-doing boundary (see the Phase 5 sub-section).
 
-`finishGame`/`updatePgn` call supabase-kt 3.6.0 `update()`, which is itself `suspend` and throws on failure — so the absence of a trailing `.decode*()` is **not** a silent-write bug. As of Phase 5 (8c00bac, 7f541ab) `sync` rethrows `CancellationException` then catches `Throwable` (a wasm Ktor fetch failure is a `kotlin.Error`, not an `Exception`). On failure an **in-progress** entry retries the bounded window then gives up and stays dirty for its next move's sync; a **finished** entry keeps retrying (backoff capped at the last delay) until it lands or the screen closes (see Phase 5 sub-section / Finding F3).
+`finishGame`/`updatePgn` call supabase-kt 3.6.0 `update()`, which is itself `suspend` and throws on failure — so the absence of a trailing `.decode*()` is **not** a silent-write bug. As of Phase 5 (7fcc3ff, 803cdc3) `sync` rethrows `CancellationException` then catches `Throwable` (a wasm Ktor fetch failure is a `kotlin.Error`, not an `Exception`). On failure an **in-progress** entry retries the bounded window then gives up and stays dirty for its next move's sync; a **finished** entry keeps retrying (backoff capped at the last delay) until it lands or the screen closes (see Phase 5 sub-section / Finding F3).
 
 The manual checks 2.6/2.7 and 4.4–4.6 were deferred to Phase 5's three-surface E2E, which has now run (see below).
 
@@ -46,12 +46,12 @@ Phase 5's three-surface E2E (Android, iOS, web) was not a no-op doc pass: it sur
 
 | Commit | Fix | Verdict |
 |--------|-----|---------|
-| `64937c7` | Push-driven History refresh via a new `GamesRepository.changes: SharedFlow<Unit>` (emitted on create/finish, **not** updatePgn), collected by the retained History ViewModel — replaces a composition effect that iOS skipped. No missed-refresh race: the repo is a Koin singleton and `HistoryKey` is the never-popped back-stack root, so the collector stays subscribed while Play/NewGame are on top. | PASS |
-| `653b013` | wasm browser nav `Chronological → Hierarchical` so browser Back pops the live stack (previously Back landed on replaced-away screens). One-shot `BrowserHistoryIsInUse` limitation and "no URL→state restore on reload" both unchanged and consistent with Non-Goals. | PASS |
-| `8c00bac` | Broadened `catch (Exception)` → `catch (Throwable)` across 5 ViewModels (a wasm Ktor fetch failure is a `kotlin.Error`, not an `Exception`) so offline no longer crashes the app — see **F4**. | PASS |
-| `7f541ab` | A finished game's cloud flush keeps retrying (capped backoff) until reconnect/screen-close instead of giving up after ~7s — see **F3**. | PASS |
+| `f0e7b04` | Push-driven History refresh via a new `GamesRepository.changes: SharedFlow<Unit>` (emitted on create/finish, **not** updatePgn), collected by the retained History ViewModel — replaces a composition effect that iOS skipped. No missed-refresh race: the repo is a Koin singleton and `HistoryKey` is the never-popped back-stack root, so the collector stays subscribed while Play/NewGame are on top. | PASS |
+| `1b1c6a5` | wasm browser nav `Chronological → Hierarchical` so browser Back pops the live stack (previously Back landed on replaced-away screens). One-shot `BrowserHistoryIsInUse` limitation and "no URL→state restore on reload" both unchanged and consistent with Non-Goals. | PASS |
+| `7fcc3ff` | Broadened `catch (Exception)` → `catch (Throwable)` across 5 ViewModels (a wasm Ktor fetch failure is a `kotlin.Error`, not an `Exception`) so offline no longer crashes the app — see **F4**. | PASS |
+| `803cdc3` | A finished game's cloud flush keeps retrying (capped backoff) until reconnect/screen-close instead of giving up after ~7s — see **F3**. | PASS |
 
-Doc write-backs (`c0e26a0`) verified accurate: roadmap S-05 → implemented (+ Stream B note); contract-surfaces §3.2 "Mark finished" now carries `pgn` (atomic status+result+pgn), dated; four well-formed lessons.md entries; plan Progress 5.1–5.5 + deferred 2.6/2.7/4.4–4.6 checked with SHAs. Scoping note: the new `GamesRepository.changes` is a mobile-internal reactive surface, correctly absent from contract-surfaces.md (which scopes out mobile-internal architecture).
+Doc write-backs (`60a16b5`) verified accurate: roadmap S-05 → implemented (+ Stream B note); contract-surfaces §3.2 "Mark finished" now carries `pgn` (atomic status+result+pgn), dated; four well-formed lessons.md entries; plan Progress 5.1–5.5 + deferred 2.6/2.7/4.4–4.6 checked with SHAs. Scoping note: the new `GamesRepository.changes` is a mobile-internal reactive surface, correctly absent from contract-surfaces.md (which scopes out mobile-internal architecture).
 
 ## Findings
 
@@ -60,7 +60,7 @@ Doc write-backs (`c0e26a0`) verified accurate: roadmap S-05 → implemented (+ S
 - **Severity**: 🔭 OBSERVATION
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Safety & Quality (Reliability)
-- **Location**: SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/games/GameAutoSaver.kt:136 (`movetext`); `isAhead` at :125. (Line numbers refreshed for Phase 5 — the finding itself is unchanged; 7f541ab did not touch either function.)
+- **Location**: SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/games/GameAutoSaver.kt:136 (`movetext`); `isAhead` at :125. (Line numbers refreshed for Phase 5 — the finding itself is unchanged; 803cdc3 did not touch either function.)
 - **Detail**: `movetext()` strips only the in-progress terminator (`removeSuffix("*")`), never the finished tokens (`1-0` / `0-1` / `1/2-1/2`). So in `reconcile`/`isAhead` a finished journal (`"1. e4 e5 0-1"`) is compared against an in-progress cloud doc (`"1. e4 e5"`) and is judged "ahead" only because `journalMoves.startsWith("$cloudMoves ")` happens to hold. It works for every reachable path today (`finishGame` clears the journal on the one path that writes a finished cloud row, so a "finished journal vs finished cloud, same moves, different terminator" comparison never occurs). It is a latent fragility: the prefix invariant silently depends on which terminator is present, not on the moves. If a future path ever reconciles two finished docs, `isAhead` would return `false` and discard the journal copy.
 - **Fix**: Strip all four result tokens in `movetext()` (or compare on the parsed move list) so the prefix check depends only on moves; add a reconcile test for "journal finished, cloud finished, same moves, different terminator".
 - **Decision**: FIXED (2026-06-17) — `movetext()` now strips all result terminators and `isAhead` adds an explicit `isFinished()` check, so two finished docs with the same moves resolve by status (LWW, cloud wins) instead of by an accidental terminator prefix; same-moves finished-journal-vs-in-progress-cloud still re-flushes (the load-bearing case the naive strip-all would have broken). Regression test `reconcileWithTwoFinishedDocsSameMovesPrefersCloud` added. Green on Android host + iOS Native + wasm.
@@ -80,7 +80,7 @@ Doc write-backs (`c0e26a0`) verified accurate: roadmap S-05 → implemented (+ S
 - **Severity**: 🔭 OBSERVATION
 - **Impact**: 🏃 LOW — informational; no action needed
 - **Dimension**: Safety & Quality (Reliability)
-- **Location**: SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/games/GameAutoSaver.kt:69-98 (give-up guard ~:94, backoff ~:95); commit 7f541ab
+- **Location**: SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/games/GameAutoSaver.kt:69-98 (give-up guard ~:94, backoff ~:95); commit 803cdc3
 - **Detail**: The give-up guard changed from `if (failures == retryDelaysMs.size) return` to `if (entry.result == null && failures == retryDelaysMs.size) return`. An **in-progress** entry still gives up after `retryDelaysMs.size` (3) failures (= 4 cloud attempts) and stays dirty for its next move's sync; a **finished** entry never satisfies the left conjunct, so it retries indefinitely with backoff capped via `delay(retryDelaysMs[minOf(failures, retryDelaysMs.lastIndex)])` (no out-of-bounds) until it lands or the screen closes. Reason: a finished game has no next move to re-trigger sync, so a slow reconnect previously left "Saving…" spinning until the next load's reconcile. **Safe**: `catch (CancellationException) { throw }` precedes the broadened `Throwable` catch, so viewModelScope cancellation on screen-close breaks the loop at the cloud-call or `delay()` suspension point (no infinite spin on a dead screen). **Race-free**: a finished game accepts no further moves, so there is only ever one finished PGN and nothing newer to overwrite. Covered by `offlineFinishKeepsRetryingPastTheBoundedWindow…` (asserts 6 finishGame calls) and `offlineInProgressSaveStillGivesUpAtTheBoundedWindow` (asserts 4 updatePgn calls then dirty). Supersedes the Phase-1–4 "bounded 4 attempts / keep the entry dirty" framing for the finished path.
 - **Fix**: None — behaviour is correct, intentional, and test-covered.
 - **Decision**: ACCEPTED (informational)
@@ -90,7 +90,7 @@ Doc write-backs (`c0e26a0`) verified accurate: roadmap S-05 → implemented (+ S
 - **Severity**: 🔭 OBSERVATION
 - **Impact**: 🏃 LOW — informational; no action needed
 - **Dimension**: Safety & Quality (Reliability) / Pattern Consistency
-- **Location**: commits 8c00bac (AuthViewModel sign-in+sign-out, HistoryViewModel load+refresh, PlayViewModel load, ReplayViewModel load, NewGameViewModel create) and 7f541ab (GameAutoSaver.sync flush) — 8 call sites
+- **Location**: commits 7fcc3ff (AuthViewModel sign-in+sign-out, HistoryViewModel load+refresh, PlayViewModel load, ReplayViewModel load, NewGameViewModel create) and 803cdc3 (GameAutoSaver.sync flush) — 8 call sites
 - **Detail**: A wasm Ktor/Supabase network failure surfaces as `kotlin.Error` (a `Throwable`), not an `Exception`, so `catch (Exception)` missed it and it escaped as an uncaught coroutine exception — offline, any networked click crashed the app. Every network call site now catches `Throwable`. **Verified correct**: each `Throwable` catch is immediately preceded by `catch (CancellationException) { throw }`, so structured-concurrency cancellation is never swallowed; each maps to a coherent atomically-assigned state (load→Error, create→failed) or an intentional documented swallow (refresh keeps the loaded list; signOut relies on `sessionState`). A repo-wide grep finds zero remaining `catch (Exception)` in `presentation/` or `domain/games/`, and a regression test (`HistoryViewModelTest.loadMapsANonExceptionThrowableToError`, throwing `kotlin.Error`) was added. Matches the lessons.md "wasm fetch failure is Throwable" rule.
 - **Fix**: None — correct and consistent. (Cosmetic-only: the ViewModels import `kotlin.coroutines.cancellation.CancellationException` while GameAutoSaver imports the `kotlinx.coroutines` typealias — same type, not worth a change.)
 - **Decision**: ACCEPTED (informational)

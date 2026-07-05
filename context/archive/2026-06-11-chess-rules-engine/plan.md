@@ -539,61 +539,61 @@ schema, no dependency additions, no DI wiring.
 
 #### Automated
 
-- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain` — 211fd2c
-- [x] 1.2 Square round-trip + start-position invariant tests pass: `:shared:testAndroidHostTest` — 211fd2c
-- [x] 1.3 Formatting clean: `ktlint -F` — 211fd2c
+- [x] 1.1 Module compiles on all three targets: `:shared:compileKotlinWasmJs` + `compileKotlinIosSimulatorArm64` + `compileAndroidMain` — 928210b
+- [x] 1.2 Square round-trip + start-position invariant tests pass: `:shared:testAndroidHostTest` — 928210b
+- [x] 1.3 Formatting clean: `ktlint -F` — 928210b
 
 #### Manual
 
-- [x] 1.4 Public type signatures reviewed as a consumable contract (S-04/S-06) — 211fd2c
-- [x] 1.5 a1 = 0 convention matches contract §1.3 by eye — 211fd2c
+- [x] 1.4 Public type signatures reviewed as a consumable contract (S-04/S-06) — 928210b
+- [x] 1.5 a1 = 0 convention matches contract §1.3 by eye — 928210b
 
 ### Phase 2: Pseudo-legal move generation & attack detection
 
 #### Automated
 
-- [x] 2.1 Per-piece generation + attack tests pass: `:shared:testAndroidHostTest` — 6d0faaf
-- [x] 2.2 Formatting clean: `ktlint -F` — 6d0faaf
+- [x] 2.1 Per-piece generation + attack tests pass: `:shared:testAndroidHostTest` — 57550a0
+- [x] 2.2 Formatting clean: `ktlint -F` — 57550a0
 
 #### Manual
 
-- [x] 2.3 Pawn attack-vs-move asymmetry handled — 6d0faaf
-- [x] 2.4 Spot-checked pseudo-legal list for a tricky position matches expectation — 6d0faaf
+- [x] 2.3 Pawn attack-vs-move asymmetry handled — 57550a0
+- [x] 2.4 Spot-checked pseudo-legal list for a tricky position matches expectation — 57550a0
 
 ### Phase 3: Full legality & applyMove
 
 #### Automated
 
-- [x] 3.1 Legality + transition tests pass: `:shared:testAndroidHostTest` — 935673a
-- [x] 3.2 Formatting clean: `ktlint -F` — 935673a
+- [x] 3.1 Legality + transition tests pass: `:shared:testAndroidHostTest` — 56eb4d6
+- [x] 3.2 Formatting clean: `ktlint -F` — 56eb4d6
 
 #### Manual
 
-- [x] 3.3 Edge cases reviewed: pin, castle-through-check, en passant (+discovers-check), incomplete promotion — 935673a
-- [x] 3.4 castlingRights / enPassantTarget / counters update correctly — 935673a
+- [x] 3.3 Edge cases reviewed: pin, castle-through-check, en passant (+discovers-check), incomplete promotion — 56eb4d6
+- [x] 3.4 castlingRights / enPassantTarget / counters update correctly — 56eb4d6
 
 ### Phase 4: Terminal-state detection
 
 #### Automated
 
-- [x] 4.1 Terminal-state tests pass: `:shared:testAndroidHostTest` — b0df795
-- [x] 4.2 Formatting clean: `ktlint -F` — b0df795
+- [x] 4.1 Terminal-state tests pass: `:shared:testAndroidHostTest` — a4232c2
+- [x] 4.2 Formatting clean: `ktlint -F` — a4232c2
 
 #### Manual
 
-- [x] 4.3 Tests include known checkmate, stalemate, check, ongoing — each FR-007-correct — b0df795
+- [x] 4.3 Tests include known checkmate, stalemate, check, ongoing — each FR-007-correct — a4232c2
 
 ### Phase 5: Perft corpus & edge-case suite
 
 #### Automated
 
-- [x] 5.1 Full suite green on host: `:shared:testAndroidHostTest` — bb83ff1
-- [x] 5.2 Green on iOS sim: `:shared:iosSimulatorArm64Test` — bb83ff1
-- [x] 5.3 Green on WasmJS: `:shared:wasmJsTest` — bb83ff1
-- [x] 5.4 Formatting clean: `ktlint -F` — bb83ff1
+- [x] 5.1 Full suite green on host: `:shared:testAndroidHostTest` — 3af67ee
+- [x] 5.2 Green on iOS sim: `:shared:iosSimulatorArm64Test` — 3af67ee
+- [x] 5.3 Green on WasmJS: `:shared:wasmJsTest` — 3af67ee
+- [x] 5.4 Formatting clean: `ktlint -F` — 3af67ee
 
 #### Manual
 
-- [x] 5.5 Asserted perft counts match published reference values (start position, Kiwipete) — bb83ff1
-- [x] 5.6 Any per-target perft-depth reduction documented in-comment — bb83ff1
-- [x] 5.7 Public API surface read as a downstream consumer (enumerate / attempt / classify) — bb83ff1
+- [x] 5.5 Asserted perft counts match published reference values (start position, Kiwipete) — 3af67ee
+- [x] 5.6 Any per-target perft-depth reduction documented in-comment — 3af67ee
+- [x] 5.7 Public API surface read as a downstream consumer (enumerate / attempt / classify) — 3af67ee

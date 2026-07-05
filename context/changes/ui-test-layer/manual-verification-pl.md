@@ -12,7 +12,7 @@ Kod jest już zmergowany do `main`. Nic z poniższego nie blokuje działania apl
 zaczerwieniła się z innego powodu — biblioteka do zapisu/odczytu goldenów w
 formacie WebP okazała się wadliwa (jej własny czytnik nie potrafił odczytać
 części plików, które sama zapisała). Przełączyliśmy format na PNG (commit
-`62e7015`, zawiera przenagranie kanoniczne `3693aec`) i `main` jest znów
+`607aca3`, zawiera przenagranie kanoniczne `86050d3`) i `main` jest znów
 zielony. To nie zmienia nic w punktach poniżej — dotyczy tylko formatu pliku,
 nie treści testów.
 
@@ -118,7 +118,7 @@ różnice. (Uwaga: to jest już drugie takie odświeżenie — pierwsze było je
 w formacie WebP, to poniżej jest aktualne, w PNG, po naprawie kodeka.)
 
 1. Otwórz w przeglądarce:
-   https://github.com/Rafau-18/SmartChessboard/commit/3693aec
+   https://github.com/Rafau-18/SmartChessboard/commit/86050d3
 2. GitHub sam pokaże podgląd „przed/po" dla każdego zmienionego pliku `.png`
    (można przełączać widok 2-up / suwak).
 3. Sprawdź, że różnice to wyłącznie subtelne wygładzenie krawędzi bierek

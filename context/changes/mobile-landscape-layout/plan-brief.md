@@ -51,7 +51,7 @@ On a landscape phone every screen swaps the TopAppBar for a left action rail (Ba
 | 5. PhysicalPlay | Recovery side-by-side; grid height-bound | Panel must fit grid + controls in a ~360 dp height budget |
 | 6. Replay + regression | One policy source app-wide; wide behavior preserved | Regressing the shipped wide Replay — guarded by an explicit regression pass |
 
-**Prerequisites:** worktree `worktree-mobile-landscape-layout` at `main@7c8c365` (includes delete-game p1 — low collision, HistoryScreen row-level only).
+**Prerequisites:** worktree `worktree-mobile-landscape-layout` at `main@9368d68` (includes delete-game p1 — low collision, HistoryScreen row-level only).
 **Estimated effort:** ~3–5 sessions across 6 phases; manual acceptance in one end-of-slice pass on the owner fleet.
 
 ## Open Risks & Assumptions

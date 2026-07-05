@@ -14,7 +14,7 @@ agent can execute and verify the CI phases autonomously.
   ViewModels, reducers, and 6 emulator-driven physical-flow E2E suites — but
   **zero pixels and zero composition tests**. `tech-stack.md` declares
   `runComposeUiTest` as the chosen UI-test tool; it was never implemented.
-- `mobile-landscape-layout` (merged `5dac931`, 2026-07-04) added
+- `mobile-landscape-layout` (merged `3aec475`, 2026-07-04) added
   `LocalWindowSizeClass` + pure layout-policy functions + `BoardScreenScaffold`
   (Column vs SidePane, banner no-jump slots) and `AdaptiveScaffold`
   (TopBar vs LeftRail). Layout *logic* is unit-tested
@@ -633,52 +633,52 @@ section updated to say so.
 
 #### Automated
 
-- [x] 0.1 `gh auth status` exits 0 with repo+workflow scopes — 8892540
-- [x] 0.2 `gh repo view` returns the private repo — 8892540
-- [x] 0.3 `git remote -v` shows origin→GitHub, bitbucket→old remote — 8892540
-- [x] 0.4 `git push origin main` exits 0 — 8892540
+- [x] 0.1 `gh auth status` exits 0 with repo+workflow scopes — 02c0e28
+- [x] 0.2 `gh repo view` returns the private repo — 02c0e28
+- [x] 0.3 `git remote -v` shows origin→GitHub, bitbucket→old remote — 02c0e28
+- [x] 0.4 `git push origin main` exits 0 — 02c0e28
 
 #### Manual
 
-- [x] 0.5 User confirms repo visibility/ownership — 8892540
-- [x] 0.6 User completed `gh auth login` — 8892540
+- [x] 0.5 User confirms repo visibility/ownership — 02c0e28
+- [x] 0.6 User completed `gh auth login` — 02c0e28
 
 ### Phase 1: Roborazzi foundation + first board goldens
 
 #### Automated
 
-- [x] 1.1 Record invocation produces first goldens in `snapshots/` — 38b2a8f
-- [x] 1.2 Verify invocation green on unchanged code — 38b2a8f
-- [x] 1.3 Deliberate-break check: verify fails on color change, green after revert — 38b2a8f
-- [x] 1.4 Full `:shared:testAndroidHostTest` green — 38b2a8f
+- [x] 1.1 Record invocation produces first goldens in `snapshots/` — 66b0fae
+- [x] 1.2 Verify invocation green on unchanged code — 66b0fae
+- [x] 1.3 Deliberate-break check: verify fails on color change, green after revert — 66b0fae
+- [x] 1.4 Full `:shared:testAndroidHostTest` green — 66b0fae
 
 #### Manual
 
-- [x] 1.5 Goldens visually correct (pieces, colors, no clipping) — 38b2a8f
-- [x] 1.6 HTML report readable as diff-review surface — 38b2a8f
+- [x] 1.5 Goldens visually correct (pieces, colors, no clipping) — 66b0fae
+- [x] 1.6 HTML report readable as diff-review surface — 66b0fae
 
 ### Phase 2: Full golden matrix
 
 #### Automated
 
-- [x] 2.1 Verify green over complete set; 3 consecutive deterministic runs — a49785f
-- [x] 2.2 Golden tree ≤ ~10 MB — a49785f
-- [x] 2.3 Full `:shared:testAndroidHostTest` green — a49785f
+- [x] 2.1 Verify green over complete set; 3 consecutive deterministic runs — 53f55b2
+- [x] 2.2 Golden tree ≤ ~10 MB — 53f55b2
+- [x] 2.3 Full `:shared:testAndroidHostTest` green — 53f55b2
 
 #### Manual
 
-- [x] 2.4 Visual pass over all goldens in both themes — a49785f
-- [x] 2.5 AGENTS.md ritual section followable cold — a49785f
+- [x] 2.4 Visual pass over all goldens in both themes — 53f55b2
+- [x] 2.5 AGENTS.md ritual section followable cold — 53f55b2
 
 ### Phase 3: uiTest harness + digital happy path
 
 #### Automated
 
-- [x] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke — 9b165f2
-- [x] 3.2 `:shared:wasmJsTest` green incl. smoke — 9b165f2
-- [x] 3.3 Android host smoke runs green OR documented exclusion committed — 9b165f2
-- [x] 3.4 No-secrets run green (blank/absent Supabase creds) — 9b165f2
-- [x] 3.5 Full `:shared:testAndroidHostTest` green — 9b165f2
+- [x] 3.1 `:shared:iosSimulatorArm64Test` green incl. smoke — fa9083b
+- [x] 3.2 `:shared:wasmJsTest` green incl. smoke — fa9083b
+- [x] 3.3 Android host smoke runs green OR documented exclusion committed — fa9083b
+- [x] 3.4 No-secrets run green (blank/absent Supabase creds) — fa9083b
+- [x] 3.5 Full `:shared:testAndroidHostTest` green — fa9083b
 
 #### Manual
 
@@ -688,9 +688,9 @@ section updated to say so.
 
 #### Automated
 
-- [x] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest` — 8dc9640
-- [x] 4.2 Android host per Phase 3 resolution — 8dc9640
-- [x] 4.3 No-secrets run still green — 8dc9640
+- [x] 4.1 Both smokes green on `iosSimulatorArm64Test` + `wasmJsTest` — d20be75
+- [x] 4.2 Android host per Phase 3 resolution — d20be75
+- [x] 4.3 No-secrets run still green — d20be75
 
 #### Manual
 
@@ -700,11 +700,11 @@ section updated to say so.
 
 #### Automated
 
-- [x] 5.1 `tests.yml` run via `gh` → success — c8a7441
-- [x] 5.2 `record-goldens.yml` produces bot commit; `tests.yml` green against it — c8a7441
-- [x] 5.3 Deliberate-break via CI: fail → artifact downloadable → revert → green — c8a7441
-- [x] 5.4 `ios-tests.yml` manual dispatch → success — c8a7441
-- [x] 5.5 Workflow files pass actionlint (preferred) — c8a7441
+- [x] 5.1 `tests.yml` run via `gh` → success — bc907a1
+- [x] 5.2 `record-goldens.yml` produces bot commit; `tests.yml` green against it — bc907a1
+- [x] 5.3 Deliberate-break via CI: fail → artifact downloadable → revert → green — bc907a1
+- [x] 5.4 `ios-tests.yml` manual dispatch → success — bc907a1
+- [x] 5.5 Workflow files pass actionlint (preferred) — bc907a1
 
 #### Manual
 

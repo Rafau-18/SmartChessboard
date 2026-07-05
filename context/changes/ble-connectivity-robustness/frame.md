@@ -14,7 +14,7 @@ ESP32 board was unreliable, in two distinct shapes:
    tore the connection down within ~200 ms (`reason=531` = HCI 0x13, remote
    user terminated), recoverable only via a manual system-Bluetooth
    "Forget". Encryption + bonding were provisionally reverted to plaintext
-   (2026-06-30, commit `f41f766`).
+   (2026-06-30, commit `e109913`).
 2. **Independently of encryption:** raw connect/reconnect was flaky on the
    Android test tablet. User's dominant remembered symptom (2026-07-02
    narrowing): **reconnecting after toggling Bluetooth off/on** (starting a
@@ -61,7 +61,7 @@ trace, 2026-07-02) re-verified `research.md` claims and filled its gaps.
 | Hypothesis | Evidence | Verdict |
 | --- | --- | --- |
 | 1. Firmware never negotiates conn params | No `ble_gap_update_params` in tree; `gap_event()` has no `CONN_UPDATE` case (`firmware/src/ble_service.cpp:282-333`); PPCP kconfig unset; no TX-power call anywhere | **STRONG** (as a fact; its share of mid-game drops unmeasured) |
-| 2. iOS desync was bond-*state* failure, not crypto | `reason=531` is a deliberate central-side teardown, not a MIC/crypto error; revert is half-done: `sm_bonding=1`, `sm_sc=1`, ENC key-dist (`ble_service.cpp:462-465`), NVS persist (`sdkconfig.defaults:23`) vs. a "no bonding dependency" comment (`:114-121`); `f41f766` stripped only the two `_ENC` flags (impl-review F1 concurs). Re-flash-while-bonded as the LTK-staleness trigger: user can't confirm (**PLAUSIBLE**, retest when bonding returns) | **STRONG** |
+| 2. iOS desync was bond-*state* failure, not crypto | `reason=531` is a deliberate central-side teardown, not a MIC/crypto error; revert is half-done: `sm_bonding=1`, `sm_sc=1`, ENC key-dist (`ble_service.cpp:462-465`), NVS persist (`sdkconfig.defaults:23`) vs. a "no bonding dependency" comment (`:114-121`); `e109913` stripped only the two `_ENC` flags (impl-review F1 concurs). Re-flash-while-bonded as the LTK-staleness trigger: user can't confirm (**PLAUSIBLE**, retest when bonding returns) | **STRONG** |
 | 3. RF/harness margin loss | Credible (jumpers straddle the module, default TX power) but **zero RSSI measurements exist** — unverifiable without hardware diagnostics | **WEAK (unmeasured)** |
 | 4. Tablet central imposes fragile profile | Circumstantial: Kable wiring is byte-for-byte identical across platforms, so the Android-vs-iOS asymmetry must originate below shared app code; no device matrix yet | **WEAK (needs device matrix)** |
 | 5. App flow amplifies/creates reconnect failures | Not a cause of live-link drops, but: no observation of Bluetooth-adapter state anywhere (BT-off known only via scan-failure catch, `KableBoardAdapter.kt:84-87`); after BT restart the reconnect loop direct-connects a cached, never-rebuilt `Peripheral` (`:106`, `:173-194`) — 6 silent attempts, no per-attempt timeout (vs. `connect()`'s 30 s), then dead end; Reconnect banner blindly retries the same dead object; no cancel-scan affordance; repeated `connect()` leaks the prior `stateJob`, whose unguarded mirror can inject phantom `Disconnected` (F5+) | **STRONG for the reconnect-shaped symptom** |

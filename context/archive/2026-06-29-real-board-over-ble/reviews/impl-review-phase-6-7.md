@@ -4,7 +4,7 @@
 - **Plan**: context/changes/real-board-over-ble/plan.md
 - **Scope**: Phases 6 & 7 of 8 (reviewed out of order — pure `commonMain` logic + UI, no collision with the not-yet-built phases)
 - **Branch / worktree**: `impl/s09-phase6-reconnect-reconcile` @ `.claude/worktrees/funny-einstein-604879`
-- **Commits**: `0e604ca` (p6 reconnect-reconcile flag), `c7d6132` (p7 live matrix overlay)
+- **Commits**: `5a31697` (p6 reconnect-reconcile flag), `c1db238` (p7 live matrix overlay)
 - **Date**: 2026-06-30
 - **Verdict**: APPROVED
 - **Findings**: 0 critical, 0 warnings, 3 observations
@@ -22,13 +22,13 @@
 
 ## What was verified
 
-### Phase 6 — `reconnectReconciling` gate (FR-012), commit `0e604ca`
+### Phase 6 — `reconnectReconciling` gate (FR-012), commit `5a31697`
 
 - New `val reconnectReconciling: Boolean = false` on `Playing` (`PhysicalPlayContract.kt`), added at **every** seam its sibling flags use: `acceptanceBlocked`, the `accumulate()` guard, the `confirm()` gate, the `commit()` reset, and the shared `SnapshotReceived` at-rest-match clear (computed parallel to `resumeVerified`). Nothing missing relative to `recovering` / `awaitingResumeConfirm`.
 - Armed in the `BoardConnected` arm alongside the existing `Send(RequestSnapshot)`; kept a distinct field so the UI can label "reconnecting" vs "resuming" vs "rejected".
 - No stuck-set path: cleared on a matching snapshot and on `commit`; deliberately held across a disconnect, re-armed on the next connect.
 
-### Phase 7 — live sensed-occupancy overlay, commit `c7d6132`
+### Phase 7 — live sensed-occupancy overlay, commit `c1db238`
 
 - New display-only `sensedOccupancy: Long?` — reset to the snapshot occupancy on `SnapshotReceived`, bit-cleared on `SquareLifted`, bit-set on `SquarePlaced` via the h8-safe `sensedAfter()` helper (`1L shl square`; square 63 = sign bit).
 - Display-only confirmed: read only by the reducer fold and `PhysicalPlayScreen` overlay; never in `acceptanceBlocked` / `confirm` / `commit` / `accumulate` (grep-pinned + a dedicated "never blocks acceptance" test). Stays separate from `latestOccupancy`.

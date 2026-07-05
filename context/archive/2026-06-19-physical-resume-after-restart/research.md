@@ -1,7 +1,7 @@
 ---
 date: 2026-06-20T00:02:00+02:00
 researcher: Rafał Urbaniak
-git_commit: b4b281017855db88e1ddaf3e7c1a46386322d470
+git_commit: 306360d1a9cea7fad4c8ce946dda272066f91481
 branch: main
 repository: smartchessboard (<user>/smartchessboard on Bitbucket)
 topic: "Physical resume after restart (S-08 / FR-013)"
@@ -15,7 +15,7 @@ last_updated_by: Rafał Urbaniak
 
 **Date**: 2026-06-20T00:02:00+02:00
 **Researcher**: Rafał Urbaniak
-**Git Commit**: b4b281017855db88e1ddaf3e7c1a46386322d470
+**Git Commit**: 306360d1a9cea7fad4c8ce946dda272066f91481
 **Branch**: main
 **Repository**: smartchessboard (<user>/smartchessboard on Bitbucket — no GitHub remote, so file references are local clickable `path:line`, not permalinks)
 

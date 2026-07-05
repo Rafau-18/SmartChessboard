@@ -3,13 +3,13 @@
 
 - **Plan**: context/changes/physical-capture-emulated/plan.md
 - **Scope**: Phases 1–5 of 5 (full plan)
-- **Commits reviewed**: b969215..0750746 (p1–p5 + epilogue)
+- **Commits reviewed**: 3dbf1cf..c9442c7 (p1–p5 + epilogue)
 - **Date**: 2026-06-19
 - **Verdict**: APPROVED
 - **Findings**: 0 critical · 1 warning · 0 observations
 - **Triage**: F1 FIXED (2026-06-19 — comment-only `TODO(S-09)` on both `BoardConnection` bindings)
 
-> Phase 1 (b969215) was reviewed separately in `impl-review-phase-1.md` (APPROVED; F1/F2/F3
+> Phase 1 (3dbf1cf) was reviewed separately in `impl-review-phase-1.md` (APPROVED; F1/F2/F3
 > all FIXED — comment/doc only). This full review covers phases 1–5 holistically and does not
 > re-open the resolved phase-1 findings.
 
@@ -26,11 +26,11 @@
 
 **Overall: APPROVED** — all PASS plus one low, forward-looking warning (fix is comment-only).
 
-### Live verification (this review, tree at 0750746)
+### Live verification (this review, tree at c9442c7)
 
 - `:shared:testAndroidHostTest` — BUILD SUCCESSFUL (covers interpreter, reducer, VM, and E2E — all live in `commonTest`).
 - ktlint — clean on all new S-06 files (`presentation/physical/**`, `domain/board/{Occupancy,Resolution,SequenceInterpreter}.kt`).
-- iOS / wasm — relying on the phase-5 recorded green (`fdf174a` ran the full `:shared` suite on `:shared:iosSimulatorArm64Test` and `:shared:wasmJsTest`); the only commit since is the docs-only epilogue (`0750746`).
+- iOS / wasm — relying on the phase-5 recorded green (`f8903b5` ran the full `:shared` suite on `:shared:iosSimulatorArm64Test` and `:shared:wasmJsTest`); the only commit since is the docs-only epilogue (`c9442c7`).
 
 ## Focus areas verified (requested)
 

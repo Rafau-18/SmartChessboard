@@ -1,7 +1,7 @@
 ---
 date: 2026-06-29T21:19:48+0200
 researcher: Rafał Urbaniak
-git_commit: e01239abb1ab60ed1e6e35f9a77bcf24491a9802
+git_commit: 9456460f72ca28c1f948285ab23988cf158a298f
 branch: claude/nifty-napier-4e2cf4
 repository: smartchessboard (bitbucket: <user>/smartchessboard)
 topic: "Real board over BLE (S-09) — driving the physical-mode flow from the real reed board over the §1 BLE contract"
@@ -16,7 +16,7 @@ last_updated_note: "Follow-ups: Blue-Falcon evaluated (does not change Kable-fir
 
 **Date**: 2026-06-29T21:19:48+0200
 **Researcher**: Rafał Urbaniak
-**Git Commit**: e01239abb1ab60ed1e6e35f9a77bcf24491a9802
+**Git Commit**: 9456460f72ca28c1f948285ab23988cf158a298f
 **Branch**: claude/nifty-napier-4e2cf4
 **Repository**: smartchessboard (Bitbucket `<user>/smartchessboard`; HEAD not pushed at this commit, so no public permalinks — paths below are repo-relative)
 

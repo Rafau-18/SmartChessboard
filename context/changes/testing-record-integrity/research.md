@@ -1,7 +1,7 @@
 ---
 date: 2026-07-04T12:30:00+0200
 researcher: Rafał Urbaniak
-git_commit: d7cee0ce3c9a4c6da683a678ba21ba0e5edc94ad
+git_commit: 014b03f43e9a4db47db35a6a45a725c649875cad
 branch: main
 repository: smartchessboard (github: Rafau-18/SmartChessboard)
 topic: "Physical-record integrity (test-plan Phase 2) — acceptance pipeline, durability pipeline, oracle surfaces, and coverage gaps for risks #1 and #2"
@@ -16,12 +16,12 @@ last_updated_note: "Open Questions 1–2 decided in session: hybrid oracle (fixt
 
 **Date**: 2026-07-04T12:30:00+0200
 **Researcher**: Rafał Urbaniak
-**Git Commit**: d7cee0ce3c9a4c6da683a678ba21ba0e5edc94ad
+**Git Commit**: 014b03f43e9a4db47db35a6a45a725c649875cad
 **Branch**: main
 **Repository**: smartchessboard (github: Rafau-18/SmartChessboard)
 
 Permalink base for all code references below:
-`https://github.com/Rafau-18/SmartChessboard/blob/d7cee0ce3c9a4c6da683a678ba21ba0e5edc94ad/`
+`https://github.com/Rafau-18/SmartChessboard/blob/014b03f43e9a4db47db35a6a45a725c649875cad/`
 
 Path shorthand: `SRC` = `SmartChessboard/shared/src`; unqualified paths are under
 `SRC/commonMain/kotlin/org/rurbaniak/smartchessboard/`; test paths under
@@ -391,7 +391,7 @@ BLE, multi-device concurrent editing (no conflict protocol exists — LWW).
 
 ## Code References
 
-Permalink base: `https://github.com/Rafau-18/SmartChessboard/blob/d7cee0ce3c9a4c6da683a678ba21ba0e5edc94ad/`
+Permalink base: `https://github.com/Rafau-18/SmartChessboard/blob/014b03f43e9a4db47db35a6a45a725c649875cad/`
 
 - `SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/games/GameAutoSaver.kt:32-38,60-102,111-121` — §6.2 gate, sync retry policy, reconcile (W5/W6 verified here)
 - `.../domain/games/GameJournal.kt:9-36` — journal port, durability contract, no enumeration API

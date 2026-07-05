@@ -567,102 +567,102 @@ old app is not deployed, so there is no field-compat concern.
 
 #### Automated
 
-- [x] 1.1 Catalog resolves and the shared module builds (`:shared:assemble`) — 6c66b27
-- [x] 1.2 All three target suites pass (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`) — 6c66b27
-- [x] 1.3 ktlint clean — 6c66b27
+- [x] 1.1 Catalog resolves and the shared module builds (`:shared:assemble`) — 734221d
+- [x] 1.2 All three target suites pass (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`) — 734221d
+- [x] 1.3 ktlint clean — 734221d
 
 #### Manual
 
-- [x] 1.4 Kable in Android/iOS dependency tree but NOT wasm — 6c66b27
+- [x] 1.4 Kable in Android/iOS dependency tree but NOT wasm — 734221d
 
 ### Phase 2: Firmware encryption (F-03 delta) + contract update
 
 #### Automated
 
-- [x] 2.1 Firmware host codec tests pass (`pio test -e native`) — 1f1789c
-- [x] 2.2 Firmware builds (`pio run`) — 1f1789c
+- [x] 2.1 Firmware host codec tests pass (`pio test -e native`) — 01b8ccb
+- [x] 2.2 Firmware builds (`pio run`) — 01b8ccb
 
 #### Manual
 
-- [x] 2.3 nRF Connect: unbonded `mobile_command` write triggers pairing+encryption (load-bearing); record whether `board_event` subscribe also does — 1f1789c
-- [x] 2.4 Bond persists across reconnect without re-pairing (Just-Works) — 1f1789c
+- [x] 2.3 nRF Connect: unbonded `mobile_command` write triggers pairing+encryption (load-bearing); record whether `board_event` subscribe also does — 01b8ccb
+- [x] 2.4 Bond persists across reconnect without re-pairing (Just-Works) — 01b8ccb
 
 ### Phase 3: BLE adapter (`data/board/ble/`)
 
 #### Automated
 
-- [x] 3.1 Mapping/state seam tests pass on Native (`iosSimulatorArm64Test`) — 4c71d70
-- [x] 3.2 Mapping/state + emulator-parity tests pass on JVM (`testAndroidHostTest`) — 4c71d70
-- [x] 3.3 wasm suite unaffected (`wasmJsTest`) — 4c71d70
-- [x] 3.4 ktlint clean — 4c71d70
+- [x] 3.1 Mapping/state seam tests pass on Native (`iosSimulatorArm64Test`) — 88f33a4
+- [x] 3.2 Mapping/state + emulator-parity tests pass on JVM (`testAndroidHostTest`) — 88f33a4
+- [x] 3.3 wasm suite unaffected (`wasmJsTest`) — 88f33a4
+- [x] 3.4 ktlint clean — 88f33a4
 
 #### Manual
 
-- [x] 3.5 (Deferred to Phase 8 hardware gate — no real radio off-device.) — f41f766
+- [x] 3.5 (Deferred to Phase 8 hardware gate — no real radio off-device.) — e109913
 
 ### Phase 4: DI swap + teardown
 
 #### Automated
 
-- [x] 4.1 App graph resolves on all targets (`:shared:assemble`) — b450c13
-- [x] 4.2 Existing physical-flow tests still green (`testAndroidHostTest`, `iosSimulatorArm64Test`) — b450c13
-- [x] 4.3 wasm suite green (`wasmJsTest`) — b450c13
-- [x] 4.4 ktlint clean — b450c13
+- [x] 4.1 App graph resolves on all targets (`:shared:assemble`) — 2f03233
+- [x] 4.2 Existing physical-flow tests still green (`testAndroidHostTest`, `iosSimulatorArm64Test`) — 2f03233
+- [x] 4.3 wasm suite green (`wasmJsTest`) — 2f03233
+- [x] 4.4 ktlint clean — 2f03233
 
 #### Manual
 
-- [x] 4.5 (Covered by Phase 8 hardware gate.) — f41f766
+- [x] 4.5 (Covered by Phase 8 hardware gate.) — e109913
 
 ### Phase 5: Connection screen (MVI, richer) + permissions
 
 #### Automated
 
-- [x] 5.1 Connection reducer unit tests pass on JVM + Native (`testAndroidHostTest`, `iosSimulatorArm64Test`) — 62b5a7d
-- [x] 5.2 wasm build excludes the connection route (`wasmJsTest` + `:webApp` assembles) — 62b5a7d
-- [x] 5.3 ktlint clean — 62b5a7d
+- [x] 5.1 Connection reducer unit tests pass on JVM + Native (`testAndroidHostTest`, `iosSimulatorArm64Test`) — 6340364
+- [x] 5.2 wasm build excludes the connection route (`wasmJsTest` + `:webApp` assembles) — 6340364
+- [x] 5.3 ktlint clean — 6340364
 
 #### Manual
 
-- [x] 5.4 Android: permission prompt before scan; deny → rationale + settings link; grant → scan — f41f766
-- [x] 5.5 iOS: first BLE use shows the `NSBluetooth…` prompt (no crash) — f41f766
-- [x] 5.6 Forget device → next entry shows the scan list (re-pair path) — f41f766
+- [x] 5.4 Android: permission prompt before scan; deny → rationale + settings link; grant → scan — e109913
+- [x] 5.5 iOS: first BLE use shows the `NSBluetooth…` prompt (no crash) — e109913
+- [x] 5.6 Forget device → next entry shows the scan list (re-pair path) — e109913
 
 ### Phase 6: Reconnect-reconcile reducer flag (FR-012)
 
 #### Automated
 
-- [x] 6.1 Reducer unit tests pass (set/clear/hold + idempotent duplicate snapshot) (`testAndroidHostTest`) — 0e604ca
-- [x] 6.2 Native parity for reducer/E2E (`iosSimulatorArm64Test`) — 0e604ca
-- [x] 6.3 Reconnect E2E passes (`runCurrent` discipline + injected occupancy + offline-change pattern) — 0e604ca
-- [x] 6.4 ktlint clean — 0e604ca
+- [x] 6.1 Reducer unit tests pass (set/clear/hold + idempotent duplicate snapshot) (`testAndroidHostTest`) — 5a31697
+- [x] 6.2 Native parity for reducer/E2E (`iosSimulatorArm64Test`) — 5a31697
+- [x] 6.3 Reconnect E2E passes (`runCurrent` discipline + injected occupancy + offline-change pattern) — 5a31697
+- [x] 6.4 ktlint clean — 5a31697
 
 #### Manual
 
-- [x] 6.5 (Behaviour proven on real hardware in Phase 8.) — f41f766
+- [x] 6.5 (Behaviour proven on real hardware in Phase 8.) — e109913
 
 ### Phase 7: Live matrix overlay (sensed-occupancy dots)
 
 #### Automated
 
-- [x] 7.1 Reducer tests: `sensedOccupancy` reset/clear/set + excluded from `acceptanceBlocked` (`testAndroidHostTest`, `iosSimulatorArm64Test`) — c7d6132
-- [x] 7.2 `ChessBoardView` overlay renders from a bitfield; Replay/Play unchanged with default (`testAndroidHostTest`) — c7d6132
-- [x] 7.3 wasm build unaffected (`wasmJsTest`) — c7d6132
-- [x] 7.4 ktlint clean — c7d6132
+- [x] 7.1 Reducer tests: `sensedOccupancy` reset/clear/set + excluded from `acceptanceBlocked` (`testAndroidHostTest`, `iosSimulatorArm64Test`) — c1db238
+- [x] 7.2 `ChessBoardView` overlay renders from a bitfield; Replay/Play unchanged with default (`testAndroidHostTest`) — c1db238
+- [x] 7.3 wasm build unaffected (`wasmJsTest`) — c1db238
+- [x] 7.4 ktlint clean — c1db238
 
 #### Manual
 
-- [x] 7.5 (Live-against-real-reeds behaviour proven in Phase 8.) — f41f766
+- [x] 7.5 (Live-against-real-reeds behaviour proven in Phase 8.) — e109913
 
 ### Phase 8: On-hardware acceptance (HARD BLOCKING GATE)
 
 #### Automated
 
-- [x] 8.1 Full suite green on all three targets (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`) — f41f766
-- [x] 8.2 ktlint clean; firmware `pio test -e native` + `pio run` green — f41f766
+- [x] 8.1 Full suite green on all three targets (`testAndroidHostTest`, `iosSimulatorArm64Test`, `wasmJsTest`) — e109913
+- [x] 8.2 ktlint clean; firmware `pio test -e native` + `pio run` green — e109913
 
 #### Manual
 
-- [x] 8.3 Android: full gate in `manual-verification.md` passes on the real board — f41f766
-- [x] 8.4 iOS: the same full gate passes on the real board — f41f766
-- [x] 8.5 Encrypted bond persists across reconnect without re-pairing on both platforms — f41f766
-- [x] 8.6 No accepted move lost across a disconnect window; matrix overlay matches physical reeds — f41f766
+- [x] 8.3 Android: full gate in `manual-verification.md` passes on the real board — e109913
+- [x] 8.4 iOS: the same full gate passes on the real board — e109913
+- [x] 8.5 Encrypted bond persists across reconnect without re-pairing on both platforms — e109913
+- [x] 8.6 No accepted move lost across a disconnect window; matrix overlay matches physical reeds — e109913

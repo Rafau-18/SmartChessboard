@@ -43,13 +43,13 @@ all planned files MATCH, no MISSING symbol, no behavioral drift.
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Pattern Consistency
 - **Location**: SmartChessboard/shared/src/commonMain/kotlin/org/rurbaniak/smartchessboard/domain/board/BoardEvents.kt:16
-- **Detail**: `SquareEvent(val square: Int, …)` has no construction guard. Its sibling `BoardSnapshot.isOccupied` (same file, line 39) guards with `require(isValidSquare(square))` — a guard this change itself added in Phase 1 (review F1, commit 42ee77b). A `SquareEvent(square = 99, …)` hand-constructed by a future S-06/S-09 consumer reaches the encoder at `BoardWireCodec.kt:99` where `(eventBits shl 6) or event.square` silently corrupts the high event bits — wrong wire byte, no error. Not reachable today (emulator validates via `lift`/`place`; decoder masks to `0x3F`), so this is defense-in-depth on a public domain type, not a live bug. The import `isValidSquare` is already present (line 3).
+- **Detail**: `SquareEvent(val square: Int, …)` has no construction guard. Its sibling `BoardSnapshot.isOccupied` (same file, line 39) guards with `require(isValidSquare(square))` — a guard this change itself added in Phase 1 (review F1, commit 8c16c1a). A `SquareEvent(square = 99, …)` hand-constructed by a future S-06/S-09 consumer reaches the encoder at `BoardWireCodec.kt:99` where `(eventBits shl 6) or event.square` silently corrupts the high event bits — wrong wire byte, no error. Not reachable today (emulator validates via `lift`/`place`; decoder masks to `0x3F`), so this is defense-in-depth on a public domain type, not a live bug. The import `isValidSquare` is already present (line 3).
 - **Fix**: Add an `init` block to `SquareEvent` matching the `isOccupied` precedent: `init { require(isValidSquare(square)) { "square must be in 0..63, was $square" } }`.
   - Strength: Matches the guard `isOccupied` uses (and the `Square.kt` index-helper convention); closes the silent-corruption path at the domain boundary; the import already exists.
   - Tradeoff: Minor tension with root CLAUDE.md's "don't validate trusted-internal-caller scenarios" — but the local precedent within this very file/change favors the guard.
   - Confidence: HIGH — identical fix already applied to the sibling type in Phase 1.
   - Blind spot: None significant.
-- **Decision**: RESOLVED in 3cb4f26 — `init { require(isValidSquare(square)) }` added to `SquareEvent`; `BoardEventsTest` covers the guard and the sibling `isOccupied` range check.
+- **Decision**: RESOLVED in 8fcb360 — `init { require(isValidSquare(square)) }` added to `SquareEvent`; `BoardEventsTest` covers the guard and the sibling `isOccupied` range check.
 
 ### F2 — Contract / firmware-PRD edits exceed the "one sentence / one line" cap
 
@@ -79,7 +79,7 @@ all planned files MATCH, no MISSING symbol, no behavioral drift.
 - **Location**: SmartChessboard/shared/src/commonTest/kotlin/org/rurbaniak/smartchessboard/data/board/emulator/EmulatedBoardEndToEndTest.kt:245 ; EmulatedBoardTest.kt:245
 - **Detail**: Production code correctly reuses `isValidSquare`/`squareOf` from `domain/chess/Square.kt` (the plan's reuse mandate is met). But the two test fixtures compute `file + 8*rank` by hand instead of calling `squareOf` — a second, tiny copy of a load-bearing convention, in test code only.
 - **Fix**: Have the `sq()` helper delegate to `squareOf(file, rank)` so the convention lives in one place even in tests.
-- **Decision**: RESOLVED in 3cb4f26 — `sq()` (E2E test) and the `E4`/`A2` constants (`EmulatedBoardTest`) now delegate to `squareOf`; no test re-derives `file + 8*rank`.
+- **Decision**: RESOLVED in 8fcb360 — `sq()` (E2E test) and the `E4`/`A2` constants (`EmulatedBoardTest`) now delegate to `squareOf`; no test re-derives `file + 8*rank`.
 
 ### F5 — Manual-gate checkboxes still unticked though the substance is now verified
 
