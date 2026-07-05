@@ -4,7 +4,7 @@ document: contract-surfaces
 version: 1
 status: draft
 created: 2026-05-27
-updated: 2026-07-04
+updated: 2026-07-05
 ---
 
 ## Purpose
@@ -31,6 +31,7 @@ In scope:
 - OAuth flow (Google → Supabase)
 - PGN / FEN data model conventions
 - Cross-cutting failure modes and invariants
+- CI required-check names that gate `main` (load-bearing strings — §7)
 
 Out of scope:
 
@@ -697,6 +698,31 @@ only (FR-013); no offline cold-start discovery and no cross-device handoff
 - OTA firmware updates over BLE.
 - Multi-board / multi-user-per-board scenarios.
 - Time control / clock semantics (PRD non-goal).
+
+---
+
+## 7. CI required checks (load-bearing job-name strings)
+
+`main` is protected by the GitHub ruleset **`main-pr-gate`** (enforcement `active`,
+`bypass_actors: []`): no direct pushes, force-push and deletion blocked, every change
+merges through a PR whose required status checks are **green and up-to-date**. The
+required-check contexts are **exact job-name strings** — a ruleset context must
+byte-match the workflow job's `name:` or the gate silently never blocks (it waits
+forever for a check that never reports). Renaming either job **must** update the
+ruleset context in the same change.
+
+| Required check (ruleset context) | Source | Notes |
+| --- | --- | --- |
+| `JVM goldens + wasm smokes` | `.github/workflows/tests.yml` → job `test` `name:` | Android host (Robolectric + Roborazzi PNG goldens) + wasm smoke suite. Also emits the per-run test-count summary ("✅ N passed / X failed / Y skipped") to `$GITHUB_STEP_SUMMARY`. |
+| `gitleaks` | `.github/workflows/tests.yml` → job `gitleaks` `name:` | Full-history secret scan (`fetch-depth: 0`) with `.gitleaks.toml`; pinned CLI binary, no third-party action. Continuous layer behind GitHub-native Secret Scanning + Push Protection. |
+
+- The iOS simulator suite (`ios-tests.yml`) is **nightly + dispatch only**, deliberately
+  **not** a required check (macOS billing); do not add it to the ruleset contexts.
+- Visual changes re-record goldens on CI, never locally (Mac fonts ≠ ubuntu): the
+  documented ritual is verify-red → `record-goldens.yml` dispatch on the branch →
+  review the bot's golden diff → green. See [`SmartChessboard/AGENTS.md`](../../SmartChessboard/AGENTS.md).
+- Ruleset name (`main-pr-gate`) and both contexts above are the strings other tooling
+  keys on — treat them as an interface, changed only via the change-control process above.
 
 ---
 

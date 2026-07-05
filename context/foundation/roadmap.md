@@ -47,7 +47,7 @@ The author and a small circle of friends play chess on a physical wooden board, 
 | S-11 | delete-game-from-history      | delete an unwanted game from history (any status, all surfaces)   | S-01             | FR-021, US-04                                         | done |
 | S-12 | mobile-landscape-layout       | space-efficient landscape UI across board screens (2-col + control placement) | S-02, S-03, S-04, S-06 | FR-004, FR-008, FR-016, FR-017, FR-019, US-01–US-03   | ready           |
 | S-13 | seed-sample-games-on-signup   | start on a pre-seeded history of 8 famous games (replayable/analyzable/deletable), not an empty list | S-01             | FR-022, FR-015, FR-016, FR-017, FR-021, US-03         | done |
-| S-14 | public-repo-and-pr-gate       | (hardening) go public + PR-gated `main`: no merge without green tests; per-run test counts visible in CI | — (best after testing-record-integrity) | NFR process / repo hygiene (no new FR)     | proposed        |
+| S-14 | public-repo-and-pr-gate       | (hardening) go public + PR-gated `main`: no merge without green tests; per-run test counts visible in CI | — (best after testing-record-integrity) | NFR process / repo hygiene (no new FR)     | implemented     |
 
 ## Streams
 
@@ -302,7 +302,7 @@ Context note (outside the app codebase): firmware status has since advanced well
   - **Test-count summary mechanism** — a self-contained step parsing JUnit XML into `$GITHUB_STEP_SUMMARY` (zero third-party actions in a trusted pipeline) vs a ready-made action (e.g. mikepenz/EnricoMi). Leading: self-contained step. Owner: team. Block: no.
   - **Golden re-record in the PR flow** — the existing verify-red → `record-goldens.yml` → review-diff → green ritual (`SmartChessboard/AGENTS.md`) becomes the documented path for any visual change under the gate; decide whether to leave it manual-dispatch or streamline. Owner: team. Block: no.
 - **Risk:** Process/CI configuration, not product logic — low code-regression risk. The load-bearing risks are (1) **going public exposes git history** — the secret/cruft audit MUST cover history, not just the working tree; (2) the required-check name must exactly match the CI job name or the gate silently never blocks; (3) goldens are environment-dependent (Mac fonts ≠ ubuntu) so any UI change re-records on CI, never locally. A small deliberate UI tweak (user has one in mind) is the demo vehicle to prove the gate end-to-end, including the golden re-record path.
-- **Status:** proposed — plannable via `/10x-new public-repo-and-pr-gate` then `/10x-plan` in a fresh session; gated on the user's go-public decision.
+- **Status:** implemented (2026-07-05) — repo is public at [`github.com/Rafau-18/SmartChessboard`](https://github.com/Rafau-18/SmartChessboard) with the rewritten (course-content- and PII-free) history; `main` is protected by the `main-pr-gate` ruleset (PR required, required checks `JVM goldens + wasm smokes` + `gitleaks`, strict up-to-date, no bypass); every `tests.yml` run shows the "✅ N passed / X failed / Y skipped" summary; GitHub Secret Scanning + Push Protection enabled. Gate proven end-to-end by PR #2 (board-coordinate UI tweak: verify-red → CI golden re-record → green → merge). The `public-repo-and-pr-gate` change folder is local-only (embeds purge literals) and never ships.
 
 ## Backlog Handoff
 
@@ -323,7 +323,7 @@ Context note (outside the app codebase): firmware status has since advanced well
 | S-11       | delete-game-from-history      | Delete a game from history (hard delete, all surfaces)             | yes                   | Run `/10x-plan delete-game-from-history` |
 | S-12       | mobile-landscape-layout       | Landscape UI: two-column + control placement across board screens  | yes                   | Run `/10x-plan mobile-landscape-layout` |
 | S-13       | seed-sample-games-on-signup   | Seed ≥5 famous games on first sign-in (non-empty new-user history)  | yes                   | Run `/10x-plan seed-sample-games-on-signup` |
-| S-14       | public-repo-and-pr-gate       | Go public + PR-gated `main`: cleanup, branch protection, CI test-count summary | yes\*   | \*Gated on go-public decision. Run `/10x-plan public-repo-and-pr-gate` |
+| S-14       | public-repo-and-pr-gate       | Go public + PR-gated `main`: cleanup, branch protection, CI test-count summary | done    | Implemented 2026-07-05 — repo public, `main-pr-gate` ruleset active, gate proven by PR #2 |
 
 ## Open Roadmap Questions
 
