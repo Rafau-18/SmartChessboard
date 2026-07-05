@@ -1,20 +1,60 @@
 # iOS simulator suite (ui-test-layer Phase 5): nightly + manual dispatch,
 # deliberately NOT a PR gate — macOS Actions minutes bill at x10 against the
 # free tier. Failure notification is the red run itself (no extra channels at MVP).
+#
+# The cron fires every night, but the expensive macOS job only runs if main saw a
+# commit in the last 24h, or it's the weekly floor (Sunday) — so a quiet main
+# doesn't burn macOS minutes every night, while a stale checkout still gets
+# exercised at least once a week (catches drift like Xcode/SDK bumps on the
+# GitHub-hosted runner). A manual `workflow_dispatch` always runs, gate or no gate.
 name: iOS tests
 
 on:
   schedule:
-    - cron: "30 2 * * *" # nightly, 02:30 UTC
+    - cron: "30 2 * * *" # nightly check, 02:30 UTC — see gating note above
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  check-activity:
+    name: Check for recent activity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      should_run: ${{ steps.gate.outputs.should_run }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Decide whether to run the iOS suite
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          latest=$(git log -1 --since="24 hours ago" --format=%H)
+          if [ -n "$latest" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          elif [ "$(date -u +%u)" = "7" ]; then
+            # Sunday: weekly floor even with zero activity.
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
   ios-simulator:
     name: iOS simulator suite
-    runs-on: macos-latest
+    needs: check-activity
+    if: needs.check-activity.outputs.should_run == 'true'
+    # Pinned image, NOT macos-latest: during GitHub's image rollover the alias lands
+    # non-deterministically on macos-15 (Xcode 16.4) or macos-26 (Xcode 26.x), and CMP 1.11's
+    # precompiled ui-uikit caches need the Xcode 26 SDK — on 16.4 the link dies with
+    # "Undefined symbols: _OBJC_CLASS_$_UIViewLayoutRegion" (nightly 2026-07-05). When bumping
+    # this pin, bump the konan cache key below with it.
+    runs-on: macos-26
     timeout-minutes: 45
     defaults:
       run:
@@ -33,12 +73,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       # The Kotlin/Native toolchain (~1 GB) is downloaded to ~/.konan on first use;
-      # setup-gradle does not cover it.
+      # setup-gradle does not cover it. The key carries the image label because ~/.konan
+      # also holds klib caches compiled against the image's Xcode SDK — sharing one cache
+      # across images injects artifacts built for the wrong SDK into the link.
       - name: Cache Kotlin/Native toolchain
         uses: actions/cache@v4
         with:
           path: ~/.konan
-          key: konan-${{ runner.os }}-${{ hashFiles('SmartChessboard/gradle/libs.versions.toml') }}
+          key: konan-macos-26-${{ hashFiles('SmartChessboard/gradle/libs.versions.toml') }}
+
+      # Cheap forensics for the next environment drift: which Xcode actually linked this run.
+      - name: Print Xcode version
+        run: xcodebuild -version
 
       - name: iOS simulator suite
         run: ./gradlew :shared:iosSimulatorArm64Test --console=plain

@@ -224,6 +224,16 @@ This file is not sorted, deduplicated, or reorganized when new entries land — 
 
 - **Applies to**: implement, impl-review — any work on the golden/screenshot layer or its image codec. Surfaced 2026-07-05 (ui-test-layer, post-merge; `main` golden gate red on a docs-only commit).
 
+## Pin the hosted macOS runner image — `macos-latest` is non-deterministic during GitHub's rollover, and the konan cache must be keyed per image
+
+- **Context**: `ios-tests.yml` runs `:shared:iosSimulatorArm64Test` on a GitHub-hosted macOS runner, with `~/.konan` cached between runs. Kotlin/Native links the test binary against the Xcode SDK present on the runner; Compose Multiplatform 1.11 ships precompiled `ui-uikit`/skiko klib caches that reference symbols from the **Xcode 26** SDK.
+
+- **Problem**: The nightly of 2026-07-05 failed at `linkDebugTestIosSimulatorArm64` with `Undefined symbols: _OBJC_CLASS_$_UIViewLayoutRegion` while the previous day's runs were green on identical code. Cause: `runs-on: macos-latest` landed on `macos-15-arm64` (Xcode 16.4 / iOS 18.5 SDK) that night, while the green runs had landed on `macos-26-arm64` (Xcode 26.x) — during GitHub's image rollover the alias is a lottery per run. Compounding it, the konan cache key (`konan-${{ runner.os }}-…`) was identical on both images, so klib caches compiled against one SDK were restored into builds linking against the other ("object file was built for newer 'iOS-simulator' version" warnings).
+
+- **Rule**: For any workflow that compiles Kotlin/Native for Apple targets on hosted runners: (1) **pin the image** (`runs-on: macos-26`), never `macos-latest` — bump the pin deliberately, as its own commit, when the toolchain (CMP/Kotlin) is ready for it; (2) **put the image label in every cache key that stores SDK-dependent artifacts** (`konan-macos-26-…`), so an image bump invalidates the cache instead of poisoning the next build; (3) print `xcodebuild -version` as a build step — when environment drift strikes again, the forensics are one log line, not an image-README archaeology session. A red run on unchanged code with linker `Undefined symbols` for UIKit/Foundation classes is an SDK-mismatch signature, not a code regression.
+
+- **Applies to**: implement, impl-review — any GitHub Actions job on macOS (iOS tests today; the `github-ci-and-distribution` change's future iOS build/signing jobs). Surfaced 2026-07-05 (ios-tests nightly).
+
 ## Positions entering the engine from outside must be validated at the boundary — the engine trusts its input
 
 - **Context**: `domain/chess` (`Position`, `ChessRules.legalMoves`/`validate`/`status`, `applyMove`). Today every `Position` is built internally — `Position.start()` then `applyMove`, or the test `positionOf` — so all inputs are already legal. Raised by the F-01 (`chess-rules-engine`) impl-review (2026-06-11, finding F1) as a latent boundary that becomes real the moment positions arrive from **outside**: FEN load, stored-record rehydration, BLE `BOARD_SNAPSHOT`.
