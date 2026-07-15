@@ -405,33 +405,33 @@ once. From the first pipeline release onward, signatures are stable and updates 
 
 #### Automated
 
-- [x] 1.1 APK assembles with injected version (`-PappVersionName/-PappVersionCode`)
-- [x] 1.2 Signature stable across two clean `assembleDebug` builds (same signer cert)
-- [x] 1.3 Web bundle builds and `_headers` present in `productionExecutable/`
-- [x] 1.4 Both workflow files valid/lint-clean and declare `on: push: tags: ['v*']`
-- [ ] 1.5 S-14 PR gate green (`JVM goldens + wasm smokes` + `gitleaks`; keystore allowlisted if needed)
+- [x] 1.1 APK assembles with injected version (`-PappVersionName/-PappVersionCode`) — 14b428d
+- [x] 1.2 Signature stable across two clean `assembleDebug` builds (same signer cert) — 14b428d
+- [x] 1.3 Web bundle builds and `_headers` present in `productionExecutable/` — 14b428d
+- [x] 1.4 Both workflow files valid/lint-clean and declare `on: push: tags: ['v*']` — 14b428d
+- [x] 1.5 S-14 PR gate green (`JVM goldens + wasm smokes` + `gitleaks`; keystore allowlisted if needed) — 14b428d
 
 #### Manual
 
-- [x] 1.6 Environment `production` exists with owner as required reviewer
-- [x] 1.7 Environment secrets (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`) + repo secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_SERVER_CLIENT_ID`) set
-- [x] 1.8 Scoped Cloudflare API token confirmed (Workers Scripts edit, this project only)
-- [x] 1.9 Committed `debug.keystore` reviewed and approved before commit
+- [x] 1.6 Environment `production` exists with owner as required reviewer — 14b428d
+- [x] 1.7 Environment secrets (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`) + repo secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GOOGLE_SERVER_CLIENT_ID`) set — 14b428d
+- [x] 1.8 Scoped Cloudflare API token confirmed (Workers Scripts edit, this project only) — 14b428d
+- [x] 1.9 Committed `debug.keystore` reviewed and approved before commit — 14b428d
 
 ### Phase 2: End-to-end release verification
 
 #### Automated
 
-- [ ] 2.1 Both workflow runs appear for the `v0.0.1-rc` tag
-- [ ] 2.2 Release exists with the APK asset (`gh release view`)
-- [ ] 2.3 `android-release` completes unattended; `web-deploy` waits at the gate
+- [x] 2.1 Both workflow runs appear for the `v0.0.1-rc` tag
+- [x] 2.2 Release exists with the APK asset (`gh release view`)
+- [x] 2.3 `android-release` completes unattended; `web-deploy` waits at the gate
 
 #### Manual
 
 - [ ] 2.4 Approve gate → `wrangler deploy` succeeds → production URL serves the new bundle (sign-in + OPFS OK)
 - [ ] 2.5 APK downloads from the Release and installs + signs in on a phone
 - [ ] 2.6 Second tag installs in place over the first (stable signature + higher `versionCode`)
-- [ ] 2.7 `main-pr-gate` required checks unchanged; no release workflow appears as a PR check
+- [x] 2.7 `main-pr-gate` required checks unchanged; no release workflow appears as a PR check
 
 ### Phase 3: (Optional) Firebase App Distribution
 
