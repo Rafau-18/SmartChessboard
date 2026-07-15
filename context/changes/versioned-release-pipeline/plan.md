@@ -428,8 +428,8 @@ once. From the first pipeline release onward, signatures are stable and updates 
 
 #### Manual
 
-- [ ] 2.4 Approve gate → `wrangler deploy` succeeds → production URL serves the new bundle (sign-in + OPFS OK)
-- [ ] 2.5 APK downloads from the Release and installs + signs in on a phone
+- [x] 2.4 Approve gate → `wrangler deploy` succeeds → production URL serves the new bundle (sign-in + OPFS OK)
+- [x] 2.5 APK downloads from the Release and installs + signs in on a phone
 - [ ] 2.6 Second tag installs in place over the first (stable signature + higher `versionCode`)
 - [x] 2.7 `main-pr-gate` required checks unchanged; no release workflow appears as a PR check
 
